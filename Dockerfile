@@ -13,7 +13,7 @@ ARG RUNTIME_IMAGE=runtime-default
 # python:3.13-slim-trixie
 FROM python:3.13-slim-trixie@sha256:3dd7cc108ec1493442514f5c2a871af6af0ec31d768ff6e378a93340c3b3db5f AS builder-default
 # gcr.io/distroless/python3-debian13:nonroot (Python 3.13.5)
-FROM gcr.io/distroless/python3-debian13:nonroot@sha256:774595d652a294b54c9bd575b2d9fdd1a4b47547dc17b8bfa4c0e953c64855b3 AS runtime-default
+FROM gcr.io/distroless/python3-debian13:nonroot@sha256:ed91505d162119a1e46552bc7f471c77737729a525269a7e9b60646807564601 AS runtime-default
 
 # Node build image, pinned by tag and digest. Runs on the build host's platform (the built files are the same for every architecture).
 FROM --platform=$BUILDPLATFORM node:24-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS frontend-builder

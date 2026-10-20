@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.db
+*.sqlite3
+.env
+stress/work/
+security/work/
+# scan and load-test output is local only
+security/results/*
+!security/results/.gitkeep
+stress/results/*
+!stress/results/.gitkeep
+.schemathesis/
+
+# licence signing keys and issued licences must never be committed
+*.pem
+*licence*.txt
+
+# built SPA copied into the package by the release workflow
+src/kresheen/web/

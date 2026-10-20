@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kresheen"
+version = "1.0.0"
+description = "Threat-modeling platform"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "requests>=2.31",
+    "defusedxml>=0.7.1",
+    "click>=8.1",
+    "sqlalchemy>=2.0",
+    # Database schema migrations (storage/migrate.py, storage/migrations/).
+    "alembic>=1.13",
+    "pyyaml>=6.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "psycopg[binary]>=3.1",
+    "argon2-cffi>=23.1",
+    "cryptography>=42.0",
+    # Used by the experimental, opt-in AI assist through engine/llm (the only place it is imported):
+    # listing models for a user-supplied key and one-shot structured calls. Nothing runs unless the owner turns AI on.
+    "anthropic>=1.7",
+    # Report exports (reporting/): HTML via Jinja2 (autoescape on), DOCX via python-docx (pure Python),
+    # PDF via reportlab (pure Python, no native rendering libraries -- see pdf_report.py's docstring).
+    "jinja2>=3.1",
+    "python-docx>=1.1",
+    "reportlab>=4.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "responses>=0.25",
+    "httpx2>=2.10",
+    "testcontainers[postgres]>=4.7",
+    "mypy>=1.9",
+    "ruff>=0.4",
+    "types-PyYAML",
+    "types-defusedxml",
+    "types-reportlab",
+]
+
+[project.scripts]
+kresheen = "kresheen.cli.main:cli"
+
+[tool.hatch.build]
+# The release workflow copies the built SPA here before building; it is git-ignored, so list it as an artifact
+# to include it in the sdist and the wheel. A build without it still works (the server then has no UI).
+artifacts = ["src/kresheen/web/**"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kresheen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI's Depends() is meant to be called in argument defaults -- that's
+# how its dependency injection works, not the mutable-default-argument
+# footgun B008 otherwise guards against.
+"src/kresheen/dashboard/routes/*.py" = ["B008"]
+"src/kresheen/dashboard/auth.py" = ["B008"]
+"src/kresheen/dashboard/access.py" = ["B008"]
+"src/kresheen/dashboard/ai_calls.py" = ["B008"]
+# api_applications.py's synchronous "execute the run inline" route
+# deliberately catches and logs any exception from execute_run rather than
+# re-raising -- execute_run has already recorded status="failed" on the run
+# itself, and the route reports that via the returned run body (not a
+# 500) so the frontend renders failure the same way as any other status.
+"src/kresheen/dashboard/routes/api_applications.py" = ["BLE001"]

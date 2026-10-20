@@ -1,0 +1,46 @@
+name: Kresheen threat model gate
+description: Runs your Kresheen threat model on a pull request, fails on newly introduced risk, and comments the diff.
+inputs:
+  server:
+    description: Base URL of your Kresheen server.
+    required: true
+  token:
+    description: Kresheen API token (store as a secret).
+    required: true
+  application:
+    description: Application id or exact name.
+    required: true
+  ref:
+    description: Git ref/SHA to scan instead of the source's configured one.
+    default: ${{ github.event.pull_request.head.sha }}
+  fail-on:
+    description: Fail on a NEW finding/threat at or above this severity (info|low|medium|high|critical|none).
+    default: critical
+  fail-on-boundary-crossing:
+    description: Fail when a new flow crosses a trust boundary ("true"/"false").
+    default: "true"
+  package:
+    description: pip requirement that provides the kresheen CLI.
+    default: kresheen
+runs:
+  using: composite
+  steps:
+    - run: python -m pip install --quiet "${{ inputs.package }}"
+      shell: bash
+    - run: |
+        kresheen ci \
+          --server "$KRESHEEN_URL" --token "$KRESHEEN_TOKEN" \
+          --application "$KRESHEEN_APPLICATION" \
+          ${KRESHEEN_REF:+--ref "$KRESHEEN_REF"} \
+          --fail-on "$KRESHEEN_FAIL_ON" \
+          $([ "$KRESHEEN_FBC" = "true" ] && echo --fail-on-boundary-crossing || echo --no-fail-on-boundary-crossing) \
+          --github-comment
+      shell: bash
+      env:
+        KRESHEEN_URL: ${{ inputs.server }}
+        KRESHEEN_TOKEN: ${{ inputs.token }}
+        KRESHEEN_APPLICATION: ${{ inputs.application }}
+        KRESHEEN_REF: ${{ inputs.ref }}
+        KRESHEEN_FAIL_ON: ${{ inputs.fail-on }}
+        KRESHEEN_FBC: ${{ inputs.fail-on-boundary-crossing }}
+        GITHUB_TOKEN: ${{ github.token }}

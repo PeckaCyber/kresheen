@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Thin wrapper around `docker compose` so operating a running kresheen
+# install (restart after a reboot, check status, tail logs) never requires
+# knowing raw Compose syntax.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage: ./kresheen-ctl <command>
+
+Commands:
+  start     Start (or resume) the stack.
+  stop      Stop the stack without removing data.
+  restart   Stop then start.
+  status    Show which services are running.
+  logs      Follow logs from all services (Ctrl-C to exit).
+  update    Pull newer images (and rebuild a locally built one), then restart.
+EOF
+}
+
+compose() {
+  (cd "$REPO_ROOT" && docker compose "$@")
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  start)
+    compose up -d
+    ;;
+  stop)
+    compose stop
+    ;;
+  restart)
+    compose restart
+    ;;
+  status)
+    compose ps
+    ;;
+  logs)
+    compose logs -f
+    ;;
+  update)
+    # `pull` updates images that come from a registry (Postgres). The app service is built
+    # from this checkout (`build:` in docker-compose.yml), so `build --pull` refreshes its
+    # base images and rebuilds it. Run `git pull` first to pick up new source.
+    compose pull --ignore-buildable
+    compose build --pull
+    compose up -d
+    ;;
+  ""|-h|--help|help)
+    usage
+    ;;
+  *)
+    echo "error: unknown command '$cmd'" >&2
+    usage >&2
+    exit 1
+    ;;
+esac

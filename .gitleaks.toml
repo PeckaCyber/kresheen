@@ -1,0 +1,11 @@
+# Extends the default ruleset. Test fixtures with fake keys are allowlisted by path.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "test fixtures"
+paths = [
+  '''^tests/unit/test_terraform_facts\.py$''',
+  '''^tests/unit/test_llm_policy\.py$''',
+  '''^tests/integration/test_github_token_at_rest\.py$''',
+]

@@ -1,0 +1,123 @@
+# Default values for kresheen.
+
+image:
+  repository: ghcr.io/peckacyber/kresheen
+  # Empty means the chart's appVersion, so a chart release runs the image release with the same version.
+  # For a local build use `--set image.repository=kresheen --set image.tag=dev`.
+  tag: ""
+  pullPolicy: IfNotPresent
+  # Pin by digest for anything beyond a trial, for example "sha256:0123...". When set, the image is
+  # `repository@digest` and `tag` is ignored.
+  digest: ""
+
+replicaCount: 1
+# The failed-login throttle is in memory per process, so each extra replica multiplies the attempts an attacker gets
+# before being slowed. The chart refuses replicaCount above 1 unless this is true.
+allowMultipleReplicas: false
+
+# Pod hardening. The runtime image is distroless and runs as 65532 with a read-only
+# root filesystem; only /tmp and the Grype cache are writable (emptyDir below).
+securityContext:
+  runAsUser: 65532
+  runAsGroup: 65532
+
+# Database upgrades. With an external database (postgresql.enabled=false) a pre-install/pre-upgrade Job runs
+# `kresheen db upgrade` before the new pods start, and the pods run with KRESHEEN_AUTO_MIGRATE=0. With the bundled dev
+# Postgres there is no Job and the pod migrates itself on startup. Take a pg_dump before an upgrade: Kresheen does not
+# back up PostgreSQL, and migrations only go forward.
+migrations:
+  timeoutSeconds: 600
+
+serviceAccount:
+  # The app does not call the Kubernetes API, so the token is not mounted.
+  automountToken: false
+
+grypeCache:
+  # Grype downloads its vulnerability DB (over 1 GB) on first use. emptyDir re-downloads on every pod start; mount a
+  # PVC at /var/cache/grype instead for a persistent cache or an air-gapped install.
+  sizeLimit: 3Gi
+
+# Egress and ingress limits. Egress: DNS, the bundled Postgres, and HTTPS (GitHub, your IdP, Jira, Anthropic).
+# Tighten `egressCidrs` to the addresses you actually use. Needs a CNI that enforces NetworkPolicy.
+networkPolicy:
+  enabled: true
+  egressCidrs: ["0.0.0.0/0"]
+  # External database (postgresql.enabled=false): without this the policy blocks the app and the migration Job from
+  # reaching it. List the address range(s) of the database, for example ["10.0.5.0/24"] or ["203.0.113.7/32"], and its
+  # port. Ignored while the bundled Postgres is on (that pod is allowed by label). Leave empty if your CNI or the
+  # database sits inside the cluster and you allow it with your own policy.
+  databaseCidrs: []
+  databasePort: 5432
+  # Extra ingress sources, e.g. your ingress controller's namespace:
+  #   - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ingress-nginx}}
+  ingressFrom: []
+
+# Behind an ingress or any TLS-terminating proxy, the app sees plain HTTP from the proxy's pod address. Tell it which
+# proxy addresses to trust, or the session cookie is not marked Secure, HSTS is not sent, and every client looks like
+# the proxy (so one attacker can trip the sign-in throttle for everyone).
+#
+# forwardedAllowIps sets KRESHEEN_FORWARDED_ALLOW_IPS: comma-separated proxy addresses or CIDR ranges, or "*". For an
+# ingress, use the range your ingress controller's pods run in (for example "10.42.0.0/16", the pod network or the
+# controller's namespace subnet). Empty keeps the app default (127.0.0.1), which trusts nothing inside a cluster.
+# Trade-off: "*" is the easy setting because pod IPs change, but it trusts X-Forwarded-* headers from any sender that
+# can reach the pod, so a client could spoof its address and scheme (and dodge the sign-in throttle). If you use "*",
+# keep networkPolicy.enabled=true and list only your ingress controller in networkPolicy.ingressFrom so that nothing
+# else can reach the pod.
+forwardedAllowIps: ""
+# cookieSecure sets KRESHEEN_COOKIE_SECURE: "auto" follows the scheme the app sees (needs forwardedAllowIps behind
+# a proxy), "always" marks the cookie Secure regardless (use it when the site is only served over HTTPS), "never".
+cookieSecure: auto
+
+# Extra environment variables for the app and the migration Job, as a standard Kubernetes env list. Use it for any
+# KRESHEEN_* setting without its own value, for example:
+#   - name: KRESHEEN_OIDC_ISSUER
+#     value: https://idp.example.com
+#   - name: KRESHEEN_OIDC_CLIENT_SECRET
+#     valueFrom: {secretKeyRef: {name: my-oidc, key: client-secret}}
+extraEnv: []
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    # 512Mi can be OOM-killed on large scans; 2Gi is the tested ceiling.
+    memory: 2Gi
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls: []
+
+# Encrypts stored connector credentials. Leave empty to generate one on first install and keep it on upgrade
+# (back it up: losing it makes stored credentials unreadable). Or set your own Fernet key.
+secretKey: ""
+
+# Dev/staging Postgres bundled with this chart. NOT production-grade: single
+# replica, no HA, no backups, no tuning. For a real deployment, set
+# postgresql.enabled: false and postgresql.externalDatabaseUrl to your own
+# managed Postgres instance instead.
+postgresql:
+  enabled: true
+  image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+  storageSize: 1Gi
+  auth:
+    username: kresheen
+    password: kresheen
+    database: kresheen
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Only used when postgresql.enabled is false.
+  externalDatabaseUrl: ""

@@ -1,0 +1,114 @@
+{{- if and (gt (int .Values.replicaCount) 1) (not .Values.allowMultipleReplicas) }}
+{{- fail "replicaCount above 1 weakens the sign-in throttle, which is kept in each process's memory (every replica counts failed logins separately). Set allowMultipleReplicas=true to accept that." }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kresheen.fullname" . }}
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kresheen.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kresheen.labels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+    spec:
+      serviceAccountName: {{ include "kresheen.fullname" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.runAsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.postgresql.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "kresheen.postgresHost" . }} -p 5432 -U {{ .Values.postgresql.auth.username }}; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ include "kresheen.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: KRESHEEN_COOKIE_SECURE
+              value: {{ .Values.cookieSecure | quote }}
+            {{- with .Values.forwardedAllowIps }}
+            - name: KRESHEEN_FORWARDED_ALLOW_IPS
+              value: {{ . | quote }}
+            {{- end }}
+            # External database: the pre-install/pre-upgrade Job migrates, so the pods only check the schema is current.
+            # Bundled dev Postgres: no Job (the database does not exist yet at pre-install), so the pod migrates itself.
+            - name: KRESHEEN_AUTO_MIGRATE
+              value: {{ if .Values.postgresql.enabled }}"1"{{ else }}"0"{{ end }}
+            - name: KRESHEEN_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kresheen.fullname" . }}
+                  key: KRESHEEN_DB_URL
+            - name: KRESHEEN_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kresheen.fullname" . }}
+                  key: KRESHEEN_SECRET_KEY
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: grype-cache
+              mountPath: /var/cache/grype
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: grype-cache
+          emptyDir:
+            sizeLimit: {{ .Values.grypeCache.sizeLimit }}

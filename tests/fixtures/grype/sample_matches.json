@@ -1,0 +1,27 @@
+{
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "GHSA-35jh-r3h4-6jhm",
+        "severity": "High",
+        "fix": {
+          "versions": ["4.17.21"],
+          "state": "fixed"
+        },
+        "epss": [
+          {
+            "cve": "CVE-2021-23337",
+            "epss": 0.21333,
+            "percentile": 0.9749
+          }
+        ],
+        "knownExploited": []
+      },
+      "artifact": {
+        "name": "lodash",
+        "version": "4.17.15",
+        "purl": "pkg:npm/lodash@4.17.15"
+      }
+    }
+  ]
+}

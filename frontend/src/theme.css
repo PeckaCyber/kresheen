@@ -1,0 +1,465 @@
+/* App-wide look: a Grafana-style layered dark theme and a soft light one. Loaded after Bootstrap. */
+
+:root,
+[data-bs-theme="light"] {
+  --bs-body-bg: #f2f4f8;
+  --bs-body-bg-rgb: 242, 244, 248;
+  --pc-panel: #ffffff;
+  --pc-panel-2: #f7f8fb;
+  --pc-border: #dde1ea;
+  --pc-muted: #5f6b7a;
+  --pc-grid: rgba(20, 30, 50, 0.1);
+  --pc-glow: 0 1px 2px rgba(20, 30, 50, 0.06);
+  /* Severity scale (red > orange > yellow > blue). Always shown with a text label and a count. */
+  --pc-sev-critical: #e34948;
+  --pc-sev-high: #eb6834;
+  --pc-sev-medium: #eda100;
+  --pc-sev-low: #2a78d6;
+  --pc-good: #1a9e6c;
+  --pc-accent: #3d71d9;
+  --pc-accent-2: #7b5cd6;
+  --pc-series: #2a78d6;
+  --pc-series-new: #e34948;
+  --pc-series-resolved: #1a9e6c;
+}
+
+[data-bs-theme="dark"] {
+  --bs-body-bg: #111217;
+  --bs-body-bg-rgb: 17, 18, 23;
+  --bs-secondary-bg: #181b1f;
+  --bs-tertiary-bg: #1d2127;
+  --bs-border-color: #2b3038;
+  --pc-panel: #181b1f;
+  --pc-panel-2: #1d2127;
+  --pc-border: #2b3038;
+  --pc-muted: #9aa5b4;
+  --pc-grid: rgba(255, 255, 255, 0.09);
+  --pc-glow: 0 0 0 1px rgba(255, 255, 255, 0.02), 0 4px 18px rgba(0, 0, 0, 0.35);
+  --pc-sev-critical: #e66767;
+  --pc-sev-high: #d95926;
+  --pc-sev-medium: #c98500;
+  --pc-sev-low: #3987e5;
+  --pc-good: #32b98a;
+  --pc-accent: #5794f2;
+  --pc-accent-2: #9085e9;
+  --pc-series: #3987e5;
+  --pc-series-new: #e66767;
+  --pc-series-resolved: #32b98a;
+}
+
+.card,
+.accordion {
+  --bs-card-bg: var(--pc-panel);
+  --bs-card-border-color: var(--pc-border);
+  --bs-accordion-bg: var(--pc-panel);
+  --bs-accordion-border-color: var(--pc-border);
+}
+.card { box-shadow: var(--pc-glow); }
+.accordion-button:not(.collapsed) {
+  background: color-mix(in srgb, var(--pc-accent) 12%, var(--pc-panel));
+  color: var(--bs-body-color);
+  box-shadow: inset 3px 0 0 var(--pc-accent);
+}
+.table { --bs-table-bg: transparent; }
+.offcanvas, .modal-content { --bs-offcanvas-bg: var(--pc-panel); --bs-modal-bg: var(--pc-panel); }
+
+/* Sidebar */
+.pc-sidebar {
+  background: linear-gradient(180deg, #14171f 0%, #0d0f14 100%);
+  border-right: 1px solid #262b35;
+}
+.pc-brand {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  background: linear-gradient(90deg, #7fb0ff, #b79bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+.pc-sidebar .nav-link { border-radius: 6px; margin-bottom: 2px; opacity: 0.85; }
+.pc-sidebar .nav-link:hover { background: rgba(255, 255, 255, 0.07); opacity: 1; }
+.pc-sidebar .nav-link.active {
+  background: linear-gradient(90deg, rgba(87, 148, 242, 0.32), rgba(87, 148, 242, 0.08));
+  box-shadow: inset 3px 0 0 #5794f2;
+  opacity: 1;
+}
+.pc-nav-icon { font-size: 1.05rem; width: 1.25em; text-align: center; flex-shrink: 0; }
+.pc-nav-divider { border-color: rgba(255, 255, 255, 0.12); margin: 8px 4px; }
+.pc-sidebar-collapsed { width: 64px; }
+.pc-sidebar-collapsed .pc-nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+.pc-sidebar-collapsed .navbar-brand { text-align: center; width: 100%; }
+
+/* Dashboard panels */
+.pc-panel {
+  background: var(--pc-panel);
+  border: 1px solid var(--pc-border);
+  border-radius: 8px;
+  box-shadow: var(--pc-glow);
+  overflow: hidden;
+}
+.pc-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pc-border);
+  background: var(--pc-panel-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--pc-muted);
+}
+.pc-panel-body { padding: 14px; }
+
+.pc-stat {
+  --tone: var(--pc-accent);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  padding: 14px 16px 12px;
+  color: inherit;
+  border: 1px solid var(--pc-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--tone) 16%, transparent), transparent 62%),
+    var(--pc-panel);
+  box-shadow: var(--pc-glow);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  overflow: hidden;
+}
+.pc-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--tone);
+}
+.pc-stat:hover { transform: translateY(-2px); border-color: var(--tone); }
+.pc-stat:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
+.pc-stat-label { font-size: 0.72rem; letter-spacing: 0.6px; text-transform: uppercase; color: var(--pc-muted); }
+.pc-stat-value { font-size: 2.3rem; font-weight: 700; line-height: 1.1; margin-top: 4px; }
+.pc-stat-sub { font-size: 0.78rem; color: var(--pc-muted); margin-top: 2px; min-height: 1.1em; }
+.pc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--tone); margin-right: 6px; box-shadow: 0 0 8px var(--tone); }
+
+.pc-tone-critical { --tone: var(--pc-sev-critical); }
+.pc-tone-high { --tone: var(--pc-sev-high); }
+.pc-tone-medium { --tone: var(--pc-sev-medium); }
+.pc-tone-low { --tone: var(--pc-sev-low); }
+.pc-tone-good { --tone: var(--pc-good); }
+.pc-tone-accent { --tone: var(--pc-accent); }
+.pc-tone-accent2 { --tone: var(--pc-accent-2); }
+.pc-tone-warn { --tone: var(--pc-sev-medium); }
+
+.pc-bar-track { height: 10px; border-radius: 5px; background: var(--pc-panel-2); border: 1px solid var(--pc-border); overflow: hidden; }
+.pc-bar-fill { height: 100%; border-radius: 4px 0 0 4px; }
+.pc-segbar { display: flex; gap: 2px; height: 16px; }
+.pc-segbar > span { border-radius: 3px; min-width: 3px; }
+.pc-legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+
+.pc-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: var(--pc-panel-2);
+  border: 1px solid var(--pc-border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+/* Page shell: every page uses one of these wrappers plus <PageHeader>. */
+.pc-page { max-width: 1600px; margin: 0 auto; padding: 20px 24px 32px; }
+.pc-page-narrow { max-width: 880px; margin: 0 auto; padding: 20px 24px 32px; }
+@media (max-width: 576px) { .pc-page, .pc-page-narrow { padding: 16px; } }
+.pc-page-header { margin-bottom: 18px; }
+.pc-page-header-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pc-page-header-text { min-width: 0; }
+.pc-page-title { font-size: 1.6rem; font-weight: 600; margin: 0; line-height: 1.25; overflow-wrap: anywhere; }
+.pc-page-subtitle { margin: 4px 0 0; color: var(--pc-muted); }
+.pc-page-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pc-crumbs { font-size: 0.85rem; color: var(--pc-muted); margin-bottom: 4px; }
+.pc-crumbs a { color: var(--pc-muted); text-decoration: none; }
+.pc-crumbs a:hover { color: var(--pc-accent); text-decoration: underline; }
+.pc-crumb-sep { margin: 0 6px; opacity: 0.6; }
+
+/* DFD canvas */
+.xyflow {
+  background: var(--bs-body-bg);
+}
+.xyflow__background {
+  background-color: var(--bs-body-bg);
+}
+.react-flow__background {
+  background: var(--bs-body-bg);
+}
+
+/* Dashboard v2 -- executive summary with trends (append-only; do not edit rules above this point) */
+
+.pc-headlines { min-width: 0; flex: 1 1 auto; }
+.pc-headline { margin: 0 0 6px; color: var(--bs-body-color); }
+.pc-headline-lead { font-size: 1.15rem; font-weight: 600; }
+
+.pc-segctl { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--pc-border); border-radius: 8px; background: var(--pc-panel-2); flex-shrink: 0; }
+.pc-segctl-btn {
+  border: none;
+  background: transparent;
+  color: var(--pc-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.pc-segctl-btn:hover { color: var(--bs-body-color); }
+.pc-segctl-btn.active { background: var(--pc-accent); color: #fff; }
+
+.pc-empty-stat { padding: 24px 0; text-align: center; }
+.pc-empty-hero { text-align: center; }
+
+.pc-heat-scroll { overflow-x: auto; }
+.pc-heat-table { border-collapse: separate; border-spacing: 2px; font-size: 0.78rem; white-space: nowrap; }
+.pc-heat-row-head {
+  text-align: left;
+  padding: 4px 10px 4px 2px;
+  color: var(--bs-body-color);
+  font-weight: 500;
+  position: sticky;
+  left: 0;
+  background: var(--pc-panel);
+}
+.pc-heat-col-head {
+  padding: 4px 6px;
+  color: var(--pc-muted);
+  font-weight: 500;
+  text-align: center;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc-heat-cell {
+  min-width: 40px;
+  height: 32px;
+  text-align: center;
+  border-radius: 4px;
+  color: var(--bs-body-color);
+  font-weight: 600;
+}
+
+/* Model workspace (append-only; do not edit rules above this point) -- the run
+   page's tabs, header and stat strip. */
+
+/* Compact variant of the .pc-stat tile (see the Dashboard panels block
+   above): the run page's 6-tile stat strip needs a smaller value type so it
+   doesn't dominate the page above the tabs the way the full-size dashboard
+   tiles do. */
+.pc-stat-compact .pc-stat-value { font-size: 1.6rem; margin-top: 2px; }
+.pc-stat-compact .pc-stat-label { font-size: 0.68rem; }
+.pc-stat-compact { padding: 10px 12px 9px; }
+
+/* Tabs: same panel look (border/background/shadow) as .pc-panel, so a tab's
+   content reads like a single-section panel, and the active tab is
+   unmistakable in both themes. */
+.nav-tabs {
+  border-bottom: 1px solid var(--pc-border);
+}
+.nav-tabs .nav-link {
+  color: var(--pc-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 8px 14px;
+}
+.nav-tabs .nav-link:hover {
+  color: var(--bs-body-color);
+  border-color: transparent;
+}
+.nav-tabs .nav-link.active {
+  color: var(--bs-body-color);
+  background: transparent;
+  border-color: var(--pc-accent);
+  font-weight: 600;
+}
+
+/* Sticky table headers ("no scroll-inside-scroll"): used on the tables
+   that still get their own inner scroll region (Findings, SBOM) once a run
+   has a lot of rows, so the column names stay visible while scrolling. */
+.pc-sticky-thead thead th {
+  position: sticky;
+  top: 0;
+  background: var(--pc-panel);
+  z-index: 1;
+}
+
+/* Node style */
+/* DFD component nodes: neutral fill with risk shown as ring only for HIGH/CRITICAL severity.
+   Ring is applied via box-shadow in React code, not CSS, since it depends on computed
+   appearance.ring value. Border colours are set inline per node type to match the ring. */
+.xyflow__node {
+  border: 2px solid var(--pc-border);
+  background: var(--pc-panel-2);
+}
+
+/* Inspector: the Diagram tab's non-modal element inspector, docked
+   next to the canvas on a wide viewport (frontend/src/pages/model/
+   ElementInspector.tsx). Below 1100px there's no room for the dock and the
+   same component renders inside an Offcanvas instead (see
+   ApplicationDetail.tsx's isNarrowViewport), so these rules only style the
+   docked case -- the Offcanvas gets react-bootstrap's own frame. */
+.pc-diagram-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.pc-diagram-canvas {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pc-inspector-dock {
+  flex: 0 0 380px;
+  width: 380px;
+  /* Stretches to the canvas's height (its flex row sibling, set inline via
+     DIAGRAM_CANVAS_HEIGHT in ApplicationDetail.tsx) via the row's default
+     align-items: stretch; this scrolls its own content within that height
+     instead of growing the page. */
+  overflow-y: auto;
+  border-left: 1px solid var(--pc-border);
+  background: var(--pc-panel);
+  padding: 14px;
+}
+.pc-inspector-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pc-inspector-title {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.pc-inspector-close {
+  padding: 0 4px;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--pc-muted);
+  text-decoration: none;
+}
+.pc-inspector-close:hover {
+  color: var(--bs-body-color);
+}
+.pc-inspector-tabs .nav-link {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+/* The selected node's highlight on the canvas: React Flow's own
+   click-to-select puts "selected" on the node wrapper regardless of node
+   type (see @xyflow/react's style.css -- the type-specific rules like
+   .react-flow__node-default.selectable.selected only cover the built-in
+   node types, not custom ones like DfdComponentNode/TrustBoundaryGroupNode,
+   so this rule targets the wrapper directly instead). An outline (not a
+   border) so it reads on top of every node fill colour in both themes.
+   !important: nodeStyle() sets an inline `outline` on manually-added and
+   out-of-scope nodes (a grey dashed/solid ring, see ApplicationDetail.tsx);
+   an inline style otherwise always wins over a stylesheet rule for the same
+   property, which would make the selection ring invisible on exactly those
+   nodes. This is one of the few cases a stylesheet is allowed to beat it. */
+.react-flow__node.selected {
+  outline: 3px solid var(--pc-accent) !important;
+  outline-offset: 3px !important;
+}
+
+/* Compact diagram */
+
+.pc-page-header-compact {
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+.pc-page-header-compact .pc-page-title {
+  font-size: 1.35rem;
+  margin-bottom: 2px;
+}
+.pc-page-header-compact .pc-crumbs {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.pc-stat-strip-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 2px;
+  background: var(--pc-panel);
+  border-bottom: 1px solid var(--pc-border);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.pc-stat-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--pc-panel-2);
+  border: 1px solid var(--pc-border);
+  border-radius: 3px;
+  color: var(--bs-body-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.pc-stat-chip:hover {
+  background: var(--pc-panel);
+  border-color: var(--pc-muted);
+}
+.pc-stat-chip:active {
+  opacity: 0.85;
+}
+.pc-stat-chip.pc-tone-bad {
+  border-color: var(--pc-sev-critical);
+  background: rgba(227, 73, 72, 0.08);
+}
+.pc-stat-chip.pc-tone-bad:hover {
+  background: rgba(227, 73, 72, 0.12);
+}
+.pc-stat-chip.pc-tone-accent2 {
+  border-color: var(--pc-accent-2);
+  background: rgba(123, 92, 214, 0.08);
+}
+.pc-stat-chip.pc-tone-accent2:hover {
+  background: rgba(123, 92, 214, 0.12);
+}
+.pc-stat-chip.pc-tone-good {
+  border-color: var(--pc-good);
+  background: rgba(26, 158, 108, 0.08);
+}
+.pc-stat-chip.pc-tone-good:hover {
+  background: rgba(26, 158, 108, 0.12);
+}
+.pc-stat-chip.pc-tone-accent {
+  border-color: var(--pc-accent);
+  background: rgba(61, 113, 217, 0.08);
+}
+.pc-stat-chip.pc-tone-accent:hover {
+  background: rgba(61, 113, 217, 0.12);
+}
+
+.pc-stat-chip-value {
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+.pc-stat-chip-sep {
+  margin: 0 2px;
+  opacity: 0.5;
+}

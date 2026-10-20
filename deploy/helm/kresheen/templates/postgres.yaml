@@ -1,0 +1,92 @@
+{{- if .Values.postgresql.enabled }}
+# Dev/staging Postgres bundled with this chart -- single replica, no HA, no
+# backups, no tuning. Set postgresql.enabled: false and
+# postgresql.externalDatabaseUrl for anything beyond dev/staging.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kresheen.postgresHost" . }}
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.storageSize }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kresheen.postgresHost" . }}
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "kresheen.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "kresheen.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      automountServiceAccountToken: false
+      # The postgres image starts as root to prepare its data directory and then drops to the postgres user, and it
+      # needs CHOWN/SETUID/SETGID/FOWNER to do so. Forcing runAsUser 70 or dropping all capabilities fails on volumes that
+      # ignore fsGroup (found by a real kind deployment, 2026-10-05). This bundled Postgres is dev/staging only; use an
+      # external managed database for anything real (postgresql.enabled: false).
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: {{ .Values.postgresql.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.auth.password | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "kresheen.postgresHost" . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kresheen.postgresHost" . }}
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: postgres
+      name: postgres
+  selector:
+    {{- include "kresheen.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+{{- end }}

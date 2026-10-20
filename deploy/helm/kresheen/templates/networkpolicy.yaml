@@ -1,0 +1,56 @@
+{{- if .Values.networkPolicy.enabled }}
+# Egress: DNS, the bundled Postgres (in the same release) or, with an external database, `networkPolicy.databaseCidrs`
+# on `networkPolicy.databasePort`, and HTTPS to the configured CIDRs (GitHub, IdP, Jira,
+# Anthropic). Ingress: from the same namespace plus whatever `networkPolicy.ingressFrom` lists. Everything else is denied.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kresheen.fullname" . }}
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "kresheen.selectorLabels" . | nindent 6 }}
+    matchExpressions:
+      - {key: app.kubernetes.io/component, operator: In, values: [app, migrate]}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector: {}
+        {{- with .Values.networkPolicy.ingressFrom }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      ports:
+        - port: 8000
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - {port: 53, protocol: UDP}
+        - {port: 53, protocol: TCP}
+    {{- if .Values.postgresql.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: postgres
+      ports:
+        - port: 5432
+    {{- else if .Values.networkPolicy.databaseCidrs }}
+    # External database: the app pods and the migration Job pods (both selected above) may reach it.
+    - to:
+        {{- range .Values.networkPolicy.databaseCidrs }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+        {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.databasePort }}
+    {{- end }}
+    - to:
+        {{- range .Values.networkPolicy.egressCidrs }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+        {{- end }}
+      ports:
+        - port: 443
+{{- end }}

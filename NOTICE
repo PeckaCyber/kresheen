@@ -1,0 +1,64 @@
+Kresheen
+Copyright 2026 Pecka Cyber LLC
+
+This product includes third-party software, each licensed under its own licence.
+
+Threat references
+-----------------
+
+Kresheen's threat rules are original text written for this project. They cite
+public reference catalogues by identifier, and the test data in
+tests/data/mitre_reference_ids.json lists the identifiers and names from the
+catalogues below so the citations can be checked.
+
+MITRE ATT&CK
+
+  © 2026 The MITRE Corporation. This work is reproduced and distributed with the
+  permission of The MITRE Corporation.
+
+  LICENSE: The MITRE Corporation (MITRE) hereby grants you a non-exclusive,
+  royalty-free license to use ATT&CK® for research, development, and commercial
+  purposes. Any copy you make for such purposes is authorized provided that you
+  reproduce MITRE's copyright designation and this license in any such copy.
+
+  DISCLAIMERS: MITRE does not claim ATT&CK enumerates all possibilities for the
+  types of actions and behaviors documented as part of its adversary model and
+  framework of techniques. Using the information contained within ATT&CK to
+  address or cover full categories of techniques will not guarantee full
+  defensive coverage as there may be undisclosed techniques or variations on
+  existing techniques not documented by ATT&CK. ALL DOCUMENTS AND THE INFORMATION
+  CONTAINED THEREIN ARE PROVIDED ON AN "AS IS" BASIS AND THE CONTRIBUTOR, THE
+  ORGANIZATION HE/SHE REPRESENTS OR IS SPONSORED BY (IF ANY), THE MITRE
+  CORPORATION, ITS BOARD OF TRUSTEES, OFFICERS, AGENTS, AND EMPLOYEES, DISCLAIM
+  ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY
+  THAT THE USE OF THE INFORMATION THEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY
+  IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+  ATT&CK® is a registered trademark of The MITRE Corporation.
+
+MITRE CWE
+
+  Copyright © 2006–2026, The MITRE Corporation. CWE is a trademark of The
+  MITRE Corporation.
+
+  The MITRE Corporation hereby grants you a non-exclusive, royalty-free license
+  to use CWE for research, development, and commercial purposes. Any copy you
+  make for such purposes is authorized on the condition that you reproduce
+  MITRE's copyright designation and this license in any such copy.
+
+  The information is provided on an "as is" basis only without warranty of any
+  kind, express or implied, including but not limited to implied warranties of
+  merchantability, availability, accuracy, noninfringement, or fitness for a
+  particular purpose.
+
+MITRE ATLAS
+
+  Copyright 2021-2026 MITRE. Licensed under the Apache License, Version 2.0
+  (the same licence as this product; see LICENSE).
+
+Methodology
+-----------
+
+The built-in rules are this project's own reading of STRIDE (from Microsoft),
+applied per element of the data-flow diagram. The rule text is written for this
+project.

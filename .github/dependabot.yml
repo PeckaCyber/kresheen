@@ -1,0 +1,62 @@
+# Dependency updates. Version updates run weekly: minor and patch updates are grouped into one PR per ecosystem, and
+# every major update gets its own PR. Security updates are not grouped, so each fix lands on its own and fast (and ignores
+# the cooldown). dependabot-automerge.yml merges patch, minor and security PRs once the required checks pass; majors
+# are labelled `needs-review` and wait for a person.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 5
+    cooldown: {default-days: 7}
+    labels: [dependencies, python]
+    groups:
+      python-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 5
+    cooldown: {default-days: 7}
+    labels: [dependencies, javascript]
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 5
+    cooldown: {default-days: 7}
+    labels: [dependencies, github-actions]
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  # Base images in the Dockerfile (pinned by digest, so most updates are digest-only).
+  - package-ecosystem: docker
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 5
+    cooldown: {default-days: 7}
+    labels: [dependencies, docker]
+    groups:
+      docker-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  # Images in docker-compose.yml (the bundled PostgreSQL).
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 3
+    cooldown: {default-days: 7}
+    labels: [dependencies, docker]
+    groups:
+      compose-minor-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]

@@ -1,0 +1,259 @@
+# Release: runs when a `v*` tag is pushed. Run it by hand (workflow_dispatch) for a dry run that builds everything and
+# publishes nothing.
+#
+#   verify   CI (ci.yml) plus consistency checks: the tag, pyproject.toml, Chart.yaml and CHANGELOG.md agree, the CHANGELOG
+#            heading carries a date, and the tagged commit is on main.
+#   image    multi-arch image (amd64, arm64) to ghcr.io/peckacyber/kresheen:<version> (and :latest unless a prerelease),
+#            keyless cosign signature, SPDX SBOM (syft) attached as a cosign attestation, GitHub build provenance.
+#   pypi     sdist and wheel to PyPI through the trusted publisher (workflow release.yml, environment `pypi`).
+#   helm     chart packaged with version and appVersion set from the tag, pushed to oci://ghcr.io/peckacyber/charts
+#            and signed.
+#   release  GitHub release with the CHANGELOG section as notes, the SBOM and the chart attached.
+#
+# A rerun for the same tag is safe: image tags are overwritten with the same content, PyPI skips files that exist, the
+# release is updated in place. Users verify releases as described in docs/releases.md.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # zizmor suggests `$/...` for a workflow in this repository; actionlint does not know that syntax yet, so `./` stays.
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      publish: ${{ steps.mode.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: mode
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then echo "publish=true" >> "$GITHUB_OUTPUT"; else echo "publish=false" >> "$GITHUB_OUTPUT"; fi
+      - id: meta
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag=""
+          if [ "$REF_TYPE" = "tag" ]; then tag="$REF_NAME"; fi
+          python3 .github/scripts/release_meta.py check "$tag" >> "$GITHUB_OUTPUT"
+      - name: Tagged commit is on main
+        if: github.ref_type == 'tag'
+        run: |
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  image:
+    needs: [ci, verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    env:
+      IMAGE: ghcr.io/peckacyber/kresheen
+      VERSION: ${{ needs.verify.outputs.version }}
+      PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+      PUBLISH: ${{ needs.verify.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        if: env.PUBLISH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: tags
+        run: |
+          tags="${IMAGE}:${VERSION}"
+          if [ "$PRERELEASE" = "false" ]; then tags="${tags},${IMAGE}:latest"; fi
+          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          provenance: false
+          sbom: false
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.title=Kresheen
+      - name: Install cosign and syft
+        if: env.PUBLISH == 'true'
+        run: |
+          .github/scripts/install-tool.sh cosign
+          .github/scripts/install-tool.sh syft
+      - name: Sign the image (keyless)
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+      - name: SBOM (SPDX) and attestation
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          syft "${IMAGE}@${DIGEST}" -o "spdx-json=kresheen-${VERSION}.sbom.spdx.json"
+          cosign attest --yes --type spdxjson --predicate "kresheen-${VERSION}.sbom.spdx.json" "${IMAGE}@${DIGEST}"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: env.PUBLISH == 'true'
+        with:
+          subject-name: ghcr.io/peckacyber/kresheen
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: env.PUBLISH == 'true'
+        with:
+          name: sbom
+          path: kresheen-*.sbom.spdx.json
+          if-no-files-found: error
+
+  pypi-build:
+    needs: [ci, verify]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.4"
+          enable-cache: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          package-manager-cache: false # never reuse a cache when building what gets published
+      - name: Build the web interface into the package
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          rm -rf ../src/kresheen/web
+          cp -r dist ../src/kresheen/web
+      - run: uv build --out-dir dist
+      - name: Check the wheel serves the web interface
+        run: |
+          wheel=$(ls dist/*.whl)
+          python3 -c "import sys, zipfile; names = zipfile.ZipFile(sys.argv[1]).namelist(); assert 'kresheen/web/index.html' in names, 'web UI missing from wheel'; print('web UI files in wheel:', sum(n.startswith('kresheen/web/') for n in names))" "$wheel"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-dist
+          path: dist/
+          if-no-files-found: error
+
+  pypi-publish:
+    needs: [verify, pypi-build, image]
+    if: needs.verify.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          skip-existing: true
+
+  helm:
+    needs: [verify, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      PUBLISH: ${{ needs.verify.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Package (chart version and appVersion come from the tag)
+        run: |
+          helm lint deploy/helm/kresheen
+          helm package deploy/helm/kresheen --version "$VERSION" --app-version "$VERSION" --destination .
+          helm template t "kresheen-${VERSION}.tgz" | grep -q "image: \"ghcr.io/peckacyber/kresheen:${VERSION}\""
+      - name: Push and sign
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          .github/scripts/install-tool.sh cosign
+          export PATH="${RUNNER_TEMP}/tools/bin:${PATH}"
+          printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$ACTOR" --password-stdin
+          helm push "kresheen-${VERSION}.tgz" oci://ghcr.io/peckacyber/charts 2>&1 | tee push.log
+          digest=$(sed -n 's/^Digest: //p' push.log)
+          test -n "$digest"
+          cosign sign --yes "ghcr.io/peckacyber/charts/kresheen@${digest}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: env.PUBLISH == 'true'
+        with:
+          name: chart
+          path: kresheen-*.tgz
+          if-no-files-found: error
+
+  release:
+    needs: [verify, image, pypi-publish, helm]
+    if: needs.verify.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.verify.outputs.version }}
+      PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: assets
+      - name: Create or update the release
+        run: |
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
+          if python3 .github/scripts/release_meta.py notes "$VERSION" > notes.md && [ -s notes.md ]; then
+            notes=(--notes-file notes.md)
+          else
+            notes=(--generate-notes)
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" "${flags[@]}" --title "Kresheen $VERSION"
+          else
+            gh release create "$TAG" --verify-tag --title "Kresheen $VERSION" "${notes[@]}" "${flags[@]}"
+          fi
+          gh release upload "$TAG" --clobber assets/sbom/*.json assets/chart/*.tgz

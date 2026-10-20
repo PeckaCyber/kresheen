@@ -1,0 +1,52 @@
+# For trying Kresheen on one machine. The PostgreSQL credentials below are fixed
+# local defaults: the database is reachable only from the app container. For a
+# real deployment use your own database and secrets (docs/installation.md), or
+# the Helm chart (deploy/helm/kresheen/), which reads credentials from a Secret.
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    environment:
+      POSTGRES_USER: kresheen
+      POSTGRES_PASSWORD: kresheen
+      POSTGRES_DB: kresheen
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Not published to the host: only the app container reaches it. To use psql
+    # from the host while developing, add `ports: ["127.0.0.1:5432:5432"]` in a docker-compose.override.yml.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kresheen"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KRESHEEN_DB_URL: postgresql+psycopg://kresheen:kresheen@postgres:5432/kresheen
+      # One app container, so it upgrades the database schema itself on startup (SQLite is backed up first; for
+      # Postgres take a pg_dump before upgrading). Set to "0" to make it refuse until `kresheen db upgrade` has run.
+      KRESHEEN_AUTO_MIGRATE: "1"
+      # Needed to store GitHub tokens and AI keys (Fernet key). Put it in .env next to this file, e.g.
+      #   KRESHEEN_SECRET_KEY=$(python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')
+      KRESHEEN_SECRET_KEY: ${KRESHEEN_SECRET_KEY:-}
+    # Loopback only by default; put a TLS-terminating proxy in front for anything else and set
+    # KRESHEEN_FORWARDED_ALLOW_IPS.
+    ports:
+      - "127.0.0.1:8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+    volumes:
+      - grype-cache:/var/cache/grype
+
+volumes:
+  postgres-data:
+  grype-cache:

@@ -1,0 +1,158 @@
+# Nightly security checks on main.
+#
+# audit          pip-audit on uv.lock (all extras), npm audit for production dependencies, and Grype on an image built
+#                from main (fixable High and Critical fail). A failure sends the usual failed-workflow email.
+# security-lock  If pip-audit finds vulnerable Python packages that have a fixed version, run `uv lock
+#                --upgrade-package` for each and open or update the PR `security/uv-lock` as the GitHub App, so CI runs
+#                on it (a PR made with GITHUB_TOKEN would not start CI). Skipped until the App is configured:
+#                repository variable SECURITY_APP_ID and secret SECURITY_APP_PRIVATE_KEY.
+name: security-nightly
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "security-lock: update the lock and show the diff, but push nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-nightly
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.4"
+          enable-cache: false
+      - name: Install Grype
+        run: .github/scripts/install-tool.sh grype
+      - name: Python dependencies (pip-audit on uv.lock)
+        run: |
+          python -m venv "$RUNNER_TEMP/audit-venv"
+          "$RUNNER_TEMP/audit-venv/bin/pip" install --quiet pip-audit==2.10.1
+          uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/requirements.txt"
+          set +e
+          "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements.txt" | tee "$RUNNER_TEMP/pip-audit.txt"
+          rc=${PIPESTATUS[0]}
+          { echo "### pip-audit (uv.lock)"; echo '```'; cat "$RUNNER_TEMP/pip-audit.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+      - name: npm production dependencies
+        if: ${{ !cancelled() }}
+        working-directory: frontend
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high | tee "$RUNNER_TEMP/npm-audit.txt"
+          rc=${PIPESTATUS[0]}
+          { echo "### npm audit (production, high and above)"; echo '```'; cat "$RUNNER_TEMP/npm-audit.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+      - name: Build the image from main
+        if: ${{ !cancelled() }}
+        run: docker build -t kresheen:nightly .
+      - name: Grype scan (fixable High and Critical fail)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          grype kresheen:nightly --only-fixed --fail-on high -o table | tee "$RUNNER_TEMP/grype.txt"
+          rc=${PIPESTATUS[0]}
+          { echo "### Grype (image built from main, fixable only)"; echo '```'; cat "$RUNNER_TEMP/grype.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+  security-lock:
+    # Variables cannot be read in a step-level secret check, so the job is skipped as a whole when the App is not set up.
+    if: ${{ vars.SECURITY_APP_ID != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.4"
+          enable-cache: false
+      - name: Find fixable vulnerabilities
+        id: find
+        run: |
+          python -m venv "$RUNNER_TEMP/audit-venv"
+          "$RUNNER_TEMP/audit-venv/bin/pip" install --quiet pip-audit==2.10.1
+          uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/requirements.txt"
+          # pip-audit exits 1 when it finds vulnerabilities; that is expected here.
+          "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements.txt" -f json -o "$RUNNER_TEMP/before.json" || true
+          python .github/scripts/security_lock.py fixable "$RUNNER_TEMP/before.json" > "$RUNNER_TEMP/fixable.txt"
+          if [ -s "$RUNNER_TEMP/fixable.txt" ]; then
+            echo "has_fixes=true" >> "$GITHUB_OUTPUT"
+            { echo "Packages with a fixed version available:"; sed 's/^/- /' "$RUNNER_TEMP/fixable.txt"; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No Python vulnerabilities with an available fix." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Update uv.lock
+        id: lock
+        if: steps.find.outputs.has_fixes == 'true'
+        run: |
+          args=()
+          while read -r pkg; do args+=(--upgrade-package "$pkg"); done < "$RUNNER_TEMP/fixable.txt"
+          uv lock "${args[@]}"
+          if git diff --quiet -- uv.lock; then
+            echo "uv.lock unchanged (the fixed versions are blocked by pyproject constraints)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          uv lock --check
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/requirements-after.txt"
+          "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements-after.txt" -f json -o "$RUNNER_TEMP/after.json" || true
+          python .github/scripts/security_lock.py body "$RUNNER_TEMP/before.json" "$RUNNER_TEMP/after.json" > "$RUNNER_TEMP/pr-body.md"
+          { echo '```diff'; git diff -- uv.lock | head -200; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Push branch and open or update the PR
+        if: steps.lock.outputs.changed == 'true' && !inputs.dry_run
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          git config user.name "kresheen-security[bot]"
+          git config user.email "security-bot@users.noreply.github.com"
+          git checkout -b security/uv-lock
+          git add uv.lock
+          git commit -q -m "Security: update uv.lock to fixed dependency versions"
+          # Authenticate the push with the App token only for this command (it is not stored in the checkout).
+          git -c "http.extraheader=Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push --force origin security/uv-lock
+          gh label create security --color b60205 --description "Security fix" --force
+          gh label create dependencies --color 0366d6 --description "Dependency update" --force
+          existing=$(gh pr list --head security/uv-lock --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file "$RUNNER_TEMP/pr-body.md" --add-label security --add-label dependencies
+            echo "Updated PR #$existing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh pr create --base main --head security/uv-lock --title "Security: update Python dependencies" \
+              --body-file "$RUNNER_TEMP/pr-body.md" --label security --label dependencies
+          fi

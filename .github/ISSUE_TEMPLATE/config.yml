@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/PeckaCyber/kresheen/blob/main/SECURITY.md
+    about: Do not open a public issue for a vulnerability. Email support@peckacyber.com or use private vulnerability reporting, as SECURITY.md describes.
+  - name: Enterprise use or Kresheen Pro
+    url: https://github.com/PeckaCyber/kresheen#contact
+    about: Questions about enterprise use or the upcoming Pro version. Email support@peckacyber.com.

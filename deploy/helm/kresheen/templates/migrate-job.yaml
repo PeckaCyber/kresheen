@@ -1,0 +1,79 @@
+{{- if not .Values.postgresql.enabled }}
+{{- /*
+  Database upgrades run once per install or upgrade, before the new pods start, so several replicas never migrate at
+  once and the Deployment can run with KRESHEEN_AUTO_MIGRATE=0 (it then refuses to start on an out-of-date schema).
+  Helm creates hook resources before the chart's own, so the Job reads the database URL from a hook Secret of its own.
+  With the bundled dev Postgres this Job is skipped (the database does not exist yet at pre-install) and the
+  Deployment migrates itself on startup instead.
+*/}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "kresheen.fullname" . }}-migrate
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+type: Opaque
+stringData:
+  KRESHEEN_DB_URL: {{ include "kresheen.databaseUrl" . | quote }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kresheen.fullname" . }}-migrate
+  labels:
+    {{- include "kresheen.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: {{ .Values.migrations.timeoutSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "kresheen.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.runAsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: {{ include "kresheen.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["db", "upgrade"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: KRESHEEN_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kresheen.fullname" . }}-migrate
+                  key: KRESHEEN_DB_URL
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+{{- end }}

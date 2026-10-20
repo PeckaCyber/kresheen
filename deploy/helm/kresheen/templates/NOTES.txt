@@ -1,0 +1,34 @@
+Kresheen has been deployed.
+
+{{- if .Values.postgresql.enabled }}
+
+Bundled Postgres is running for dev/staging (no HA, no backups). Point
+postgresql.externalDatabaseUrl at a real instance for anything more than that.
+{{- else }}
+
+Using the external database at the URL you supplied in postgresql.externalDatabaseUrl.
+{{- end }}
+
+Open the dashboard:
+{{ if .Values.ingress.enabled }}
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}/
+{{- if and (not .Values.forwardedAllowIps) }}
+
+Warning: forwardedAllowIps is not set. Behind an ingress the session cookie is not
+marked Secure and every client looks like the ingress controller. Set forwardedAllowIps
+(and see the trade-off described in values.yaml), or set cookieSecure=always if the
+site is only served over HTTPS.
+{{- end }}
+{{- else }}
+  kubectl port-forward svc/{{ include "kresheen.fullname" . }} 8000:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+
+and visit http://localhost:8000/
+{{- end }}
+
+There are no accounts yet. Create the first one (it becomes the owner) in the pod:
+
+  kubectl exec -it deploy/{{ include "kresheen.fullname" . }} -n {{ .Release.Namespace }} -- kresheen create-user --email you@example.com
+
+The password (at least 12 characters) is generated and printed once if you leave out --password.
+
+Docs: https://github.com/PeckaCyber/kresheen/tree/main/docs

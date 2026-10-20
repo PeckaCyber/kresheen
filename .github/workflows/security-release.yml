@@ -1,0 +1,215 @@
+# Automatic patch release for a fixed vulnerability.
+#
+# Idea: the released image is scanned with Grype. If it has High or Critical vulnerabilities that have a fix, and an
+# image built from main no longer has them, and every required workflow is green on main, a patch release is prepared.
+#
+# Flow
+#   1. propose  (push to main, daily, manual) Finds the latest stable `v*` tag. Stops when main has no commits since
+#      it, when a release bump is already merged and waits for its tag, when `v<next>` already exists, or when a
+#      `security-release` PR is already open. Otherwise it scans both images, requires `ci` and `codeql` to be green on
+#      main's head, and opens the PR "Release vX.Y.Z (security)" (label `security-release`). The PR bumps pyproject.toml,
+#      uv.lock, Chart.yaml (version and appVersion) and adds a dated CHANGELOG "Security" entry listing the advisories.
+#   2. dependabot-automerge.yml turns on auto-merge for that PR (it is opened by the GitHub App). It merges once the
+#      required checks pass.
+#   3. tag  (push to main) For a merge commit of a `security-release` PR whose version has no tag yet: waits until
+#      `ci` and `codeql` are green on that commit, then creates the tag `v<version>`. The tag is created as the App, so
+#      release.yml starts (a tag made with GITHUB_TOKEN would not start it).
+#
+# Safety
+#   - A commit is tagged only after the required workflows are green on that exact commit.
+#   - Only a PR labelled `security-release` and opened by the App can lead to a tag. A tag that already exists is
+#     never moved or recreated, so a version is released once; a rerun finds nothing to do.
+#   - Everything is skipped, with a notice, until the App is configured (variable SECURITY_APP_ID, secret
+#     SECURITY_APP_PRIVATE_KEY).
+#   - If a push made by an auto-merge does not start CI (GITHUB_TOKEN rules), the wait step starts `ci` and `codeql`
+#     on main itself after a few minutes.
+name: security-release
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "30 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-release
+  cancel-in-progress: false
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.check.outputs.app }}
+    steps:
+      - id: check
+        env:
+          APP_ID: ${{ vars.SECURITY_APP_ID }}
+        run: |
+          if [ -n "$APP_ID" ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SECURITY_APP_ID is not set, so automatic security releases are off (see the setup notes)."
+            echo "Skipped: the security GitHub App is not configured (variable SECURITY_APP_ID)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  propose:
+    needs: config
+    if: needs.config.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.13.4"
+          enable-cache: false
+      - name: Decide whether a release could be due
+        id: plan
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          git fetch --tags --force origin
+          python3 .github/scripts/security_release.py plan | tee plan.txt >> "$GITHUB_OUTPUT"
+          . ./plan.txt
+          stop() { echo "$1"; echo "Nothing to do: $1" >> "$GITHUB_STEP_SUMMARY"; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; }
+          [ -n "${latest:-}" ] || stop "no stable release tag exists yet"
+          [ "$commits_since" -gt 0 ] || stop "main has no commits since $latest"
+          [ "$pending" = false ] || stop "a release bump is merged and waits for its tag"
+          [ "$tag_exists" = false ] || stop "v$next already exists"
+          open=$(gh pr list --label security-release --state open --json number --jq 'length')
+          [ "$open" = 0 ] || stop "a security-release PR is already open"
+          echo "go=true" >> "$GITHUB_OUTPUT"
+      - name: Install Grype
+        if: steps.plan.outputs.go == 'true'
+        run: .github/scripts/install-tool.sh grype
+      - name: Scan the released image
+        if: steps.plan.outputs.go == 'true'
+        env:
+          LATEST: ${{ steps.plan.outputs.latest }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          grype "registry:ghcr.io/peckacyber/kresheen:${LATEST#v}" --only-fixed -o json > "$RUNNER_TEMP/released.json"
+      - name: Build and scan an image from main
+        if: steps.plan.outputs.go == 'true'
+        run: |
+          docker build -t kresheen:main-scan .
+          grype docker:kresheen:main-scan --only-fixed -o json > "$RUNNER_TEMP/main.json"
+      - name: Fixed in main?
+        id: diff
+        if: steps.plan.outputs.go == 'true'
+        run: |
+          python3 .github/scripts/security_release.py diff "$RUNNER_TEMP/released.json" "$RUNNER_TEMP/main.json" "$RUNNER_TEMP/fixed.json" | tee -a "$GITHUB_OUTPUT"
+          { echo "### Fixable High/Critical in the released image that main no longer has"; echo '```json'; cat "$RUNNER_TEMP/fixed.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Required workflows green on main?
+        if: steps.plan.outputs.go == 'true' && steps.diff.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 .github/scripts/ci_green.py "$(git rev-parse HEAD)" --workflows "ci codeql" --timeout-minutes 45 --dispatch-missing
+      - name: Open the release PR
+        if: steps.plan.outputs.go == 'true' && steps.diff.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          NEXT: ${{ steps.plan.outputs.next }}
+        run: |
+          branch="security-release/v${NEXT}"
+          git config user.name "kresheen-security[bot]"
+          git config user.email "security-bot@users.noreply.github.com"
+          git checkout -b "$branch"
+          python3 .github/scripts/security_release.py bump "$NEXT" "$RUNNER_TEMP/fixed.json" "$(date -u +%F)"
+          uv lock --check
+          python3 .github/scripts/release_meta.py check "v${NEXT}"
+          git add pyproject.toml uv.lock deploy/helm/kresheen/Chart.yaml CHANGELOG.md
+          git commit -q -m "Release v${NEXT} (security)"
+          git -c "http.extraheader=Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin "$branch"
+          for l in security-release:b60205 security:b60205; do gh label create "${l%%:*}" --color "${l##*:}" --force; done
+          {
+            echo "Fixable High and Critical vulnerabilities in the released image that main no longer has:"
+            echo
+            python3 -c "import json,sys; [print(f\"- {f['id']} ({f['severity']}): {f['package']} {f['installed']}, fixed in {', '.join(f['fixed_in'])}\") for f in json.load(open(sys.argv[1]))]" "$RUNNER_TEMP/fixed.json"
+            echo
+            echo "Merging this PR (after the required checks) tags v${NEXT}, and release.yml then publishes the image, the PyPI package and the chart."
+          } > "$RUNNER_TEMP/pr-body.md"
+          gh pr create --base main --head "$branch" --title "Release v${NEXT} (security)" \
+            --body-file "$RUNNER_TEMP/pr-body.md" --label security-release --label security
+
+  tag:
+    needs: config
+    if: needs.config.outputs.app == 'true' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: read
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Is this the merge of a security release PR?
+        id: find
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
+        run: |
+          echo "go=false" >> "$GITHUB_OUTPUT"
+          prs=$(gh api "repos/${GH_REPO}/commits/${SHA}/pulls" --jq '[.[] | select(.merged_at != null and .base.ref == "main" and any(.labels[]; .name == "security-release") and .user.login == env.BOT_LOGIN and .head.repo.full_name == env.GH_REPO)] | length')
+          if [ "$prs" = 0 ]; then echo "Not a security release merge."; exit 0; fi
+          version=$(python3 .github/scripts/release_meta.py check "" | sed -n 's/^version=//p')
+          if git ls-remote --exit-code --tags origin "refs/tags/v${version}" >/dev/null 2>&1; then
+            echo "Tag v${version} already exists; nothing to do."; exit 0
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+      - name: Wait for the required workflows on this commit
+        if: steps.find.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: python3 .github/scripts/ci_green.py "$SHA" --workflows "ci codeql" --timeout-minutes 45 --dispatch-missing
+      - name: Tag the release
+        if: steps.find.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          VERSION: ${{ steps.find.outputs.version }}
+        run: |
+          # The API refuses to create a ref that exists, so an existing tag is never moved.
+          gh api "repos/${GH_REPO}/git/refs" -f "ref=refs/tags/v${VERSION}" -f "sha=${SHA}"
+          echo "Created tag v${VERSION} on ${SHA}. release.yml publishes it." >> "$GITHUB_STEP_SUMMARY"

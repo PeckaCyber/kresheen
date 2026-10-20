@@ -1,0 +1,88 @@
+# Auto-merge for automated dependency PRs. It only turns on GitHub auto-merge: the PR still merges only after every
+# required status check passes (branch protection decides which checks are required).
+#
+#   Dependabot PR  -> auto-merge when the update is a patch or minor version, fixes a security alert, or is a
+#                     digest-only update (GitHub Actions, Docker). A major version gets the label `needs-review`
+#                     and waits for a person.
+#   Security bot   -> PRs opened by the GitHub App named in the repository variable SECURITY_BOT_LOGIN: the
+#                     `security/uv-lock` branch (security-nightly.yml) and PRs labelled `security-release`
+#                     (security-release.yml). Skipped when the variable is not set.
+#
+# No pull_request_target: this runs with the PR's own (Dependabot-limited) token and never checks out PR code.
+# PR fields reach the shell only through env variables.
+name: dependabot-automerge
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  dependabot:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-lookup: true
+      - name: Decide and enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+          ALERT_STATE: ${{ steps.meta.outputs.alert-state }}
+          GHSA_ID: ${{ steps.meta.outputs.ghsa-id }}
+        run: |
+          reason=""
+          if [ -n "$GHSA_ID" ] && [ "$ALERT_STATE" = "OPEN" ]; then
+            reason="fixes security advisory $GHSA_ID"
+          elif [ "$UPDATE_TYPE" = "version-update:semver-patch" ] || [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
+            reason="$UPDATE_TYPE"
+          elif [ -z "$UPDATE_TYPE" ] && { [ "$ECOSYSTEM" = "docker" ] || [ "$ECOSYSTEM" = "docker-compose" ] || [ "$ECOSYSTEM" = "github_actions" ] || [ "$ECOSYSTEM" = "github-actions" ]; }; then
+            reason="digest-only update ($ECOSYSTEM)"
+          fi
+          if [ -n "$reason" ]; then
+            echo "Enabling auto-merge: $reason"
+            gh pr merge "$PR_NUMBER" --auto --squash
+            echo "Auto-merge enabled: $reason" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Not merging automatically (update type: ${UPDATE_TYPE:-none}); labelling for review."
+            gh label create needs-review --color d93f0b --description "Needs a human review before merge" --force
+            gh pr edit "$PR_NUMBER" --add-label needs-review
+            echo "Labelled needs-review (update type: ${UPDATE_TYPE:-none})" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  security-bot:
+    if: >-
+      vars.SECURITY_BOT_LOGIN != ''
+      && github.event.pull_request.user.login == vars.SECURITY_BOT_LOGIN
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && (startsWith(github.event.pull_request.head.ref, 'security/')
+          || contains(github.event.pull_request.labels.*.name, 'security-release'))
+    runs-on: ubuntu-latest
+    steps:
+      # The merge is made with the App token (not GITHUB_TOKEN) so that the push to main triggers CI and the release workflows.
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr merge "$PR_NUMBER" --auto --squash
+          echo "Auto-merge enabled for security bot PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"

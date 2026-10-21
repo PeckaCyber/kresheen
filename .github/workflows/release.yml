@@ -212,6 +212,8 @@ jobs:
           .github/scripts/install-tool.sh cosign
           export PATH="${RUNNER_TEMP}/tools/bin:${PATH}"
           printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$ACTOR" --password-stdin
+          # cosign reads Docker's credential store, not Helm's.
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
           helm push "kresheen-${VERSION}.tgz" oci://ghcr.io/peckacyber/charts 2>&1 | tee push.log
           digest=$(sed -n 's/^Digest: //p' push.log)
           test -n "$digest"

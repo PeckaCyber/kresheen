@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-20
+
+### Fixed
+
+- The release workflow signs the Helm chart. The 1.0.0 chart was pushed without a cosign signature, and 1.0.0 has no GitHub release; use 1.0.1.
+
 ## [1.0.0] - 2026-10-20
 
 First public release of Kresheen, a self-hosted threat-modeling platform.

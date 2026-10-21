@@ -127,6 +127,9 @@ jobs:
           npx playwright install --with-deps chromium
           npm run build
           npm run e2e -- --project=chromium
+      - name: Backend log
+        if: failure()
+        run: cat server.log
 
   # Builds the image the way a release does and checks that it starts and answers /healthz.
   image:

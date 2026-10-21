@@ -37,8 +37,12 @@ export default defineConfig({
   },
   // `vite preview` (what Playwright's webServer runs, and what e2e/README.md
   // documents for manual smoke testing) doesn't share `server.proxy` --
-  // needs its own, same target.
+  // needs its own, same target. Bind IPv4 explicitly: `localhost` can resolve to ::1 only (CI runners), and
+  // Playwright waits on 127.0.0.1.
   preview: {
+    host: "127.0.0.1",
+    port: 4173,
+    strictPort: true,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8000",

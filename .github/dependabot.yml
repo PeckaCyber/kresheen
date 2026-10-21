@@ -44,6 +44,11 @@ updates:
     open-pull-requests-limit: 5
     cooldown: {default-days: 7}
     labels: [dependencies, docker]
+    # The builder's Python minor must match the distroless runtime's (compiled wheels and .pyc), and the tag change
+    # looks like a minor update. Move both images together by hand.
+    ignore:
+      - dependency-name: python
+        update-types: [version-update:semver-minor, version-update:semver-major]
     groups:
       docker-minor-patch:
         applies-to: version-updates
@@ -56,6 +61,11 @@ updates:
     open-pull-requests-limit: 3
     cooldown: {default-days: 7}
     labels: [dependencies, docker]
+    # A PostgreSQL major cannot read the previous major's data directory (needs pg_upgrade). Change it by hand,
+    # together with the Helm chart's values.yaml, and document the upgrade.
+    ignore:
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
     groups:
       compose-minor-patch:
         applies-to: version-updates

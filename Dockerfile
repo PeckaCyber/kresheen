@@ -11,7 +11,7 @@ ARG BUILDER_IMAGE=builder-default
 ARG RUNTIME_IMAGE=runtime-default
 
 # python:3.13-slim-trixie
-FROM python:3.14-slim-trixie@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS builder-default
+FROM python:3.13-slim-trixie@sha256:3dd7cc108ec1493442514f5c2a871af6af0ec31d768ff6e378a93340c3b3db5f AS builder-default
 # gcr.io/distroless/python3-debian13:nonroot (Python 3.13.5)
 FROM gcr.io/distroless/python3-debian13:nonroot@sha256:ed91505d162119a1e46552bc7f471c77737729a525269a7e9b60646807564601 AS runtime-default
 
@@ -46,7 +46,7 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt --no
     && mkdir -p /rootfs/data /rootfs/var/cache/grype /rootfs/tmp
 
 # Official Grype image, pinned by tag and digest (a static Go binary)
-FROM anchore/grype:v0.120.1@sha256:e4a44ef45d285b829ce6efe2642980329661bd2d18eab5fc539138d4adaebbbe AS grype
+FROM anchore/grype:v0.121.0@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239f0c20195fab8c16f7ea AS grype
 
 FROM ${RUNTIME_IMAGE}
 COPY --from=builder /opt/site-packages /opt/site-packages

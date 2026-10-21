@@ -43,7 +43,8 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt --no
     && find /opt/site-packages -type d \( -name tests -o -name test \) -prune -exec rm -rf {} + \
     && find /opt/site-packages -name '*.pyi' -delete \
     && python -m compileall -q /opt/site-packages \
-    && mkdir -p /rootfs/data /rootfs/var/cache/grype /rootfs/tmp
+    && mkdir -p /rootfs/data /rootfs/var/cache/grype /rootfs/tmp \
+    && printf '#!/usr/bin/python3\nfrom kresheen.cli.main import cli\ncli()\n' > /rootfs/kresheen
 
 # Official Grype image, pinned by tag and digest (a static Go binary)
 FROM anchore/grype:v0.121.0@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239f0c20195fab8c16f7ea AS grype
@@ -51,6 +52,8 @@ FROM anchore/grype:v0.121.0@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239
 FROM ${RUNTIME_IMAGE}
 COPY --from=builder /opt/site-packages /opt/site-packages
 COPY --from=grype /grype /usr/local/bin/grype
+# `kresheen` on PATH for `kubectl exec` / `docker exec` (pip's script was dropped: its shebang names the builder's Python).
+COPY --from=builder --chmod=0755 /rootfs/kresheen /usr/local/bin/kresheen
 COPY --from=frontend-builder /build/frontend/dist /app/frontend/dist
 COPY LICENSE NOTICE /app/
 # Writable places only: the database volume, the Grype vulnerability DB cache, /tmp (also mount tmpfs/emptyDir there).

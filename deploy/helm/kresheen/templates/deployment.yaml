@@ -9,9 +9,11 @@ metadata:
     {{- include "kresheen.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  # The component label keeps the bundled Postgres pod (same name/instance labels) out of this selector.
   selector:
     matchLabels:
       {{- include "kresheen.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
   template:
     metadata:
       labels:

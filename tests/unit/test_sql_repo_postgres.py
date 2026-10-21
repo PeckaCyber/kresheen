@@ -33,7 +33,7 @@ pytestmark = pytest.mark.skipif(not _DOCKER_AVAILABLE, reason="Docker is not rea
 def postgres_repo():
     from testcontainers.community.postgres import PostgresContainer
 
-    with PostgresContainer("postgres:16-alpine", driver="psycopg") as postgres:
+    with PostgresContainer("postgres:18-alpine", driver="psycopg") as postgres:
         yield SQLRepository(postgres.get_connection_url())
 
 

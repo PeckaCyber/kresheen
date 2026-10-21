@@ -8,7 +8,7 @@ The rest of this guide covers building Kresheen and running its checks, which yo
 
 ## Development setup
 
-You need Python 3.13 and Node 22 (22.12 or later).
+You need Python 3.13 and Node 24.
 
 Backend:
 

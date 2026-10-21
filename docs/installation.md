@@ -66,7 +66,7 @@ and use `docker compose up -d` without `--build`. To change anything without edi
 
 ### What the Compose file sets up
 
-- `postgres`: PostgreSQL 16 with a volume, not published to the host. Its throwaway credentials suit a local install only.
+- `postgres`: PostgreSQL 18 with a volume, not published to the host. Its throwaway credentials suit a local install only.
 - `app`: Kresheen, on `127.0.0.1:8000`, with a read-only root filesystem, a tmpfs `/tmp`, all capabilities dropped, a 2 GB memory limit and a volume for the Grype cache.
 - `KRESHEEN_AUTO_MIGRATE=1`, so the container upgrades the database schema itself on start.
 - `KRESHEEN_SECRET_KEY` from your `.env` file.
@@ -233,7 +233,7 @@ This uses SQLite in `kresheen.db` in the current directory. The [notes for every
 
 ## From source
 
-You need Python 3.13 (the image uses 3.13; the package declares 3.11 or newer) and Node.js 22.12 or newer.
+You need Python 3.13 (the image uses 3.13; the package declares 3.11 or newer) and Node.js 24 or newer.
 
 ```bash
 git clone https://github.com/PeckaCyber/kresheen.git

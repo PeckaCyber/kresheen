@@ -5,7 +5,7 @@ FastAPI backend's `/api/*` JSON API. `kresheen serve` serves the production buil
 
 ## Prerequisites
 
-Node.js 22.12 or newer (see `engines` in `package.json`) and a Python environment with Kresheen installed
+Node.js 24 or newer (see `engines` in `package.json`) and a Python environment with Kresheen installed
 (`pip install -e ".[dev]"` from the repository root).
 
 ## Develop

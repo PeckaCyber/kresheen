@@ -53,7 +53,7 @@ def _postgres_server():
         pytest.skip(_DOCKER_SKIP)
     from testcontainers.community.postgres import PostgresContainer
 
-    with PostgresContainer("postgres:16-alpine", driver="psycopg") as postgres:
+    with PostgresContainer("postgres:18-alpine", driver="psycopg") as postgres:
         yield postgres
 
 

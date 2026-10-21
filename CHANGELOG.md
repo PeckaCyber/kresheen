@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- The diagram draws flows that leave a trust boundary. They were drawn underneath the boundary boxes, so a Terraform diagram could show no connections at all.
+- `docker run ghcr.io/peckacyber/kresheen --help` prints `Usage: kresheen` (it printed `Usage: -c`).
+- The nightly security job no longer fails when there is nothing to update.
+- User-supplied names are quoted in two log lines, so a line break in them cannot start a fake log entry.
+
 ## [1.0.1] - 2026-10-20
 
 ### Fixed

@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-21
+
+### Added
+
+- Two more sample models, next to the online shop: a Kubernetes app built from bundled manifests and an AWS app built from a bundled Terraform plan. Each has a few weaknesses planted on purpose so the config checks have something to find. Open them from the first-run page or the New threat model menu; they are ordinary models you can edit or delete. `POST /api/applications/sample` takes an optional `{"sample": "online_shop" | "kubernetes" | "aws"}`.
+
+### Fixed
+
+- The diagram draws flows that leave a trust boundary. They were drawn underneath the boundary boxes, so a Terraform diagram could show no connections at all.
+- `docker run ghcr.io/peckacyber/kresheen --help` prints `Usage: kresheen` (it printed `Usage: -c`).
+- The nightly security job no longer fails when there is nothing to update.
+- User-supplied names are quoted in two log lines, so a line break in them cannot start a fake log entry.
+
 ## [1.0.1] - 2026-10-20
 
 ### Fixed

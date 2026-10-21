@@ -11,7 +11,7 @@ const emptyRollup = { application_count: 0, worst_severity: null, finding_count:
 
 describe("Onboarding", () => {
   it("offers only inputs the engine reads, and says documents are not analysed", () => {
-    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy={false} sampleError={null} />);
+    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy={null} sampleError={null} />);
 
     expect(screen.getByText("Upload infrastructure files")).toBeInTheDocument();
     expect(screen.getByText("Connect a GitHub repository")).toBeInTheDocument();
@@ -25,22 +25,27 @@ describe("Onboarding", () => {
     const onPick = vi.fn();
     const onSample = vi.fn();
     const onDescribe = vi.fn();
-    render(<Onboarding onPick={onPick} onDescribe={onDescribe} onSample={onSample} sampleBusy={false} sampleError={null} />);
+    render(<Onboarding onPick={onPick} onDescribe={onDescribe} onSample={onSample} sampleBusy={null} sampleError={null} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Start drawing/ }));
     expect(onPick).toHaveBeenCalledWith("blank");
     fireEvent.click(screen.getByRole("button", { name: /Choose: Connect a GitHub repository/ }));
     expect(onPick).toHaveBeenCalledWith("github_repository");
-    fireEvent.click(screen.getByText("Explore a sample model"));
-    expect(onSample).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Open sample: Kubernetes app" }));
+    expect(onSample).toHaveBeenCalledWith("kubernetes");
+    fireEvent.click(screen.getByRole("button", { name: "Open sample: AWS app" }));
+    expect(onSample).toHaveBeenCalledWith("aws");
+    fireEvent.click(screen.getByRole("button", { name: "Open sample: Online shop" }));
+    expect(onSample).toHaveBeenCalledWith("online_shop");
     fireEvent.click(screen.getByRole("button", { name: "Describe your system" }));
     expect(onDescribe).toHaveBeenCalled();
   });
 
-  it("shows a sample error and disables the link while busy", () => {
-    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy sampleError="Nope" />);
+  it("shows a sample error and disables every sample while one is being created", () => {
+    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy="aws" sampleError="Nope" />);
     expect(screen.getByText("Nope")).toBeInTheDocument();
-    expect(screen.getByText("Creating the sample...")).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Creating the sample.*AWS app/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Open sample: Kubernetes app" })).toBeDisabled();
   });
 });
 
@@ -118,5 +123,37 @@ describe("GroupsPage first run", () => {
 
     expect(await screen.findByText("Draw a new threat model")).toBeInTheDocument();
     expect(screen.getByLabelText("Group")).toBeInTheDocument();
+  });
+
+  it("asks the server for the picked sample and opens its run", async () => {
+    setupMocks(0);
+    fetchMock.mockResolvedValueOnce(json({ application_id: "app-k", run_id: "run-k" }));
+    render(
+      <MemoryRouter>
+        <GroupsPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Open sample: Kubernetes app" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    const [url, init] = fetchMock.mock.calls[2];
+    expect(url).toBe("/api/applications/sample");
+    expect(JSON.parse(init.body)).toEqual({ sample: "kubernetes" });
+  });
+
+  it("offers the samples from the New threat model menu once models exist", async () => {
+    setupMocks(2);
+    render(
+      <MemoryRouter>
+        <GroupsPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "New threat model" }));
+
+    expect(await screen.findByText("Sample: AWS app")).toBeInTheDocument();
+    expect(screen.getByText("Sample: Kubernetes app")).toBeInTheDocument();
+    expect(screen.getByText("Sample: Online shop")).toBeInTheDocument();
   });
 });

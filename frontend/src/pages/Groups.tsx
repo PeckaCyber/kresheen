@@ -8,6 +8,7 @@ import { PageHeader } from "../components/PageHeader";
 import { CreateApplicationModal, type CreatePreset } from "./CreateApplicationModal";
 import { IntakeWizard } from "./IntakeWizard";
 import { Onboarding } from "./Onboarding";
+import { SAMPLES, type SampleKey } from "./samples";
 import { worseOf } from "./threatSignal";
 import { RiskBadge } from "../components/RiskBadge";
 import { DashboardApplication } from "./dashboard/types";
@@ -98,7 +99,7 @@ export function GroupsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [describeOpen, setDescribeOpen] = useState(false);
   const [createPreset, setCreatePreset] = useState<CreatePreset | undefined>(undefined);
-  const [sampleBusy, setSampleBusy] = useState(false);
+  const [sampleBusy, setSampleBusy] = useState<SampleKey | null>(null);
 
   function loadApplications() {
     return apiFetch<{ applications: DashboardApplication[] }>("/api/dashboard")
@@ -122,17 +123,18 @@ export function GroupsPage() {
     setCreateOpen(true);
   }
 
-  async function handleSample() {
-    setSampleBusy(true);
+  async function handleSample(sample: SampleKey) {
+    setSampleBusy(sample);
     try {
       const out = await apiFetch<{ application_id: string; run_id: string }>("/api/applications/sample", {
         method: "POST",
+        body: JSON.stringify({ sample }),
       });
       navigate(`/applications/${out.application_id}/runs/${out.run_id}`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Could not create the sample model");
     } finally {
-      setSampleBusy(false);
+      setSampleBusy(null);
     }
   }
 
@@ -296,6 +298,13 @@ export function GroupsPage() {
           <Dropdown.Item onClick={() => setDescribeOpen(true)}>Describe your system (guided)</Dropdown.Item>
           <Dropdown.Item onClick={() => openCreate()}>Upload files or connect a repository</Dropdown.Item>
           <Dropdown.Item onClick={() => openCreate("blank")}>Draw it yourself</Dropdown.Item>
+          <Dropdown.Divider />
+          <Dropdown.Header>Explore a sample</Dropdown.Header>
+          {SAMPLES.map((sample) => (
+            <Dropdown.Item key={sample.key} disabled={sampleBusy !== null} onClick={() => void handleSample(sample.key)}>
+              {sampleBusy === sample.key ? "Creating the sample..." : `Sample: ${sample.title}`}
+            </Dropdown.Item>
+          ))}
         </Dropdown.Menu>
       </Dropdown>
       <Button variant="outline-secondary" onClick={() => setShowGroupsModal(true)}>
@@ -322,7 +331,7 @@ export function GroupsPage() {
             <Onboarding
               onPick={(preset) => openCreate(preset)}
               onDescribe={() => setDescribeOpen(true)}
-              onSample={() => void handleSample()}
+              onSample={(sample) => void handleSample(sample)}
               sampleBusy={sampleBusy}
             />
           )}

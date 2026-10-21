@@ -1,6 +1,6 @@
 """Persists a hand-drawn model (components, connections, stated facts) built in code.
 
-Shared by the bundled sample (engine/samples.py) and the guided intake
+Shared by the bundled sample (engine/samples) and the guided intake
 (engine/intake.py): both produce an ordinary manual model, the same rows the diagram
 editor writes, so everything downstream (threats, completeness, the action plan,
 exports, editing) treats it like any other hand-drawn model.

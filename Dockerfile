@@ -75,5 +75,5 @@ EXPOSE 8000
 VOLUME ["/data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD ["/usr/bin/python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status == 200 else 1)"]
-ENTRYPOINT ["/usr/bin/python3", "-c", "from kresheen.cli.main import cli; cli()"]
+ENTRYPOINT ["/usr/local/bin/kresheen"]
 CMD ["serve", "--host", "0.0.0.0", "--port", "8000"]

@@ -62,7 +62,7 @@ def record_snapshot(repo: Repository, application_id: str) -> None:
     except UnknownRunError:
         pass
     except Exception:
-        logger.exception("Could not record threat snapshot for application %s", application_id)
+        logger.exception("Could not record threat snapshot for application %r", application_id)
 
 
 def compute_trend(snapshots: list[ThreatSnapshot]) -> list[TrendPoint]:

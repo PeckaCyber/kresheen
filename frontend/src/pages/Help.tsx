@@ -85,7 +85,11 @@ const SECTIONS: Section[] = [
               </li>
             </Steps>
             <p>
-              New here? <strong>Explore a sample model</strong> on the first-run page shows what results look like.
+              New here? Open a sample to see what results look like: <strong>Online shop</strong> (drawn by hand),{" "}
+              <strong>Kubernetes app</strong> (built from uploaded manifests) or <strong>AWS app</strong> (built from a
+              Terraform plan). They are on the first-run page and under <strong>New threat model</strong>. Each sample
+              is an ordinary model you can edit or delete; the Kubernetes and AWS ones have a few weaknesses planted on
+              purpose.
             </p>
           </>
         ),

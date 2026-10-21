@@ -59,7 +59,9 @@ def body(before: str, after: str) -> str:
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "fixable" and len(sys.argv) == 3:
-        print("\n".join(fixable(sys.argv[2])))
+        # No output at all when nothing is fixable: the workflow tests the file for emptiness.
+        for name in fixable(sys.argv[2]):
+            print(name)
     elif cmd == "body" and len(sys.argv) == 4:
         sys.stdout.write(body(sys.argv[2], sys.argv[3]))
     else:

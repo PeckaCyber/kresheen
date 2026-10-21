@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Col, Row } from "react-bootstrap";
 import type { CreatePreset } from "./CreateApplicationModal";
+import { SAMPLES, type SampleKey } from "./samples";
 
 interface Entry {
   preset: CreatePreset;
@@ -42,8 +43,8 @@ export function Onboarding({
 }: {
   onPick: (preset: CreatePreset) => void;
   onDescribe: () => void;
-  onSample: () => void;
-  sampleBusy: boolean;
+  onSample: (sample: SampleKey) => void;
+  sampleBusy: SampleKey | null;
   sampleError?: string | null;
 }) {
   return (
@@ -82,14 +83,36 @@ export function Onboarding({
           </Col>
         ))}
       </Row>
-      {sampleError && <Alert variant="danger">{sampleError}</Alert>}
-      <p className="small mb-1">
-        Not sure yet?{" "}
-        <Button variant="link" size="sm" className="p-0 align-baseline" disabled={sampleBusy} onClick={onSample}>
-          {sampleBusy ? "Creating the sample..." : "Explore a sample model"}
-        </Button>{" "}
-        to see what the results look like. It is an ordinary model you can edit or delete.
+      <h3 className="h6 mt-4" id="samples-title">
+        Not sure yet? Explore a sample
+      </h3>
+      <p className="small text-muted mb-2">
+        Each sample is created and run so you can see what the results look like. It is an ordinary model you can edit
+        or delete.
       </p>
+      {sampleError && <Alert variant="danger">{sampleError}</Alert>}
+      <Row xs={1} md={3} className="g-3 mb-3" aria-labelledby="samples-title" role="group">
+        {SAMPLES.map((sample) => (
+          <Col key={sample.key}>
+            <Card className="h-100">
+              <Card.Body className="d-flex flex-column">
+                <Card.Title className="h6">{sample.title}</Card.Title>
+                <Card.Text className="small text-muted flex-grow-1">{sample.body}</Card.Text>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  className="align-self-start"
+                  disabled={sampleBusy !== null}
+                  onClick={() => onSample(sample.key)}
+                >
+                  {sampleBusy === sample.key ? "Creating the sample..." : "Open sample"}
+                  <span className="visually-hidden">: {sample.title}</span>
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
       <p className="small text-muted mb-0">
         You can attach documentation later, but it is stored for reference only; the engine does not read it yet.
       </p>

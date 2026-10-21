@@ -716,6 +716,7 @@ export function ApplicationDetailPage() {
     const showConfig = show ?? !(configCount > 0 && snapshot.nodes.length >= 10);
     const visible = showConfig ? snapshot.nodes : snapshot.nodes.filter((node) => !isConfigObject(node));
     const visibleIds = new Set(visible.map((node) => node.id));
+    const boundedIds = new Set(visible.filter((node) => node.trust_boundary).map((node) => node.id));
     setConfigObjects({ count: configCount, shown: showConfig });
     setNodes(layoutNodes(visible, snapshot.dfd.boundaries ?? [], editModeRef.current, snapshot.dfd.edges));
     setEdges(
@@ -728,6 +729,9 @@ export function ApplicationDetailPage() {
           label: edge.label ?? undefined,
           data: { isManual: edge.is_manual, properties: edge.properties ?? {} },
           type: "smoothstep",
+          // A flow between two components inside boundaries is drawn above the boundary boxes already; one
+          // with an end outside every boundary was drawn underneath them and could not be seen.
+          zIndex: boundedIds.has(edge.source) && boundedIds.has(edge.target) ? undefined : 1,
           style: {
             stroke: edge.is_manual ? "#6c757d" : "var(--pc-muted)",
             strokeDasharray: edge.is_manual ? "4 3" : undefined,

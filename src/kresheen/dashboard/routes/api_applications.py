@@ -28,7 +28,7 @@ from kresheen.engine.ingest.github_repository_ingestor import validate_github_de
 from kresheen.engine.orchestrator import SUPPORTED_DATA_SOURCE_TYPES, execute_run
 from kresheen.engine.provenance import compute_staleness, input_digest
 from kresheen.engine.run_safety import RunQueueFull, reconcile_run
-from kresheen.engine.samples import build_sample_application
+from kresheen.engine.samples import DEFAULT_SAMPLE, SAMPLES, SampleKey
 from kresheen.engine.sbom import build_sbom_summary
 from kresheen.engine.threats.service import generate_run_threats, load_dfd_model
 from kresheen.models.application import DEFAULT_METHODOLOGY, Application, new_application_id
@@ -301,14 +301,22 @@ class SampleOut(BaseModel):
     run_id: str
 
 
+class SampleRequest(BaseModel):
+    sample: SampleKey = DEFAULT_SAMPLE
+
+
 @router.post("/sample", response_model=SampleOut, dependencies=[Depends(require_csrf)])
 def create_sample_application(
-    request: Request, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)
+    request: Request,
+    body: SampleRequest | None = None,
+    user: User = Depends(get_current_user),
+    repo: Repository = Depends(get_repo),
 ) -> SampleOut:
-    """Creates (ungrouped) and runs the bundled sample model so a first-time user has something to
-    explore. Each call makes a new copy; it is an ordinary application the user can edit or delete."""
+    """Creates (ungrouped) and runs one bundled sample model (engine/samples) so a first-time user has
+    something to explore. Each call makes a new copy; it is an ordinary application the user can edit or
+    delete. No body means the online-shop sample."""
     require_group_role(user, None, "editor", repo, what="group")
-    application = build_sample_application(repo, user.id)
+    application = SAMPLES[(body or SampleRequest()).sample].build(repo, user.id)
     run = create_run(application.id, request, None, user, repo)
     return SampleOut(application_id=application.id, run_id=run.id)
 

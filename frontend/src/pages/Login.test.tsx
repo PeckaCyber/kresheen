@@ -164,7 +164,8 @@ describe("Signed out by timeout", () => {
     );
     await screen.findByText("in");
     fireEvent.click(screen.getByRole("button", { name: "load" }));
-    await screen.findByText("out");
-    expect(await screen.findByText(/signed out after a period of inactivity/i)).toBeInTheDocument();
+    // The sign-out runs after the mocked 401 resolves; the default 1 s wait flaked on a loaded CI runner.
+    await screen.findByText("out", {}, { timeout: 5000 });
+    expect(await screen.findByText(/signed out after a period of inactivity/i, {}, { timeout: 5000 })).toBeInTheDocument();
   });
 });

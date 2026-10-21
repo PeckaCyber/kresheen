@@ -1,0 +1,365 @@
+{
+ "format_version": "1.2",
+ "resource_changes": [
+  {
+   "address": "aws_vpc.main",
+   "type": "aws_vpc",
+   "name": "main",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "vpc-0a1b2c3d4e5f60001",
+     "cidr_block": "10.20.0.0/16",
+     "arn": "arn:aws:ec2:us-east-1:000000000000:vpc/vpc-0a1b2c3d4e5f60001",
+     "tags": {
+      "Name": "photo-share"
+     }
+    }
+   }
+  },
+  {
+   "address": "aws_subnet.app",
+   "type": "aws_subnet",
+   "name": "app",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "subnet-0a1b2c3d4e5f60003",
+     "vpc_id": "vpc-0a1b2c3d4e5f60001",
+     "cidr_block": "10.20.10.0/24",
+     "availability_zone": "us-east-1a",
+     "map_public_ip_on_launch": false,
+     "arn": "arn:aws:ec2:us-east-1:000000000000:subnet/subnet-0a1b2c3d4e5f60003",
+     "tags": {
+      "Name": "photo-share-app"
+     }
+    }
+   }
+  },
+  {
+   "address": "aws_security_group.alb",
+   "type": "aws_security_group",
+   "name": "alb",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "sg-0a1b2c3d4e5f60001",
+     "name": "photo-share-alb",
+     "vpc_id": "vpc-0a1b2c3d4e5f60001",
+     "description": "Public load balancer",
+     "ingress": [
+      {
+       "from_port": 443,
+       "to_port": 443,
+       "protocol": "tcp",
+       "cidr_blocks": [
+        "0.0.0.0/0"
+       ],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [],
+       "self": false,
+       "description": "HTTPS from anywhere",
+       "prefix_list_ids": []
+      }
+     ],
+     "egress": [
+      {
+       "from_port": 0,
+       "to_port": 0,
+       "protocol": "-1",
+       "cidr_blocks": [
+        "0.0.0.0/0"
+       ],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [],
+       "self": false,
+       "description": "",
+       "prefix_list_ids": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "address": "aws_security_group.app",
+   "type": "aws_security_group",
+   "name": "app",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "sg-0a1b2c3d4e5f60002",
+     "name": "photo-share-app",
+     "vpc_id": "vpc-0a1b2c3d4e5f60001",
+     "description": "App servers",
+     "ingress": [
+      {
+       "from_port": 8080,
+       "to_port": 8080,
+       "protocol": "tcp",
+       "cidr_blocks": [],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [
+        "sg-0a1b2c3d4e5f60001"
+       ],
+       "self": false,
+       "description": "from the load balancer",
+       "prefix_list_ids": []
+      }
+     ],
+     "egress": [
+      {
+       "from_port": 0,
+       "to_port": 0,
+       "protocol": "-1",
+       "cidr_blocks": [
+        "0.0.0.0/0"
+       ],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [],
+       "self": false,
+       "description": "",
+       "prefix_list_ids": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "address": "aws_security_group.db",
+   "type": "aws_security_group",
+   "name": "db",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "sg-0a1b2c3d4e5f60003",
+     "name": "photo-share-db",
+     "vpc_id": "vpc-0a1b2c3d4e5f60001",
+     "description": "Database",
+     "ingress": [
+      {
+       "from_port": 5432,
+       "to_port": 5432,
+       "protocol": "tcp",
+       "cidr_blocks": [],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [
+        "sg-0a1b2c3d4e5f60002"
+       ],
+       "self": false,
+       "description": "from the app",
+       "prefix_list_ids": []
+      },
+      {
+       "from_port": 5432,
+       "to_port": 5432,
+       "protocol": "tcp",
+       "cidr_blocks": [
+        "0.0.0.0/0"
+       ],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [],
+       "self": false,
+       "description": "temporary: admin access",
+       "prefix_list_ids": []
+      }
+     ],
+     "egress": [
+      {
+       "from_port": 0,
+       "to_port": 0,
+       "protocol": "-1",
+       "cidr_blocks": [
+        "0.0.0.0/0"
+       ],
+       "ipv6_cidr_blocks": [],
+       "security_groups": [],
+       "self": false,
+       "description": "",
+       "prefix_list_ids": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "address": "aws_lb.web",
+   "type": "aws_lb",
+   "name": "web",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/photo-share/0a1b2c3d4e5f6001",
+     "arn": "arn:aws:elasticloadbalancing:us-east-1:000000000000:loadbalancer/app/photo-share/0a1b2c3d4e5f6001",
+     "name": "photo-share",
+     "internal": false,
+     "load_balancer_type": "application",
+     "security_groups": [
+      "sg-0a1b2c3d4e5f60001"
+     ],
+     "subnets": []
+    }
+   }
+  },
+  {
+   "address": "aws_iam_role.app",
+   "type": "aws_iam_role",
+   "name": "app",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "photo-share-app",
+     "name": "photo-share-app",
+     "arn": "arn:aws:iam::000000000000:role/photo-share-app",
+     "assume_role_policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Principal\": {\"Service\": \"ec2.amazonaws.com\"}, \"Action\": \"sts:AssumeRole\"}]}",
+     "inline_policy": [
+      {
+       "name": "uploads",
+       "policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Effect\": \"Allow\", \"Action\": [\"s3:GetObject\", \"s3:PutObject\"], \"Resource\": \"arn:aws:s3:::photo-share-uploads-example/*\"}]}"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "address": "aws_iam_instance_profile.app",
+   "type": "aws_iam_instance_profile",
+   "name": "app",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "photo-share-app",
+     "name": "photo-share-app",
+     "role": "photo-share-app",
+     "arn": "arn:aws:iam::000000000000:instance-profile/photo-share-app"
+    }
+   }
+  },
+  {
+   "address": "aws_instance.app",
+   "type": "aws_instance",
+   "name": "app",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "i-0a1b2c3d4e5f60001",
+     "arn": "arn:aws:ec2:us-east-1:000000000000:instance/i-0a1b2c3d4e5f60001",
+     "ami": "ami-0a1b2c3d4e5f60001",
+     "instance_type": "t3.medium",
+     "subnet_id": "subnet-0a1b2c3d4e5f60003",
+     "vpc_security_group_ids": [
+      "sg-0a1b2c3d4e5f60002"
+     ],
+     "associate_public_ip_address": false,
+     "iam_instance_profile": "photo-share-app",
+     "metadata_options": [
+      {
+       "http_tokens": "required",
+       "http_endpoint": "enabled"
+      }
+     ],
+     "root_block_device": [
+      {
+       "encrypted": true,
+       "volume_size": 30
+      }
+     ],
+     "tags": {
+      "Name": "photo-share-app"
+     }
+    }
+   }
+  },
+  {
+   "address": "aws_db_instance.main",
+   "type": "aws_db_instance",
+   "name": "main",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "db-0A1B2C3D4E5F60001",
+     "identifier": "photo-share-db",
+     "arn": "arn:aws:rds:us-east-1:000000000000:db:photo-share-db",
+     "engine": "postgres",
+     "engine_version": "16.4",
+     "instance_class": "db.t4g.medium",
+     "publicly_accessible": true,
+     "storage_encrypted": true,
+     "vpc_security_group_ids": [
+      "sg-0a1b2c3d4e5f60003"
+     ],
+     "username": "photoshare",
+     "backup_retention_period": 7,
+     "deletion_protection": false,
+     "tags": {
+      "Name": "photo-share-db"
+     }
+    }
+   }
+  },
+  {
+   "address": "aws_s3_bucket.uploads",
+   "type": "aws_s3_bucket",
+   "name": "uploads",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "photo-share-uploads-example",
+     "bucket": "photo-share-uploads-example",
+     "arn": "arn:aws:s3:::photo-share-uploads-example",
+     "tags": {
+      "Name": "photo-share-uploads"
+     }
+    }
+   }
+  },
+  {
+   "address": "aws_s3_bucket_policy.uploads_public_read",
+   "type": "aws_s3_bucket_policy",
+   "name": "uploads_public_read",
+   "provider_name": "registry.terraform.io/hashicorp/aws",
+   "change": {
+    "actions": [
+     "create"
+    ],
+    "after": {
+     "id": "photo-share-uploads-example",
+     "bucket": "photo-share-uploads-example",
+     "policy": "{\"Version\": \"2012-10-17\", \"Statement\": [{\"Sid\": \"PublicRead\", \"Effect\": \"Allow\", \"Principal\": \"*\", \"Action\": \"s3:GetObject\", \"Resource\": \"arn:aws:s3:::photo-share-uploads-example/*\"}]}"
+    }
+   }
+  }
+ ]
+}

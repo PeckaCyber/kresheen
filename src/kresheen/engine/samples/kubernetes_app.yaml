@@ -1,0 +1,202 @@
+# Sample Kubernetes manifests for Kresheen's "Kubernetes app" demo model.
+# A made-up ticketing app. It contains deliberate weaknesses so the demo has something to show:
+#   - the web front end is published with a LoadBalancer and declares no authentication
+#   - the deploy agent's ServiceAccount is bound to cluster-admin
+#   - a ConfigMap holds a database password (the value is a placeholder, not a real secret)
+# Do not deploy these manifests.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: helpdesk
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: helpdesk-data
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform-ops
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helpdesk-web
+  namespace: helpdesk
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: helpdesk-web}
+  template:
+    metadata:
+      labels: {app: helpdesk-web}
+    spec:
+      containers:
+        - name: web
+          image: registry.example.test/helpdesk/web:2.4.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: API_URL
+              value: http://helpdesk-api.helpdesk.svc.cluster.local:8000
+          resources:
+            limits: {cpu: 500m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helpdesk-web
+  namespace: helpdesk
+spec:
+  type: LoadBalancer
+  selector: {app: helpdesk-web}
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helpdesk-api
+  namespace: helpdesk
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: helpdesk-api}
+  template:
+    metadata:
+      labels: {app: helpdesk-api}
+    spec:
+      containers:
+        - name: api
+          image: registry.example.test/helpdesk/api:2.4.1
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: helpdesk-api-config
+          resources:
+            limits: {cpu: "1", memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helpdesk-api
+  namespace: helpdesk
+spec:
+  type: ClusterIP
+  selector: {app: helpdesk-api}
+  ports:
+    - name: http
+      port: 8000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helpdesk-api-config
+  namespace: helpdesk
+data:
+  DATABASE_HOST: tickets-db.helpdesk-data.svc.cluster.local
+  DATABASE_PORT: "5432"
+  DATABASE_USER: helpdesk
+  DATABASE_PASSWORD: example-placeholder
+  LOG_LEVEL: info
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tickets-db
+  namespace: helpdesk-data
+spec:
+  serviceName: tickets-db
+  replicas: 1
+  selector:
+    matchLabels: {app: tickets-db}
+  template:
+    metadata:
+      labels: {app: tickets-db}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: tickets-db-credentials
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          resources:
+            limits: {cpu: "1", memory: 1Gi}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 10Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tickets-db
+  namespace: helpdesk-data
+spec:
+  type: ClusterIP
+  selector: {app: tickets-db}
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tickets-db-credentials
+  namespace: helpdesk-data
+type: Opaque
+stringData:
+  POSTGRES_USER: helpdesk
+  POSTGRES_PASSWORD: example-placeholder
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deploy-agent
+  namespace: platform-ops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deploy-agent-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: deploy-agent
+    namespace: platform-ops
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-agent
+  namespace: platform-ops
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: deploy-agent}
+  template:
+    metadata:
+      labels: {app: deploy-agent}
+    spec:
+      serviceAccountName: deploy-agent
+      containers:
+        - name: agent
+          image: registry.example.test/platform/deploy-agent:1.9.0
+          env:
+            - name: TARGET_API
+              value: http://helpdesk-api.helpdesk.svc.cluster.local:8000

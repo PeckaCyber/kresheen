@@ -52,3 +52,61 @@ def test_sample_is_csrf_protected(tmp_path):
     client, _csrf = _logged_in_client(tmp_path)
 
     assert client.post("/api/applications/sample").status_code == 403
+
+
+def _threats_by_rule(client, ids):
+    base = f"/api/applications/{ids['application_id']}/runs/{ids['run_id']}"
+    assert client.get(base).json()["status"] == "completed"
+    threats = client.get(f"{base}/threats").json()["threats"]
+    return base, {t["rule_id"]: t for t in threats if t["rule_id"].startswith("SC-")}
+
+
+def test_sample_keys_match_the_api_choices():
+    from typing import get_args
+
+    from kresheen.engine.samples import SAMPLES, SampleKey
+
+    assert set(SAMPLES) == set(get_args(SampleKey))
+
+
+def test_kubernetes_sample_ingests_its_manifests_and_shows_the_planted_weaknesses(tmp_path):
+    client, csrf = _logged_in_client(tmp_path)
+    response = client.post("/api/applications/sample", json={"sample": "kubernetes"}, headers={"X-CSRF-Token": csrf})
+    assert response.status_code == 200
+    ids = response.json()
+
+    base, config_hits = _threats_by_rule(client, ids)
+    assert set(config_hits) == {"SC-T01", "SC-T02", "SC-T08"}
+    assert config_hits["SC-T02"]["risk"] == "critical"
+    dfd = client.get(f"{base}/dfd").json()
+    assert {n["trust_boundary"] for n in dfd["nodes"] if n["type"] == "process"} == {
+        "helpdesk", "helpdesk-data", "platform-ops"
+    }
+    assert len(dfd["edges"]) >= 4
+    sources = client.get(f"/api/applications/{ids['application_id']}/data-sources").json()
+    assert [s["type"] for s in sources] == ["manifest_upload"]
+    # The planted ConfigMap password is redacted at ingest like any upload.
+    assert "example-placeholder" not in client.get(f"{base}/dfd").text
+
+
+def test_aws_sample_ingests_its_plan_and_shows_the_planted_weaknesses(tmp_path):
+    client, csrf = _logged_in_client(tmp_path)
+    response = client.post("/api/applications/sample", json={"sample": "aws"}, headers={"X-CSRF-Token": csrf})
+    assert response.status_code == 200
+    ids = response.json()
+
+    base, config_hits = _threats_by_rule(client, ids)
+    assert set(config_hits) == {"SC-AWS-T01R", "SC-AWS-T05"}
+    names = {n["id"]: n["name"] for n in client.get(f"{base}/dfd").json()["nodes"]}
+    edges = {(names[e["source"]], names[e["target"]]) for e in client.get(f"{base}/dfd").json()["edges"]}
+    assert ("Internet", "aws_lb.web") in edges
+    assert ("Internet", "aws_db_instance.main") in edges
+    assert ("aws_instance.app", "aws_s3_bucket.uploads") in edges
+
+
+def test_unknown_sample_is_rejected(tmp_path):
+    client, csrf = _logged_in_client(tmp_path)
+
+    response = client.post("/api/applications/sample", json={"sample": "nope"}, headers={"X-CSRF-Token": csrf})
+
+    assert response.status_code == 422

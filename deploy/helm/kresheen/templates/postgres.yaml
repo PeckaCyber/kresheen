@@ -21,6 +21,11 @@ metadata:
   name: {{ include "kresheen.postgresHost" . }}
   labels:
     {{- include "kresheen.labels" . | nindent 4 }}
+  annotations:
+    # The bundled dev/staging Postgres: the official image's initdb needs a writable root filesystem and starts as
+    # root before dropping to the postgres user. Use an external database in production.
+    ignore-check.kube-linter.io/no-read-only-root-fs: "official postgres image needs a writable root filesystem"
+    ignore-check.kube-linter.io/run-as-non-root: "official postgres image starts as root, then drops privileges"
 spec:
   replicas: 1
   strategy:

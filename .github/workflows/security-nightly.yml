@@ -121,7 +121,7 @@ jobs:
         if: steps.find.outputs.has_fixes == 'true'
         run: |
           args=()
-          while read -r pkg; do args+=(--upgrade-package "$pkg"); done < "$RUNNER_TEMP/fixable.txt"
+          while read -r pkg; do if [ -n "$pkg" ]; then args+=(--upgrade-package "$pkg"); fi; done < "$RUNNER_TEMP/fixable.txt"
           uv lock "${args[@]}"
           if git diff --quiet -- uv.lock; then
             echo "uv.lock unchanged (the fixed versions are blocked by pyproject constraints)." >> "$GITHUB_STEP_SUMMARY"

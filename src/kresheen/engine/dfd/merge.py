@@ -113,7 +113,7 @@ def merge_run_dfd(
         target_id = _resolve_ref(manual_flow.target_ref)
         if source_id is None or target_id is None:
             logger.warning(
-                "Skipping manual flow %s for run %s -- could not resolve %s -> %s against this run's assets "
+                "Skipping manual flow %r for run %r -- could not resolve %r -> %r against this run's assets "
                 "(or its endpoint is hidden on this diagram)",
                 manual_flow.id,
                 run_id,

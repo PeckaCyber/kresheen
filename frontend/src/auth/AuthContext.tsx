@@ -27,21 +27,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedOutByTimeout, setSignedOutByTimeout] = useState(false);
+  // Read by the 401 handler. Set together with isAuthenticated, not in an effect: an effect runs after the render
+  // that shows the user as signed in, so a request sent in between would get its 401 ignored.
   const authedRef = useRef(false);
-
-  useEffect(() => {
-    authedRef.current = isAuthenticated;
-  }, [isAuthenticated]);
+  const setAuthenticated = useCallback((value: boolean) => {
+    authedRef.current = value;
+    setIsAuthenticated(value);
+  }, []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
       if (!authedRef.current) return;
-      authedRef.current = false;
       setCsrfToken(null);
       setRole(null);
       setEmail(null);
       setSignedOutByTimeout(true);
-      setIsAuthenticated(false);
+      setAuthenticated(false);
     });
     return () => setUnauthorizedHandler(null);
   }, []);
@@ -54,13 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCsrfToken(session.csrf_token);
         setRole(session.role);
         setEmail(session.email || null);
-        setIsAuthenticated(true);
+        setAuthenticated(true);
       })
       .catch(() => {
         setCsrfToken(null);
         setRole(null);
         setEmail(null);
-        setIsAuthenticated(false);
+        setAuthenticated(false);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -74,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(session.role);
         setEmail(session.email || null);
     setSignedOutByTimeout(false);
-    setIsAuthenticated(true);
+    setAuthenticated(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
         setEmail(null);
     setSignedOutByTimeout(false);
-    setIsAuthenticated(false);
+    setAuthenticated(false);
     // A plugin may ask for a page to visit after sign-out, such as an identity provider's.
     if (result?.redirect) window.location.assign(result.redirect);
   }, []);

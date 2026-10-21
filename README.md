@@ -23,9 +23,7 @@ docker compose run --rm app create-user --email you@example.com
 
 `create-user` prints a generated password once. Open <http://127.0.0.1:8000>, sign in, click **Create your first threat model**, then **Explore a sample model** to see what results look like.
 
-This setup is for trying Kresheen on your own machine: it listens on 127.0.0.1 only and its bundled PostgreSQL uses a fixed local password. For a shared or production install (TLS, your own database, backups), follow [docs/installation.md](docs/installation.md).
-
-`./install.sh` does the same steps interactively and also supports Kubernetes. See [docs/installation.md](docs/installation.md) for Helm and installing from source.
+This setup is for trying Kresheen on your own machine: it listens on 127.0.0.1 only, and its bundled PostgreSQL uses a fixed local password. `./install.sh` runs the same steps interactively and also supports Kubernetes. For a shared or production install (TLS, your own database, backups), Helm, or installing from source, see [docs/installation.md](docs/installation.md).
 
 ## What it does
 
@@ -45,7 +43,7 @@ Kresheen is rule-based. It does not guess. Its rules are checked against the pro
 
 ## Optional AI assist (experimental)
 
-Optional AI assist (experimental, bring your own Anthropic API key). It is off by default, the instance owner turns it on, and rule-based analysis works fully without it. See [docs/ai.md](docs/ai.md).
+With your own Anthropic API key, AI can suggest answers for the guided setup and explain a threat in plain words. It is off by default, only the instance owner can turn it on, and it never writes threats, findings or the model. Rule-based analysis works fully without it. See [docs/ai.md](docs/ai.md).
 
 ## Project status
 
@@ -60,11 +58,10 @@ Kresheen Pro is a separate edition for organisations that need more. It is not a
 - an extended threat knowledge base, including the full set of Kubernetes and AWS misconfiguration checks
 - extended methodology coverage beyond STRIDE
 - reviewed guidance with verification steps and example fixes
-- compliance mapping and a compliance report section
 - a Jira connector
 - a portfolio dashboard across models
 - audit streaming to a SIEM and longer retention
-- constructs per deployment paradigm
+- your organisation's own names for Kresheen's terms, such as trust boundaries
 
 The open-source edition in this repository is complete on its own and has no licence checks.
 
@@ -78,7 +75,7 @@ By submitting an issue, you agree that Pecka Cyber LLC may freely use your feedb
 
 For anything that should not be public, email **support@peckacyber.com**:
 
-- reporting a potential security vulnerability (see [SECURITY.md](SECURITY.md); never in a public issue, so it can be fixed first)
+- a potential security vulnerability: see [SECURITY.md](SECURITY.md), and please do not open a public issue for it, so it can be fixed first
 - questions about enterprise use or the upcoming Kresheen Pro
 
 ## Documentation

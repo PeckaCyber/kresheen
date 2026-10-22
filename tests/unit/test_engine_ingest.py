@@ -431,6 +431,81 @@ def test_extract_tarball_safely_rejects_extracted_size_over_cap(tmp_path, monkey
     assert list(extract_dir.iterdir()) == []
 
 
+def _link_tarball(tmp_path, *members: tarfile.TarInfo) -> Path:
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
+        data = b"inside"
+        info = tarfile.TarInfo(name="a/b/file.txt")
+        info.size = len(data)
+        tar.addfile(info, io.BytesIO(data))
+        for member in members:
+            tar.addfile(member)
+    tarball_path = tmp_path / "links.tar.gz"
+    tarball_path.write_bytes(buffer.getvalue())
+    return tarball_path
+
+
+def test_extract_tarball_safely_rejects_hard_link_escaping_root(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    # A hard link's target is relative to the archive root, not to the member's directory: from `a/b/` this name
+    # would stay inside, from the root it climbs two levels out.
+    link = tarfile.TarInfo(name="a/b/link")
+    link.type = tarfile.LNKTYPE
+    link.linkname = "../../outside"
+    tarball_path = _link_tarball(tmp_path, link)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    with pytest.raises(ValueError, match="escaping the archive root"):
+        _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+    assert list(extract_dir.iterdir()) == []
+
+
+def test_extract_tarball_safely_rejects_symlink_escaping_root(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    link = tarfile.TarInfo(name="a/link")
+    link.type = tarfile.SYMTYPE
+    link.linkname = "../../outside"
+    tarball_path = _link_tarball(tmp_path, link)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    with pytest.raises(ValueError, match="escaping the archive root"):
+        _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+
+def test_extract_tarball_safely_keeps_hard_link_inside_root(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    link = tarfile.TarInfo(name="c/copy.txt")
+    link.type = tarfile.LNKTYPE
+    link.linkname = "a/b/file.txt"
+    tarball_path = _link_tarball(tmp_path, link)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+    assert (extract_dir / "c" / "copy.txt").read_bytes() == b"inside"
+
+
+def test_extract_tarball_safely_refuses_without_data_filter(tmp_path, monkeypatch):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    tarball_path = _link_tarball(tmp_path)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+    monkeypatch.delattr(tarfile, "data_filter")
+
+    with pytest.raises(ValueError, match="data' extraction filter"):
+        _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+    assert list(extract_dir.iterdir()) == []
+
+
 def test_facts_from_cyclonedx_resolves_component_by_bom_ref_from_a_real_fixture():
     from datetime import UTC, datetime
 

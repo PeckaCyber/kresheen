@@ -51,6 +51,12 @@ jobs:
           if [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
             echo "The branch moved on since the failed run; nothing to do."; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
+          failed=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?filter=latest&per_page=100" \
+            --jq '[.jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out" or .conclusion == "cancelled") | .name] | join(",")')
+          if [ "$failed" = audit ]; then
+            # A new advisory or an advisory service outage, not a code problem: audit-heal.yml handles it.
+            echo "Only the dependency audit failed; leaving it to audit-heal."; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
           git fetch -q origin main
           attempts=$(git log --format=%B origin/main..HEAD | grep -c '^Autofix-Attempt:' || true)
           echo "attempt=$((attempts + 1))" >> "$GITHUB_OUTPUT"

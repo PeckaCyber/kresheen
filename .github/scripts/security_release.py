@@ -5,8 +5,12 @@ security_release.py plan                      print latest=, next=, commits_sinc
 security_release.py diff <released.json> <main.json> <fixed.json>
       Grype JSON of the released image and of an image built from main. Writes the High/Critical findings with a
       fix that the released image has and main no longer has, and prints count=N.
-security_release.py bump <next version> <fixed.json> <YYYY-MM-DD>
-      Set the version in pyproject.toml, uv.lock, deploy/helm/kresheen/Chart.yaml and add a CHANGELOG entry.
+security_release.py advisories <tag pip.json> <tag npm.json> <main pip.json> <main npm.json> <fixed.json>
+      pip-audit JSON and `npm audit --json` of a superseded tag and of main. Writes the advisories the tag has and main
+      no longer has, in the format of `diff`, and prints count=N.
+security_release.py bump <next version> <fixed.json> <YYYY-MM-DD> [<superseded tag>]
+      Set the version in pyproject.toml, uv.lock, deploy/helm/kresheen/Chart.yaml and add a CHANGELOG entry. With a
+      superseded tag (tagged, never published), the entry says this release carries that tag's changes.
 """
 
 import json
@@ -75,7 +79,43 @@ def diff(released: str, main: str, outfile: str) -> None:
     print(f"count={len(fixed)}")
 
 
-def bump(version: str, fixed_path: str, date: str) -> None:
+def audit_findings(pip_path: str, npm_path: str) -> dict[tuple[str, str], dict]:
+    out = {}
+    pip = json.loads(Path(pip_path).read_text() or "{}")
+    for d in pip.get("dependencies", []):
+        for v in d.get("vulns", []):
+            out[(v["id"], d["name"])] = {
+                "id": v["id"],
+                "severity": None,
+                "package": d["name"],
+                "installed": d["version"],
+                "fixed_in": v.get("fix_versions", []),
+            }
+    npm = json.loads(Path(npm_path).read_text() or "{}")
+    for name, v in npm.get("vulnerabilities", {}).items():
+        for via in v.get("via", []):
+            if isinstance(
+                via, dict
+            ):  # a string means "vulnerable through that package", reported under its own name
+                adv = via.get("url", "").rsplit("/", 1)[-1] or str(via.get("source"))
+                out[(adv, name)] = {
+                    "id": adv,
+                    "severity": str(via.get("severity", "")).capitalize() or None,
+                    "package": name,
+                    "installed": v.get("range", ""),
+                    "fixed_in": [],
+                }
+    return out
+
+
+def advisories(tag_pip: str, tag_npm: str, main_pip: str, main_npm: str, outfile: str) -> None:
+    before, after = audit_findings(tag_pip, tag_npm), audit_findings(main_pip, main_npm)
+    fixed = [before[k] for k in sorted(before) if k not in after]
+    Path(outfile).write_text(json.dumps(fixed, indent=2))
+    print(f"count={len(fixed)}")
+
+
+def bump(version: str, fixed_path: str, date: str, superseded: str = "") -> None:
     fixed = json.loads(Path(fixed_path).read_text())
     old = project_version()
     py = ROOT / "pyproject.toml"
@@ -104,11 +144,21 @@ def bump(version: str, fixed_path: str, date: str) -> None:
     lines = [f"## [{version}] - {date}", "", "### Security", ""]
     seen = set()
     for f in fixed:
-        line = f"- {f['id']} ({f['severity']}): {f['package']} {f['installed']}, fixed in {', '.join(f['fixed_in'])}."
+        sev = f" ({f['severity']})" if f.get("severity") else ""
+        fix = f", fixed in {', '.join(f['fixed_in'])}" if f.get("fixed_in") else ""
+        line = f"- {f['id']}{sev}: {f['package']} {f['installed']}{fix}."
         if line not in seen:
             seen.add(line)
             lines.append(line)
-    lines += ["", f"No other changes since {old}.", ""]
+    if superseded:
+        lines += [
+            "",
+            f"{superseded} was tagged but never published: these advisories appeared before its release finished.",
+            f"This release carries the changes listed under {old} below.",
+            "",
+        ]
+    else:
+        lines += ["", f"No other changes since {old}.", ""]
     cl = ROOT / "CHANGELOG.md"
     c = cl.read_text()
     m = re.search(r"^## \[Unreleased\][^\n]*\n", c, re.MULTILINE)
@@ -122,7 +172,9 @@ if __name__ == "__main__":
         plan()
     elif a[:1] == ["diff"] and len(a) == 4:
         diff(*a[1:])
-    elif a[:1] == ["bump"] and len(a) == 4:
+    elif a[:1] == ["advisories"] and len(a) == 6:
+        advisories(*a[1:])
+    elif a[:1] == ["bump"] and len(a) in (4, 5):
         bump(*a[1:])
     else:
         raise SystemExit(__doc__)

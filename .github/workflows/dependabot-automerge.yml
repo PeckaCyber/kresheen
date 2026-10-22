@@ -5,7 +5,7 @@
 #                     digest-only update (GitHub Actions, Docker). A major version gets the label `needs-review`
 #                     and waits for a person.
 #   Security bot   -> PRs opened by the GitHub App named in the repository variable SECURITY_BOT_LOGIN: the
-#                     `security/uv-lock` branch (security-nightly.yml) and PRs labelled `security-release`
+#                     `security/lockfiles` branch (security-nightly.yml) and PRs labelled `security-release`
 #                     (security-release.yml). Skipped when the variable is not set.
 #
 # No pull_request_target: this runs with the PR's own (Dependabot-limited) token and never checks out PR code.

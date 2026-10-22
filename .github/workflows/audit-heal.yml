@@ -1,0 +1,160 @@
+# Same-day recovery when only the dependency audit stops the pipeline.
+#
+# Runs when `ci` fails on a publish/* PR (the after-hours publisher's) or `release` fails on a tag, and acts only when
+# the audit job is the sole failure (audit_heal.py classify):
+#   transient  The audit logs report no vulnerabilities, so the advisory service or the network failed. Rerun the
+#              failed jobs after a growing pause (5, 10, 15, 20 minutes) and watch each rerun, up to MAX_ATTEMPTS
+#              runs in all; then this job fails, which sends the usual email. Reruns this job starts do not start
+#              audit-heal again (triggering actor github-actions[bot]); the loop handles them. A rerun that now
+#              reports a vulnerability continues as `vuln`.
+#   vuln       A new advisory. Start security-nightly so security-lock opens the fix PR (security/lockfiles) now
+#              instead of at 07:00 UTC, and wait until it auto-merges. Then:
+#                publish PR  merge main into the PR branch (as the App, so CI runs); auto-merge and the publisher's
+#                            wait carry on, and the queued work lands the same evening.
+#                tag         the tagged commit still has the vulnerable lock and a tag is never moved, so start
+#                            security-release with supersede=<tag>: it opens "Release v<next> (security)" for the
+#                            next patch version, which merges and tags itself after the checks. The superseded tag
+#                            stays without a GitHub release.
+#              No fixable version, a closed fix PR or a timeout fails this job, which sends the usual email.
+# ci-autofix.yml leaves audit-only failures to this workflow.
+#
+# Safety: no PR code is checked out or run (the checkout is main, for the helper script); the App token only merges
+# main into a same-repository publish/* branch; required checks still decide every merge and every tag.
+name: audit-heal
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers] -- runs no PR code; gated to same-repo publish/* PRs and tags
+    workflows: [ci, release]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-heal-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  heal:
+    if: >-
+      vars.SECURITY_APP_ID != '' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.triggering_actor.login != 'github-actions[bot]' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      ((github.event.workflow_run.name == 'ci' && github.event.workflow_run.event == 'pull_request' &&
+        startsWith(github.event.workflow_run.head_branch, 'publish/')) ||
+       (github.event.workflow_run.name == 'release' && github.event.workflow_run.event == 'push' &&
+        startsWith(github.event.workflow_run.head_branch, 'v')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
+    env:
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      WORKFLOW: ${{ github.event.workflow_run.name }}
+      MAX_ATTEMPTS: "5"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: What failed?
+        id: kind
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/audit_heal.py classify "$RUN_ID" | tee -a "$GITHUB_OUTPUT"
+          pr=
+          if [ "$WORKFLOW" = ci ]; then
+            pr=$(gh api "repos/${GH_REPO}/pulls?head=${GH_REPO%%/*}:${HEAD_BRANCH}&state=open" --jq '.[0].number // empty')
+          fi
+          echo "pr=${pr}" >> "$GITHUB_OUTPUT"
+
+      - name: Advisory service or network failure; rerun after a pause
+        id: retry
+        if: steps.kind.outputs.kind == 'transient'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          attempt=$ATTEMPT
+          while [ "$attempt" -lt "$MAX_ATTEMPTS" ]; do
+            pause=$((attempt * 5))
+            echo "Audit failed without a vulnerability report (attempt ${attempt}); rerunning in ${pause} minutes." | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep $((pause * 60))
+            if [ "$WORKFLOW" = ci ] && [ "$(gh api "repos/${GH_REPO}/branches/${HEAD_BRANCH}" --jq .commit.sha)" != "$HEAD_SHA" ]; then
+              echo "The branch moved on meanwhile; its new run decides." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            gh run rerun "$RUN_ID" --failed
+            sleep 30
+            if gh run watch "$RUN_ID" --interval 30 --exit-status >/dev/null; then
+              echo "Rerun passed." | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            attempt=$((attempt + 1))
+            kind=$(python3 .github/scripts/audit_heal.py classify "$RUN_ID" | sed -n 's/^kind=//p')
+            case $kind in
+              transient) ;;
+              vuln) echo "kind=vuln" >> "$GITHUB_OUTPUT"; echo "The audit now reports a vulnerability." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+              *) echo "The rerun failed in another job; leaving it to the usual failure handling." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+            esac
+          done
+          echo "::error::The audit still fails after ${attempt} attempts with no vulnerability reported; giving up."
+          exit 1
+
+      - name: Start the lock fix and wait for it to merge
+        if: steps.kind.outputs.kind == 'vuln' || steps.retry.outputs.kind == 'vuln'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
+        run: |
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          open=$(gh pr list --head security/lockfiles --state open --json number --jq 'length')
+          if [ "$open" = 0 ]; then
+            gh workflow run security-nightly.yml --ref main
+            echo "New advisory: started security-nightly to open the lock fix." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "New advisory: the lock fix PR is already open; waiting for it." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          set +e
+          python3 .github/scripts/audit_heal.py wait-fix "$since" --timeout-minutes 90
+          rc=$?
+          set -e
+          case $rc in
+            0) echo "The lock fix is on main." >> "$GITHUB_STEP_SUMMARY" ;;
+            2) echo "::error::No automatic fix: no fixed version is released, or pyproject constraints block it. Fix by hand."; exit 1 ;;
+            *) echo "::error::The lock fix did not merge (closed, failing checks, or timed out). See the security/lockfiles PR."; exit 1 ;;
+          esac
+
+      - name: App token
+        id: app
+        if: (steps.kind.outputs.kind == 'vuln' || steps.retry.outputs.kind == 'vuln') && steps.kind.outputs.pr != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Publish PR; bring in the fix from main
+        if: (steps.kind.outputs.kind == 'vuln' || steps.retry.outputs.kind == 'vuln') && steps.kind.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR: ${{ steps.kind.outputs.pr }}
+        run: |
+          # A merge from main made with the App token starts CI again; auto-merge then squashes the PR as usual.
+          gh api -X PUT "repos/${GH_REPO}/pulls/${PR}/update-branch" -f expected_head_sha="$HEAD_SHA"
+          echo "Merged main into #${PR}; CI runs again and auto-merge finishes it." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Tag; release the next patch version instead
+        if: (steps.kind.outputs.kind == 'vuln' || steps.retry.outputs.kind == 'vuln') && env.WORKFLOW == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run security-release.yml --ref main -f supersede="$HEAD_BRANCH"
+          echo "${HEAD_BRANCH} has the vulnerable lock; started security-release to release the next patch version." | tee -a "$GITHUB_STEP_SUMMARY"

@@ -3,9 +3,12 @@
 # audit          pip-audit on uv.lock (all extras), npm audit for production dependencies, and Grype on an image built
 #                from main (fixable High and Critical fail). A failure sends the usual failed-workflow email.
 # security-lock  If pip-audit finds vulnerable Python packages that have a fixed version, run `uv lock
-#                --upgrade-package` for each and open or update the PR `security/uv-lock` as the GitHub App, so CI runs
-#                on it (a PR made with GITHUB_TOKEN would not start CI). Skipped until the App is configured:
-#                repository variable SECURITY_APP_ID and secret SECURITY_APP_PRIVATE_KEY.
+#                --upgrade-package` for each; if npm audit reports production advisories at high or above, run
+#                `npm audit fix --package-lock-only` (no major upgrades). Both lockfiles go in one PR,
+#                `security/lockfiles`, opened or updated as the GitHub App so CI runs on it (a PR made with
+#                GITHUB_TOKEN would not start CI); separate PRs would each fail the other's audit. audit-heal.yml
+#                starts this workflow by hand when an audit stops a publish PR or a release. Skipped until the App is
+#                configured: repository variable SECURITY_APP_ID and secret SECURITY_APP_PRIVATE_KEY.
 name: security-nightly
 on:
   schedule:
@@ -101,6 +104,9 @@ jobs:
         with:
           version: "0.13.4"
           enable-cache: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
       - name: Find fixable vulnerabilities
         id: find
         run: |
@@ -133,26 +139,61 @@ jobs:
           "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements-after.txt" -f json -o "$RUNNER_TEMP/after.json" || true
           python .github/scripts/security_lock.py body "$RUNNER_TEMP/before.json" "$RUNNER_TEMP/after.json" > "$RUNNER_TEMP/pr-body.md"
           { echo '```diff'; git diff -- uv.lock | head -200; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Update package-lock.json
+        id: npm
+        working-directory: frontend
+        run: |
+          # Same scope as the CI audit: production dependencies, high and above.
+          if npm audit --omit=dev --audit-level=high > "$RUNNER_TEMP/npm-before.txt"; then
+            echo "npm: no production advisories at high or above." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! grep -q '# npm audit report' "$RUNNER_TEMP/npm-before.txt"; then
+            echo "::warning::npm audit failed without a report (advisory service down?); package-lock.json left as is."
+            exit 0
+          fi
+          # Lockfile only: no install scripts run, and no major upgrades (no --force).
+          npm audit fix --package-lock-only --ignore-scripts || true
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json unchanged (no fix within the allowed ranges)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          npm audit --omit=dev --audit-level=high > "$RUNNER_TEMP/npm-after.txt" || true
+          {
+            echo
+            echo "### npm (production dependencies, high and above)"
+            echo
+            echo "Updated \`frontend/package-lock.json\` with \`npm audit fix --package-lock-only\` (no major upgrades)."
+            echo
+            echo "Before:"; echo '```'; head -60 "$RUNNER_TEMP/npm-before.txt"; echo '```'
+            echo "After:"; echo '```'; head -60 "$RUNNER_TEMP/npm-after.txt"; echo '```'
+          } > "$RUNNER_TEMP/npm-body.md"
+          { echo '```diff'; git diff --stat -- package-lock.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Push branch and open or update the PR
-        if: steps.lock.outputs.changed == 'true' && !inputs.dry_run
+        if: (steps.lock.outputs.changed == 'true' || steps.npm.outputs.changed == 'true') && !inputs.dry_run
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           git config user.name "kresheen-security[bot]"
           git config user.email "security-bot@users.noreply.github.com"
-          git checkout -b security/uv-lock
-          git add uv.lock
-          git commit -q -m "Security: update uv.lock to fixed dependency versions"
+          if [ ! -s "$RUNNER_TEMP/pr-body.md" ]; then
+            echo "Automated security update of the lockfiles, opened by the nightly security workflow." > "$RUNNER_TEMP/pr-body.md"
+          fi
+          if [ -s "$RUNNER_TEMP/npm-body.md" ]; then cat "$RUNNER_TEMP/npm-body.md" >> "$RUNNER_TEMP/pr-body.md"; fi
+          git checkout -b security/lockfiles
+          git add uv.lock frontend/package-lock.json
+          git commit -q -m "Security: update lockfiles to fixed dependency versions"
           # Authenticate the push with the App token only for this command (it is not stored in the checkout).
-          git -c "http.extraheader=Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push --force origin security/uv-lock
+          git -c "http.extraheader=Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push --force origin security/lockfiles
           gh label create security --color b60205 --description "Security fix" --force
           gh label create dependencies --color 0366d6 --description "Dependency update" --force
-          existing=$(gh pr list --head security/uv-lock --state open --json number --jq '.[0].number // empty')
+          existing=$(gh pr list --head security/lockfiles --state open --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh pr edit "$existing" --body-file "$RUNNER_TEMP/pr-body.md" --add-label security --add-label dependencies
             echo "Updated PR #$existing" >> "$GITHUB_STEP_SUMMARY"
           else
-            gh pr create --base main --head security/uv-lock --title "Security: update Python dependencies" \
+            gh pr create --base main --head security/lockfiles --title "Security: update dependency lockfiles" \
               --body-file "$RUNNER_TEMP/pr-body.md" --label security --label dependencies
           fi

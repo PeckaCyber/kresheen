@@ -170,6 +170,7 @@ jobs:
       - name: Licence check (Python packages in the image, npm packages in the lock file)
         run: |
           .github/scripts/install-tool.sh syft
+          export PATH="${RUNNER_TEMP}/tools/bin:${PATH}"
           syft scan docker:kresheen:ci -q -o syft-json > "$RUNNER_TEMP/image-sbom.json"
           syft scan file:frontend/package-lock.json -q -o syft-json > "$RUNNER_TEMP/npm-sbom.json"
           python3 .github/scripts/licence_check.py "$RUNNER_TEMP/image-sbom.json" "$RUNNER_TEMP/npm-sbom.json"

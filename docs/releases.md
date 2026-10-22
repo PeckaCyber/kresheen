@@ -18,7 +18,7 @@ The chart runs the image with the same version by default.
 
 ## Verify the image
 
-The image is signed with [cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub's OIDC identity. There is no long-lived key. Check that the signature came from the release workflow of this repository:
+The image is signed with [cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub's OIDC identity. There is no long-lived key. Use cosign 3 or later: releases are signed with cosign 3, whose signature format cosign 2 does not find (it reports `no signatures found`). Check that the signature came from the release workflow of this repository:
 
 ```bash
 cosign verify ghcr.io/peckacyber/kresheen:X.Y.Z \

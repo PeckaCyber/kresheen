@@ -131,6 +131,25 @@ jobs:
         if: failure()
         run: cat server.log
 
+  # Static checks of what delivers and runs the app: GitHub workflows (actionlint with shellcheck, zizmor), the
+  # Dockerfile (hadolint) and the Helm chart (kube-linter). Accepted exceptions are annotated where they occur.
+  config-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install scanners
+        run: for tool in actionlint zizmor hadolint kube-linter; do .github/scripts/install-tool.sh "$tool"; done
+      - name: Workflows
+        run: |
+          actionlint
+          zizmor --offline --min-severity medium .github/workflows
+      - name: Dockerfile
+        run: hadolint Dockerfile
+      - name: Helm chart
+        run: kube-linter lint deploy/helm/kresheen
+
   # Builds the image the way a release does and checks that it starts and answers /healthz.
   image:
     runs-on: ubuntu-latest
@@ -148,3 +167,10 @@ jobs:
           docker logs kresheen-ci | tail -5
           docker rm -f kresheen-ci >/dev/null
           test -n "$ok"
+      - name: Licence check (Python packages in the image, npm packages in the lock file)
+        run: |
+          .github/scripts/install-tool.sh syft
+          export PATH="${RUNNER_TEMP}/tools/bin:${PATH}"
+          syft scan docker:kresheen:ci -q -o syft-json > "$RUNNER_TEMP/image-sbom.json"
+          syft scan file:frontend/package-lock.json -q -o syft-json > "$RUNNER_TEMP/npm-sbom.json"
+          python3 .github/scripts/licence_check.py "$RUNNER_TEMP/image-sbom.json" "$RUNNER_TEMP/npm-sbom.json"

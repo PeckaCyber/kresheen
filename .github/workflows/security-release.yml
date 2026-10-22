@@ -15,6 +15,13 @@
 #      `ci` and `codeql` are green on that commit, then creates the tag `v<version>`. The tag is created as the App, so
 #      release.yml starts (a tag made with GITHUB_TOKEN would not start it).
 #
+# Superseding a tag (workflow_dispatch with supersede=<tag>, started by audit-heal.yml): a release whose run stopped
+# at the dependency audit because a new advisory appeared leaves a tag with no GitHub release. Once the lock fix is
+# on main, propose skips the Grype comparison (there is no released image for that tag), lists the advisories the
+# tag's lockfiles have and main's no longer have, and opens the release PR for the next patch version with a
+# CHANGELOG note that it carries the superseded tag's changes. Only the latest tag, and only one without a GitHub
+# release, can be superseded. Without supersede, propose stops while the latest tag has no GitHub release.
+#
 # Safety
 #   - A commit is tagged only after the required workflows are green on that exact commit.
 #   - Only a PR labelled `security-release` and opened by the App can lead to a tag. A tag that already exists is
@@ -30,6 +37,11 @@ on:
   schedule:
     - cron: "30 8 * * *"
   workflow_dispatch:
+    inputs:
+      supersede:
+        description: "Latest tag whose release was stopped by the audit (no GitHub release); release the next patch"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -90,12 +102,22 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           GH_REPO: ${{ github.repository }}
+          SUPERSEDE: ${{ inputs.supersede }}
         run: |
           git fetch --tags --force origin
           python3 .github/scripts/security_release.py plan | tee plan.txt >> "$GITHUB_OUTPUT"
           . ./plan.txt
           stop() { echo "$1"; echo "Nothing to do: $1" >> "$GITHUB_STEP_SUMMARY"; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; }
           [ -n "${latest:-}" ] || stop "no stable release tag exists yet"
+          published=true
+          gh release view "$latest" >/dev/null 2>&1 || published=false
+          if [ -n "$SUPERSEDE" ]; then
+            [ "$SUPERSEDE" = "$latest" ] || stop "$SUPERSEDE is not the latest tag ($latest)"
+            [ "$published" = false ] || stop "$latest has a GitHub release; there is nothing to supersede"
+            echo "supersede=$latest" >> "$GITHUB_OUTPUT"
+          else
+            [ "$published" = true ] || stop "$latest has no GitHub release (its release run failed or is still running)"
+          fi
           [ "$commits_since" -gt 0 ] || stop "main has no commits since $latest"
           [ "$pending" = false ] || stop "a release bump is merged and waits for its tag"
           [ "$tag_exists" = false ] || stop "v$next already exists"
@@ -103,10 +125,10 @@ jobs:
           [ "$open" = 0 ] || stop "a security-release PR is already open"
           echo "go=true" >> "$GITHUB_OUTPUT"
       - name: Install Grype
-        if: steps.plan.outputs.go == 'true'
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede == ''
         run: .github/scripts/install-tool.sh grype
       - name: Scan the released image
-        if: steps.plan.outputs.go == 'true'
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede == ''
         env:
           LATEST: ${{ steps.plan.outputs.latest }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,34 +137,54 @@ jobs:
           printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
           grype "registry:ghcr.io/peckacyber/kresheen:${LATEST#v}" --only-fixed -o json > "$RUNNER_TEMP/released.json"
       - name: Build and scan an image from main
-        if: steps.plan.outputs.go == 'true'
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede == ''
         run: |
           docker build -t kresheen:main-scan .
           grype docker:kresheen:main-scan --only-fixed -o json > "$RUNNER_TEMP/main.json"
       - name: Fixed in main?
-        id: diff
-        if: steps.plan.outputs.go == 'true'
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede == ''
         run: |
-          python3 .github/scripts/security_release.py diff "$RUNNER_TEMP/released.json" "$RUNNER_TEMP/main.json" "$RUNNER_TEMP/fixed.json" | tee -a "$GITHUB_OUTPUT"
+          python3 .github/scripts/security_release.py diff "$RUNNER_TEMP/released.json" "$RUNNER_TEMP/main.json" "$RUNNER_TEMP/fixed.json" | tee -a "$GITHUB_ENV"
           { echo "### Fixable High/Critical in the released image that main no longer has"; echo '```json'; cat "$RUNNER_TEMP/fixed.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede != ''
+        with:
+          node-version: "24"
+      - name: Advisories the superseded tag has and main no longer has
+        if: steps.plan.outputs.go == 'true' && steps.plan.outputs.supersede != ''
+        env:
+          TAG: ${{ steps.plan.outputs.supersede }}
+        run: |
+          python -m venv "$RUNNER_TEMP/audit-venv"
+          "$RUNNER_TEMP/audit-venv/bin/pip" install --quiet pip-audit==2.10.1
+          git worktree add -q "$RUNNER_TEMP/tag" "$TAG"
+          for side in tag main; do
+            dir=.; [ "$side" = tag ] && dir="$RUNNER_TEMP/tag"
+            (cd "$dir" && uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/$side-req.txt")
+            "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/$side-req.txt" -f json -o "$RUNNER_TEMP/$side-pip.json" || true
+            (cd "$dir/frontend" && npm audit --omit=dev --json > "$RUNNER_TEMP/$side-npm.json") || true
+          done
+          python3 .github/scripts/security_release.py advisories "$RUNNER_TEMP"/{tag-pip,tag-npm,main-pip,main-npm,fixed}.json | tee -a "$GITHUB_ENV"
+          { echo "### Advisories in ${TAG} that main no longer has"; echo '```json'; cat "$RUNNER_TEMP/fixed.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Required workflows green on main?
-        if: steps.plan.outputs.go == 'true' && steps.diff.outputs.count != '0'
+        if: steps.plan.outputs.go == 'true' && env.count != '' && env.count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: python3 .github/scripts/ci_green.py "$(git rev-parse HEAD)" --workflows "ci codeql" --timeout-minutes 45 --dispatch-missing
       - name: Open the release PR
-        if: steps.plan.outputs.go == 'true' && steps.diff.outputs.count != '0'
+        if: steps.plan.outputs.go == 'true' && env.count != '' && env.count != '0'
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
           GH_REPO: ${{ github.repository }}
           NEXT: ${{ steps.plan.outputs.next }}
+          SUPERSEDE: ${{ steps.plan.outputs.supersede }}
         run: |
           branch="security-release/v${NEXT}"
           git config user.name "kresheen-security[bot]"
           git config user.email "security-bot@users.noreply.github.com"
           git checkout -b "$branch"
-          python3 .github/scripts/security_release.py bump "$NEXT" "$RUNNER_TEMP/fixed.json" "$(date -u +%F)"
+          python3 .github/scripts/security_release.py bump "$NEXT" "$RUNNER_TEMP/fixed.json" "$(date -u +%F)" "$SUPERSEDE"
           uv lock --check
           python3 .github/scripts/release_meta.py check "v${NEXT}"
           git add pyproject.toml uv.lock deploy/helm/kresheen/Chart.yaml CHANGELOG.md
@@ -150,9 +192,13 @@ jobs:
           git -c "http.extraheader=Authorization: Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin "$branch"
           for l in security-release:b60205 security:b60205; do gh label create "${l%%:*}" --color "${l##*:}" --force; done
           {
-            echo "Fixable High and Critical vulnerabilities in the released image that main no longer has:"
+            if [ -n "$SUPERSEDE" ]; then
+              echo "${SUPERSEDE} was tagged but its release stopped at the dependency audit. Advisories it has that main no longer has:"
+            else
+              echo "Fixable High and Critical vulnerabilities in the released image that main no longer has:"
+            fi
             echo
-            python3 -c "import json,sys; [print(f\"- {f['id']} ({f['severity']}): {f['package']} {f['installed']}, fixed in {', '.join(f['fixed_in'])}\") for f in json.load(open(sys.argv[1]))]" "$RUNNER_TEMP/fixed.json"
+            python3 -c "import json,sys; [print(f\"- {f['id']} ({f.get('severity') or 'n/a'}): {f['package']} {f['installed']}\" + (f\", fixed in {', '.join(f['fixed_in'])}\" if f['fixed_in'] else '')) for f in json.load(open(sys.argv[1]))]" "$RUNNER_TEMP/fixed.json"
             echo
             echo "Merging this PR (after the required checks) tags v${NEXT}, and release.yml then publishes the image, the PyPI package and the chart."
           } > "$RUNNER_TEMP/pr-body.md"

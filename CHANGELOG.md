@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Security
+
+- GitHub repository scans check hard links in the downloaded archive against the archive root, the way they are extracted. A hard link that pointed outside the extraction folder could pass the pre-check on Python 3.11.0 to 3.11.3, which lack tarfile's `data` filter. Scans now refuse to run on a Python without that filter.
+
 ## [1.1.0] - 2026-10-21
 
 ### Added

@@ -24,7 +24,8 @@ extraction as untrusted input: it rejects path-traversal members, absolute
 paths, symlinks escaping the extraction root, and device files *before*
 extracting anything (checked over `tar.getmembers()` up front, not
 discovered mid-extraction), on top of Python's own `filter="data"`
-extraction filter (PEP 706) where the running interpreter supports it. A
+extraction filter (PEP 706), which is required: an interpreter without it
+refuses to extract. A
 download-size cap and an extracted-size cap (checked from member sizes
 before extracting) guard against an oversized or bomb-like archive.
 
@@ -213,9 +214,15 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
     (path traversal, absolute paths, symlinks escaping the extraction root,
     device files, total extracted size), then extracts using Python's own
     `filter="data"` security filter (PEP 706) as a second, independent
-    layer wherever the running interpreter supports it
-    (`hasattr(tarfile, "data_filter")` is the interpreter's own recommended
-    feature-detection check, not a version-number guess)."""
+    layer. The filter is required, not best effort: Python 3.11 before
+    3.11.4 lacks it (`hasattr(tarfile, "data_filter")` is the interpreter's
+    own recommended feature-detection check), and such an interpreter
+    refuses to extract rather than rely on the pre-check alone."""
+    if not hasattr(tarfile, "data_filter"):
+        raise ValueError(
+            "This Python lacks tarfile's 'data' extraction filter (added in 3.11.4); "
+            "upgrade Python to scan GitHub repositories."
+        )
     extract_root = Path(extract_dir).resolve()
     with tarfile.open(tarball_path, mode="r:gz") as tar:
         members: list[tarfile.TarInfo] = []
@@ -242,18 +249,18 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
                     raise ValueError(
                         f"Refusing to extract symlink with an absolute target: {member.name} -> {link_name}"
                     )
-                link_target = (target.parent / link_name).resolve()
+                # tarfile resolves a symlink against the member's own directory but a hard link against the
+                # archive root, so check each the way it will be extracted.
+                link_base = extract_root if member.islnk() else target.parent
+                link_target = (link_base / link_name).resolve()
                 try:
                     link_target.relative_to(extract_root)
                 except ValueError:
                     raise ValueError(
-                        f"Refusing to extract symlink escaping the archive root: {member.name} -> {link_name}"
+                        f"Refusing to extract link escaping the archive root: {member.name} -> {link_name}"
                     ) from None
 
-        extract_kwargs: dict = {}
-        if hasattr(tarfile, "data_filter"):
-            extract_kwargs["filter"] = "data"
-        tar.extractall(path=extract_dir, members=members, **extract_kwargs)
+        tar.extractall(path=extract_dir, members=members, filter="data")
 
 
 def _find_extracted_root(extract_dir: str) -> Path:

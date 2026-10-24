@@ -15,6 +15,19 @@ updates:
         applies-to: version-updates
         update-types: [minor, patch]
 
+  # pip-audit for the CI audit job, installed from a hashed list (`.in` is the input; regenerate the `.txt` with
+  # `uv pip compile --generate-hashes --universal --python-version 3.13`).
+  - package-ecosystem: pip
+    directory: /.github/requirements
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 2
+    cooldown: {default-days: 7}
+    labels: [dependencies, python]
+    groups:
+      pip-audit:
+        applies-to: version-updates
+        patterns: ["*"]
+
   - package-ecosystem: npm
     directory: /frontend
     schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}

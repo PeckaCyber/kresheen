@@ -65,7 +65,7 @@ jobs:
       - name: Python dependencies (uv.lock, all extras)
         run: |
           python -m venv .audit-venv
-          .audit-venv/bin/pip install --quiet pip-audit==2.10.1
+          .audit-venv/bin/pip install --quiet --require-hashes -r .github/requirements/pip-audit.txt
           uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o audit-requirements.txt
           .audit-venv/bin/pip-audit --require-hashes --no-deps --disable-pip -r audit-requirements.txt
       - name: npm production dependencies

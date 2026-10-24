@@ -16,7 +16,6 @@
 #                            next patch version, which merges and tags itself after the checks. The superseded tag
 #                            stays without a GitHub release.
 #              No fixable version, a closed fix PR or a timeout fails this job, which sends the usual email.
-# ci-autofix.yml leaves audit-only failures to this workflow.
 #
 # Safety: no PR code is checked out or run (the checkout is main, for the helper script); the App token only merges
 # main into a same-repository publish/* branch; required checks still decide every merge and every tag.

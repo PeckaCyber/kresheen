@@ -2,11 +2,25 @@
 """Helpers for the security-lock job (security-nightly.yml). Reads pip-audit JSON.
 
 security_lock.py fixable <audit.json>            print one package name per line that has a fixed version available
+security_lock.py cutoffs <audit.json> <uv.lock> <min age days> <kev.json>
+                                                 print "<package> <cutoff>" per fixable package: only versions uploaded
+                                                 before the cutoff may be picked ("none" for a CISA KEV advisory)
+security_lock.py strip-options <uv.lock>         remove the exclude-newer-package table `uv lock` records
+security_lock.py npm-kev <npm-audit.json> <kev.json>
+                                                 print "yes" when an npm advisory is in CISA KEV
 security_lock.py body <before.json> <after.json>  print the pull request body (Markdown)
+
+The minimum age keeps the nightly fix from picking a version published hours ago: most malicious releases are
+found and pulled within a day or two. An advisory in CISA's Known Exploited Vulnerabilities catalog skips the wait.
 """
 
 import json
+import os
+import re
 import sys
+import tomllib
+import urllib.request
+from datetime import UTC, datetime, timedelta
 
 
 def load(path: str) -> list[dict]:
@@ -17,6 +31,84 @@ def load(path: str) -> list[dict]:
 
 def fixable(path: str) -> list[str]:
     return sorted({d["name"] for d in load(path) if any(v.get("fix_versions") for v in d["vulns"])})
+
+
+def load_kev(path: str) -> set[str]:
+    """CVE ids in the CISA KEV feed; empty (so the wait applies) when the feed could not be read."""
+    try:
+        with open(path) as f:
+            return {v["cveID"] for v in json.load(f)["vulnerabilities"]}
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"::warning::CISA KEV feed unreadable ({exc}); the minimum age applies to every package.", file=sys.stderr)
+        return set()
+
+
+def locked_upload_times(lock_path: str) -> dict[str, datetime]:
+    """Latest upload time of each package's locked files (uv records it per wheel and sdist)."""
+    with open(lock_path, "rb") as f:
+        lock = tomllib.load(f)
+    times: dict[str, datetime] = {}
+    for pkg in lock.get("package", []):
+        files = [pkg.get("sdist", {}), *pkg.get("wheels", [])]
+        stamps = [datetime.fromisoformat(x["upload-time"]) for x in files if x.get("upload-time")]
+        if stamps:
+            times[pkg["name"]] = max(stamps)
+    return times
+
+
+def cutoffs(audit: str, lock_path: str, min_age_days: int, kev_path: str) -> list[tuple[str, str]]:
+    kev = load_kev(kev_path)
+    uploaded = locked_upload_times(lock_path)
+    oldest_allowed = datetime.now(UTC) - timedelta(days=min_age_days)
+    out = []
+    for d in load(audit):
+        if not any(v.get("fix_versions") for v in d["vulns"]):
+            continue
+        ids = {i for v in d["vulns"] for i in [v["id"], *v.get("aliases", [])]}
+        if min_age_days <= 0 or ids & kev:
+            out.append((d["name"], "none"))
+            continue
+        # Never earlier than the locked version's upload: that would downgrade a package locked recently.
+        cut = max(oldest_allowed, uploaded.get(d["name"], oldest_allowed))
+        out.append((d["name"], cut.strftime("%Y-%m-%dT%H:%M:%SZ")))
+    return sorted(set(out))
+
+
+def strip_options(lock_path: str) -> None:
+    """Drop what `--exclude-newer-package` records in uv.lock, or `uv sync --locked` without the flag fails."""
+    with open(lock_path) as f:
+        text = f.read()
+    text = re.sub(r"\[options\.exclude-newer-package\]\n(?:[^\[\n].*\n)*\n?", "", text)
+    text = re.sub(r"\[options\]\n\n(?=\[|$)", "", text)
+    if "exclude-newer" in text:
+        raise SystemExit(f"{lock_path} still records an exclude-newer option; not stripping by hand")
+    with open(lock_path, "w") as f:
+        f.write(text)
+
+
+def npm_kev(audit_path: str, kev_path: str) -> bool:
+    kev = load_kev(kev_path)
+    with open(audit_path) as f:
+        report = json.load(f)
+    ghsas = {
+        m.group(0)
+        for v in report.get("vulnerabilities", {}).values()
+        for via in v.get("via", [])
+        if isinstance(via, dict) and (m := re.search(r"GHSA(-[0-9a-z]{4}){3}", via.get("url", "")))
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    headers = {"Accept": "application/vnd.github+json", **({"Authorization": f"Bearer {token}"} if token else {})}
+    for ghsa in sorted(ghsas):
+        req = urllib.request.Request(f"https://api.github.com/advisories/{ghsa}", headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                cve = json.load(r).get("cve_id")
+        except (OSError, ValueError) as exc:
+            print(f"::warning::could not look up {ghsa} ({exc})", file=sys.stderr)
+            continue
+        if cve in kev:
+            return True
+    return False
 
 
 def clean(text: str, limit: int = 200) -> str:
@@ -62,6 +154,13 @@ if __name__ == "__main__":
         # No output at all when nothing is fixable: the workflow tests the file for emptiness.
         for name in fixable(sys.argv[2]):
             print(name)
+    elif cmd == "cutoffs" and len(sys.argv) == 6:
+        for name, cut in cutoffs(sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]):
+            print(name, cut)
+    elif cmd == "strip-options" and len(sys.argv) == 3:
+        strip_options(sys.argv[2])
+    elif cmd == "npm-kev" and len(sys.argv) == 4:
+        print("yes" if npm_kev(sys.argv[2], sys.argv[3]) else "no")
     elif cmd == "body" and len(sys.argv) == 4:
         sys.stdout.write(body(sys.argv[2], sys.argv[3]))
     else:

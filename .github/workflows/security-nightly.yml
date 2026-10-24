@@ -4,7 +4,10 @@
 #                from main (fixable High and Critical fail). A failure sends the usual failed-workflow email.
 # security-lock  If pip-audit finds vulnerable Python packages that have a fixed version, run `uv lock
 #                --upgrade-package` for each; if npm audit reports production advisories at high or above, run
-#                `npm audit fix --package-lock-only` (no major upgrades). Both lockfiles go in one PR,
+#                `npm audit fix --package-lock-only` (no major upgrades). Only fixed versions published at least
+#                MIN_AGE_DAYS (3) ago are used, so a malicious release has time to be found and pulled first; an
+#                advisory in CISA's Known Exploited Vulnerabilities catalog skips the wait. A fix that is too new is
+#                picked up by a later night. Both lockfiles go in one PR,
 #                `security/lockfiles`, opened or updated as the GitHub App so CI runs on it (a PR made with
 #                GITHUB_TOKEN would not start CI); separate PRs would each fail the other's audit. audit-heal.yml
 #                starts this workflow by hand when an audit stops a publish PR or a release. Skipped until the App is
@@ -19,6 +22,10 @@ on:
         description: "security-lock: update the lock and show the diff, but push nothing"
         type: boolean
         default: false
+      min_age_days:
+        description: "security-lock: only use fixed versions published at least this many days ago (0 = no wait)"
+        type: string
+        default: "3"
 
 permissions:
   contents: read
@@ -85,6 +92,9 @@ jobs:
     if: ${{ vars.SECURITY_APP_ID != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      MIN_AGE_DAYS: ${{ inputs.min_age_days || '3' }}
+      KEV_URL: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
     steps:
       - id: app
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -110,15 +120,19 @@ jobs:
       - name: Find fixable vulnerabilities
         id: find
         run: |
+          case "$MIN_AGE_DAYS" in ''|*[!0-9]*) echo "::error::min_age_days must be a whole number"; exit 1 ;; esac
+          # An unreadable feed leaves the wait in place for every package (security_lock.py warns).
+          curl -fsS --retry 3 --max-time 60 -o "$RUNNER_TEMP/kev.json" "$KEV_URL" || echo "::warning::could not download the CISA KEV feed"
           python -m venv "$RUNNER_TEMP/audit-venv"
           "$RUNNER_TEMP/audit-venv/bin/pip" install --quiet pip-audit==2.10.1
           uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/requirements.txt"
           # pip-audit exits 1 when it finds vulnerabilities; that is expected here.
           "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements.txt" -f json -o "$RUNNER_TEMP/before.json" || true
-          python .github/scripts/security_lock.py fixable "$RUNNER_TEMP/before.json" > "$RUNNER_TEMP/fixable.txt"
+          python .github/scripts/security_lock.py cutoffs "$RUNNER_TEMP/before.json" uv.lock "$MIN_AGE_DAYS" "$RUNNER_TEMP/kev.json" > "$RUNNER_TEMP/fixable.txt"
           if [ -s "$RUNNER_TEMP/fixable.txt" ]; then
             echo "has_fixes=true" >> "$GITHUB_OUTPUT"
-            { echo "Packages with a fixed version available:"; sed 's/^/- /' "$RUNNER_TEMP/fixable.txt"; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "Packages with a fixed version available (only versions uploaded before the cutoff are used; none = CISA KEV or no wait):"
+              sed 's/^\([^ ]*\) \(.*\)$/- \1: cutoff \2/' "$RUNNER_TEMP/fixable.txt"; } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "No Python vulnerabilities with an available fix." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -127,10 +141,16 @@ jobs:
         if: steps.find.outputs.has_fixes == 'true'
         run: |
           args=()
-          while read -r pkg; do if [ -n "$pkg" ]; then args+=(--upgrade-package "$pkg"); fi; done < "$RUNNER_TEMP/fixable.txt"
+          while read -r pkg cut; do
+            if [ -z "$pkg" ]; then continue; fi
+            args+=(--upgrade-package "$pkg")
+            if [ "$cut" != none ]; then args+=(--exclude-newer-package "$pkg=$cut"); fi
+          done < "$RUNNER_TEMP/fixable.txt"
           uv lock "${args[@]}"
+          # uv records the cutoffs in uv.lock; drop them so `uv sync --locked` without the flags still accepts the lock.
+          python .github/scripts/security_lock.py strip-options uv.lock
           if git diff --quiet -- uv.lock; then
-            echo "uv.lock unchanged (the fixed versions are blocked by pyproject constraints)." >> "$GITHUB_STEP_SUMMARY"
+            echo "uv.lock unchanged (the fixed versions are newer than ${MIN_AGE_DAYS} days or blocked by pyproject constraints)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           uv lock --check
@@ -138,10 +158,14 @@ jobs:
           uv export --frozen --all-extras --no-emit-project --format requirements-txt --no-header -o "$RUNNER_TEMP/requirements-after.txt"
           "$RUNNER_TEMP/audit-venv/bin/pip-audit" --require-hashes --no-deps --disable-pip -r "$RUNNER_TEMP/requirements-after.txt" -f json -o "$RUNNER_TEMP/after.json" || true
           python .github/scripts/security_lock.py body "$RUNNER_TEMP/before.json" "$RUNNER_TEMP/after.json" > "$RUNNER_TEMP/pr-body.md"
+          { echo; echo "Upload cutoffs used (minimum age ${MIN_AGE_DAYS} days; none = CISA KEV or no wait):"
+            sed 's/^\([^ ]*\) \(.*\)$/- \1: \2/' "$RUNNER_TEMP/fixable.txt"; } >> "$RUNNER_TEMP/pr-body.md"
           { echo '```diff'; git diff -- uv.lock | head -200; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Update package-lock.json
         id: npm
         working-directory: frontend
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # Same scope as the CI audit: production dependencies, high and above.
           if npm audit --omit=dev --audit-level=high > "$RUNNER_TEMP/npm-before.txt"; then
@@ -152,10 +176,19 @@ jobs:
             echo "::warning::npm audit failed without a report (advisory service down?); package-lock.json left as is."
             exit 0
           fi
+          npm audit --omit=dev --json > "$RUNNER_TEMP/npm-before.json" || true
+          before=()
+          if [ "$MIN_AGE_DAYS" -gt 0 ]; then
+            if [ "$(python ../.github/scripts/security_lock.py npm-kev "$RUNNER_TEMP/npm-before.json" "$RUNNER_TEMP/kev.json")" = yes ]; then
+              echo "npm: an advisory is in CISA KEV; no minimum age." >> "$GITHUB_STEP_SUMMARY"
+            else
+              before=(--before "$(date -u -d "${MIN_AGE_DAYS} days ago" +%Y-%m-%dT%H:%M:%SZ)")
+            fi
+          fi
           # Lockfile only: no install scripts run, and no major upgrades (no --force).
-          npm audit fix --package-lock-only --ignore-scripts || true
+          npm audit fix --package-lock-only --ignore-scripts "${before[@]}" || true
           if git diff --quiet -- package-lock.json; then
-            echo "package-lock.json unchanged (no fix within the allowed ranges)." >> "$GITHUB_STEP_SUMMARY"
+            echo "package-lock.json unchanged (no fix within the allowed ranges, or the fix is newer than ${MIN_AGE_DAYS} days)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -164,7 +197,7 @@ jobs:
             echo
             echo "### npm (production dependencies, high and above)"
             echo
-            echo "Updated \`frontend/package-lock.json\` with \`npm audit fix --package-lock-only\` (no major upgrades)."
+            echo "Updated \`frontend/package-lock.json\` with \`npm audit fix --package-lock-only ${before[*]}\` (no major upgrades)."
             echo
             echo "Before:"; echo '```'; head -60 "$RUNNER_TEMP/npm-before.txt"; echo '```'
             echo "After:"; echo '```'; head -60 "$RUNNER_TEMP/npm-after.txt"; echo '```'

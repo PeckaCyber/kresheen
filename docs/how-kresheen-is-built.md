@@ -10,7 +10,7 @@ No AI-written code is merged without the maintainer. An automated AI review comm
 
 ## What every pull request must pass
 
-`main` is protected: changes arrive only through pull requests, and these checks must pass before a merge.
+`main` is protected: changes arrive only through pull requests, and these checks must pass before a merge. The protection applies to administrators too.
 
 - `tests`: backend and frontend unit and integration tests, type checks and linting.
 - `e2e`: browser tests against a real server.
@@ -42,6 +42,7 @@ AI is used to help write Kresheen and to review it, so the repository has guardr
 ## Releases
 
 - Releases are built by a GitHub Actions workflow from a tag on `main`. Nothing is built or uploaded by hand.
+- Releases are immutable: once published, the tag cannot move and the assets cannot change. Only the maintainer and the project's security App may create release tags.
 - The container image and Helm chart are signed with cosign (keyless), the image carries an SPDX SBOM attestation and GitHub build provenance, and the Python package is published to PyPI through a trusted publisher with attestations.
 - The notes of every GitHub release start with a provenance block: who started the release (the maintainer, or the automatic security patch with the advisories it fixes), the commit, and every commit since the previous release, flagging any that did not come through a pull request. The maintainer is notified of every release and checks it against this block.
 - When a dependency fix reaches `main`, a patch release is prepared and published automatically after the same checks.

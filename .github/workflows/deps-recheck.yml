@@ -1,0 +1,48 @@
+# Re-runs the new-package check on dependency bot PRs that are only waiting for the soak. config-scan fails a PR whose
+# lockfile gains a package at a version under 3 days old ("NEW-DEPS: wait only" in its log); once the version is old
+# enough the same check passes, and auto-merge (dependabot-automerge.yml) finishes the PR. Only PRs opened by
+# Dependabot or the security bot, only when config-scan is the sole failed job and its log says wait only. A young
+# project or a registry failure is never re-run: that needs a person. No PR code is checked out and no PR text is used.
+name: deps-recheck
+on:
+  schedule:
+    - cron: "20 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: write # re-run the failed job
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
+    steps:
+      - name: Re-run soak-only failures
+        run: |
+          gh api "repos/${GH_REPO}/pulls?state=open&per_page=100" \
+            --jq ".[] | select(.user.login == \"dependabot[bot]\" or (env.BOT_LOGIN != \"\" and .user.login == env.BOT_LOGIN)) | \"\(.number) \(.head.sha)\"" |
+          while read -r pr sha; do
+            run=$(gh api "repos/${GH_REPO}/actions/runs?head_sha=${sha}&per_page=50" \
+              --jq '[.workflow_runs[] | select(.name == "ci")] | sort_by(.created_at) | last | select(.conclusion == "failure") | .id')
+            [ -n "$run" ] || continue
+            failed=$(gh api "repos/${GH_REPO}/actions/runs/${run}/jobs?filter=latest&per_page=100" \
+              --jq '[.jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out" or .conclusion == "cancelled")] | map("\(.name) \(.id)") | join(",")')
+            case "$failed" in
+              *,*) echo "PR #${pr}: more than one job failed (${failed}); left alone"; continue ;;
+              "config-scan "*[0-9]) job=${failed#config-scan } ;;
+              *) echo "PR #${pr}: not a soak-only failure (${failed:-none}); left alone"; continue ;;
+            esac
+            if gh run view "$run" --job "$job" --log | grep -q "NEW-DEPS: wait only"; then
+              echo "PR #${pr}: soak-only failure in run ${run}; re-running config-scan"
+              gh run rerun "$run" --failed
+            else
+              echo "PR #${pr}: config-scan failed for another reason; left alone"
+            fi
+          done

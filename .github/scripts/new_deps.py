@@ -9,6 +9,10 @@ lockfile must be a project at least MIN_PROJECT_DAYS old on its registry, at a v
 MIN_VERSION_DAYS ago. Version updates of packages already locked are not checked here: Dependabot waits 7 days and
 the nightly security fix 3. A deliberate exception goes in .github/new-dependency-allow.txt, one `pypi:<name>` or
 `npm:<name>` per line with a comment saying why.
+
+Exit 0: nothing to hold back. Exit 2: only versions still inside the soak (the projects are established); the line
+"NEW-DEPS: wait only" is printed and deps-recheck.yml re-runs the check on bot PRs once the soak is over. Exit 1:
+needs a person (a young project, or the registry could not be checked).
 """
 
 from __future__ import annotations
@@ -109,7 +113,7 @@ def main(base: str) -> int:
         print("No packages new to the lockfiles.")
         return 0
     now = datetime.now(UTC)
-    problems = []
+    problems, waiting = [], []
     for ecosystem, name, version in added:
         label = f"{ecosystem}:{name}"
         try:
@@ -119,11 +123,24 @@ def main(base: str) -> int:
             continue
         project_days, version_days = (now - created).days, (now - published).days
         line = f"{label} {version}: project {project_days} days old, version {version_days} days old"
-        young = now - created < timedelta(days=MIN_PROJECT_DAYS) or now - published < timedelta(days=MIN_VERSION_DAYS)
-        if young and label not in allowed:
+        young_project = now - created < timedelta(days=MIN_PROJECT_DAYS)
+        young_version = now - published < timedelta(days=MIN_VERSION_DAYS)
+        if label in allowed or not (young_project or young_version):
+            status = "ALLOWED " if (young_project or young_version) else "ok      "
+        elif young_project:
             problems.append(line)
-        print(("ok      " if not young else "ALLOWED " if label in allowed else "TOO NEW ") + line)
+            status = "TOO NEW "
+        else:
+            waiting.append(f"{line} (passes after {(published + timedelta(days=MIN_VERSION_DAYS)):%Y-%m-%d %H:%M} UTC)")
+            status = "WAIT    "
+        print(status + line)
+    if waiting and not problems:
+        print("\nNEW-DEPS: wait only. These versions are inside the soak; the check passes once they are older:")
+        for entry in waiting:
+            print(f"  {entry}")
+        return 2
     if problems:
+        problems += [f"{entry} [soak]" for entry in waiting]
         print(f"\nNew packages younger than {MIN_PROJECT_DAYS} days (project) or {MIN_VERSION_DAYS} days (version):")
         for problem in problems:
             print(f"  {problem}")

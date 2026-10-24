@@ -20,6 +20,7 @@ Kresheen is an open-source threat modeling and security analysis platform by Pec
 | [Security guide](security.md) | Hardening for operators: TLS, secrets, limits, audit, backups |
 | [Upgrading](upgrading.md) | Backups, automatic migrations and what happens on upgrade |
 | [Releases](releases.md) | How releases are made, and how to verify the image, SBOM and provenance |
+| [How Kresheen is built](how-kresheen-is-built.md) | Who reviews changes, the checks every change passes, dependency and release safeguards |
 | [CLI reference](cli-reference.md) | Every `kresheen` command |
 
 ## Contribute

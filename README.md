@@ -90,6 +90,7 @@ For anything that should not be public, email **support@peckacyber.com**:
 - [CLI reference](docs/cli-reference.md)
 - [Upgrading](docs/upgrading.md)
 - [Releases](docs/releases.md): how releases are made and how to verify them
+- [How Kresheen is built](docs/how-kresheen-is-built.md): reviews, checks, dependency and release safeguards
 - [Security guide for operators](docs/security.md)
 - [AI assist](docs/ai.md)
 - [Architecture](docs/architecture.md)

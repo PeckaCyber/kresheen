@@ -46,6 +46,8 @@ npx tsc -b --noEmit
 npm test
 ```
 
+New features and bug fixes come with tests: a fix adds a test that fails without it. Every pull request must pass the full suite, which runs as required checks in CI.
+
 End-to-end tests use Playwright. Follow the setup steps in [frontend/e2e/README.md](frontend/e2e/README.md) before you run them.
 
 ## Database changes

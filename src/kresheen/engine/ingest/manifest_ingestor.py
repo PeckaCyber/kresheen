@@ -35,6 +35,12 @@ def _detect_format(content: str) -> str:
     return "k8s_manifest"
 
 
+_BAD_PLAN = (
+    "The Terraform plan has an unexpected structure, so it could not be read. Upload the output of "
+    "`terraform show -json <planfile>` unchanged."
+)
+
+
 class ManifestUploadIngestor(SourceIngestor):
     source_type: ClassVar[str] = "manifest_upload"
 
@@ -44,14 +50,17 @@ class ManifestUploadIngestor(SourceIngestor):
     def parse(self, raw: str) -> list[dict]:
         fmt = _detect_format(raw)
         if fmt == "terraform_plan":
-            plan = json.loads(raw)
-            refs_by_address = config_refs_of(plan)
-            return [
-                {"_format": fmt, "_config_refs": refs_by_address, **change}
-                for change in plan.get("resource_changes", [])
-                # "delete" actions have no `after` to build a fact from.
-                if "delete" not in change.get("change", {}).get("actions", [])
-            ]
+            try:
+                plan = json.loads(raw)
+                refs_by_address = config_refs_of(plan)
+                return [
+                    {"_format": fmt, "_config_refs": refs_by_address, **change}
+                    for change in plan.get("resource_changes", [])
+                    # "delete" actions have no `after` to build a fact from.
+                    if "delete" not in change.get("change", {}).get("actions", [])
+                ]
+            except (AttributeError, TypeError, KeyError, RecursionError) as exc:
+                raise ValueError(_BAD_PLAN) from exc
         check_yaml_aliases(raw)
         return [
             {"_format": fmt, **doc}
@@ -71,7 +80,10 @@ class ManifestUploadIngestor(SourceIngestor):
     def _normalize_terraform(
         self, records: list[dict], *, run_id: str, application_id: str
     ) -> tuple[list[FactNode], list[FactEdge]]:
-        return build_terraform_facts(records, run_id=run_id, application_id=application_id)
+        try:
+            return build_terraform_facts(records, run_id=run_id, application_id=application_id)
+        except (AttributeError, TypeError, KeyError) as exc:
+            raise ValueError(_BAD_PLAN) from exc
 
     def _normalize_k8s(
         self, records: list[dict], *, run_id: str, application_id: str

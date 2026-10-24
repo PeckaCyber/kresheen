@@ -67,7 +67,7 @@ import requests
 import yaml
 
 from kresheen.engine.ingest.base import SourceIngestor
-from kresheen.engine.ingest.k8s_facts import build_k8s_facts, is_manifest_record
+from kresheen.engine.ingest.k8s_facts import build_k8s_facts, is_manifest_record, record_is_readable
 from kresheen.models.facts import FactEdge, FactNode, new_fact_edge_id, new_fact_node_id
 
 logger = logging.getLogger(__name__)
@@ -226,6 +226,7 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
     extract_root = Path(extract_dir).resolve()
     with tarfile.open(tarball_path, mode="r:gz") as tar:
         members: list[tarfile.TarInfo] = []
+        seen_names: set[str] = set()
         total_size = 0
         for member in tar:  # lazily: stop at the cap instead of loading every entry first
             members.append(member)
@@ -259,6 +260,11 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
                     raise ValueError(
                         f"Refusing to extract link escaping the archive root: {member.name} -> {link_name}"
                     ) from None
+                # tarfile copies a hard link from an earlier member; one that names no earlier member would
+                # stop extraction with a KeyError, so refuse it as the malformed archive it is.
+                if member.islnk() and os.path.normpath(link_name) not in seen_names:
+                    raise ValueError(f"Refusing to extract hard link to a missing file: {member.name} -> {link_name}")
+            seen_names.add(os.path.normpath(member.name))
 
         tar.extractall(path=extract_dir, members=members, filter="data")
 
@@ -341,8 +347,13 @@ def _collect_k8s_records(root: Path) -> tuple[list[dict], dict[str, int]]:
         except yaml.YAMLError:
             stats["unparseable_skipped"] += 1
             continue
+        manifests = [doc for doc in documents if is_manifest_record(doc)]
+        readable = [doc for doc in manifests if record_is_readable(doc)]
+        if len(readable) < len(manifests):  # a field of the wrong type: skip the file, as for any unparseable one
+            stats["unparseable_skipped"] += 1
+            continue
         stats["files_parsed"] += 1
-        records.extend(doc for doc in documents if is_manifest_record(doc))
+        records.extend(readable)
     return records[:_MAX_MANIFEST_RECORDS], stats
 
 

@@ -83,6 +83,10 @@ evidence for an admin user.)"""
 _SENSITIVE_MASK = "<redacted>"
 _WORLD_CIDRS = ("0.0.0.0/0", "::/0")
 _MAX_CONFIG_DEPTH = 6
+# Redaction walks much deeper than the config the engine reads, so a value Terraform marks sensitive is never kept
+# because it sits deep. Anything below this is replaced as a whole.
+_MAX_REDACT_DEPTH = 64
+_TOO_DEEP = "<omitted: nested too deep>"
 _ADDRESS_INDEX = re.compile(r"\[[^\]]*\]$")
 
 
@@ -95,8 +99,8 @@ def _redact_tree(value: Any, mask: Any, key: str = "", depth: int = 0) -> Any:
     `after_sensitive` (same shape; True marks a sensitive leaf or subtree)."""
     if mask is True:
         return _SENSITIVE_MASK
-    if depth > _MAX_CONFIG_DEPTH:
-        return value
+    if depth > _MAX_REDACT_DEPTH:
+        return _SENSITIVE_MASK if mask else _TOO_DEEP
     if isinstance(value, dict):
         sub = mask if isinstance(mask, dict) else {}
         return {k: _redact_tree(v, sub.get(k), k, depth + 1) for k, v in value.items()}

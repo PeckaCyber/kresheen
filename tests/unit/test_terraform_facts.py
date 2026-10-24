@@ -8,6 +8,8 @@ from __future__ import annotations
 import base64
 import json
 
+import pytest
+
 from kresheen.engine.ingest.manifest_ingestor import ManifestUploadIngestor
 from kresheen.engine.threats.config_rules import FactContext
 from kresheen.engine.threats.config_rules_aws import AWS_CONFIG_RULES
@@ -62,6 +64,23 @@ def test_sensitive_values_and_credential_named_keys_are_redacted_before_storage(
     assert attrs["config"]["username"] == "<redacted>"  # marked sensitive by Terraform
     assert attrs["config"]["password"] == "<redacted>"  # credential-named key
     assert attrs["engine"] == "postgres"
+
+
+def test_sensitive_value_nested_deep_is_still_redacted():
+    # Found by tests/fuzz: redaction stopped at depth 6 and kept anything deeper as it was.
+    after: dict = {"secret": "deep-secret-value"}
+    mask: dict | bool = {"secret": True}
+    for _ in range(9):
+        after, mask = {"name": after}, {"name": mask}
+    nodes, _edges, _ = _facts(_r("aws_instance", "web", after, after_sensitive=mask))
+    assert "deep-secret-value" not in repr([n.attributes for n in nodes])
+
+
+def test_plan_with_wrong_types_is_refused_with_a_clear_error():
+    ingestor = ManifestUploadIngestor()
+    plan = json.dumps({"resource_changes": [{"type": "aws_instance", "change": {"actions": ["create"], "after": [1]}}]})
+    with pytest.raises(ValueError, match="unexpected structure"):
+        ingestor.normalize(ingestor.parse(plan), run_id="R", application_id="A")
 
 
 def test_user_data_is_decoded_redacted_and_flagged_without_storing_the_secret():

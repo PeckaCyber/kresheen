@@ -13,7 +13,7 @@ ARG RUNTIME_IMAGE=runtime-default
 # python:3.13-slim-trixie
 FROM python:3.13-slim-trixie@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f AS builder-default
 # gcr.io/distroless/python3-debian13:nonroot (Python 3.13.5)
-FROM gcr.io/distroless/python3-debian13:nonroot@sha256:ed91505d162119a1e46552bc7f471c77737729a525269a7e9b60646807564601 AS runtime-default
+FROM gcr.io/distroless/python3-debian13:nonroot@sha256:64e54c4b1200da244d80181d98e86fc01d73c8101f107d5baf472152d8e119a2 AS runtime-default
 
 # Node build image, pinned by tag and digest. Runs on the build host's platform (the built files are the same for every architecture).
 FROM --platform=$BUILDPLATFORM node:24-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS frontend-builder
@@ -24,7 +24,7 @@ COPY frontend ./
 RUN npm run build
 
 # Official uv image, pinned by tag and digest. Only used to export uv.lock; it never reaches the runtime.
-FROM ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b AS uv
+FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
 
 FROM ${BUILDER_IMAGE} AS builder
 WORKDIR /build

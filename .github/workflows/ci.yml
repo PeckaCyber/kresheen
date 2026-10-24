@@ -25,17 +25,26 @@ jobs:
         with:
           version: "0.13.4"
           enable-cache: false
+      - name: Backend (from uv.lock)
+        # -n auto: one pytest-xdist worker per runner CPU.
+        run: |
+          uv sync --locked --extra dev
+          .venv/bin/python -m ruff check .
+          .venv/bin/python -m mypy src/kresheen
+          .venv/bin/python -m pytest -q -p no:cacheprovider -n auto
+
+  # Separate from `tests` so it runs alongside the backend instead of after it.
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Backend (from uv.lock)
-        run: |
-          uv sync --locked --extra dev
-          .venv/bin/python -m ruff check .
-          .venv/bin/python -m mypy src/kresheen
-          .venv/bin/python -m pytest -q -p no:cacheprovider
       - name: Frontend
         working-directory: frontend
         run: |

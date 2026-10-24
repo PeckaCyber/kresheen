@@ -18,6 +18,8 @@ The chart runs the image with the same version by default.
 
 The provenance block at the top of the release notes says who started the release (the maintainer's tag push, or the automatic security patch with the advisories it fixes), the commit, and every commit since the previous release, flagging any that did not come through a pull request.
 
+Releases are immutable: once published, the tag cannot move and the assets cannot change. Only the maintainer and the project's security App may create release tags.
+
 ## Verify the image
 
 The image is signed with [cosign](https://docs.sigstore.dev/cosign/overview/) using GitHub's OIDC identity. There is no long-lived key. Use cosign 3 or later: releases are signed with cosign 3, whose signature format cosign 2 does not find (it reports `no signatures found`). Check that the signature came from the release workflow of this repository:

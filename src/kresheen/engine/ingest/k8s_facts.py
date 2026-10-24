@@ -115,6 +115,41 @@ def _meta(record: dict) -> dict:
     return record.get("metadata") or {}
 
 
+_READ_ERRORS = (AttributeError, TypeError, KeyError, ValueError)
+
+
+def _label(record: dict) -> str:
+    """Kind/name for an error message, safe on any shape."""
+    meta = record.get("metadata")
+    name = meta.get("name") if isinstance(meta, dict) else None
+    return f"{record.get('kind')}/{name if isinstance(name, str) else '?'}"
+
+
+def _record_node_fields(record: dict) -> tuple[str, str, dict[str, Any]]:
+    """(node type, name, attributes) of one record. Raises one of _READ_ERRORS on a field of the wrong type."""
+    kind = record["kind"]
+    if not isinstance(kind, str):
+        raise TypeError("kind is not a string")
+    node_type = _node_type(kind)
+    if node_type == "process":
+        attrs = _workload_attributes(record)
+    elif node_type == "data_store":
+        attrs = _store_attributes(record)
+    else:
+        attrs = _metadata_attributes(record)
+    return node_type, f"{kind}/{_name(record)}", attrs
+
+
+def record_is_readable(record: dict) -> bool:
+    """False for a manifest with a field of an unexpected type (a list where a mapping belongs, and so on), which
+    the fact builder cannot read. The repository path skips such a file instead of failing the whole run."""
+    try:
+        _record_node_fields(record)
+    except _READ_ERRORS:
+        return False
+    return True
+
+
 def _name(record: dict) -> str:
     return str(_meta(record).get("name", "unknown"))
 
@@ -133,6 +168,11 @@ def pod_spec_of(record: dict) -> dict:
         spec = ((spec.get("jobTemplate") or {}).get("spec")) or {}
     template = spec.get("template")
     return (template.get("spec") or {}) if isinstance(template, dict) else {}
+
+
+def _str_map(value: object) -> dict[str, str]:
+    """A label or selector map as strings; {} when the file has anything else there."""
+    return {str(k): str(v) for k, v in value.items()} if isinstance(value, dict) else {}
 
 
 def pod_labels_of(record: dict) -> dict[str, str]:
@@ -269,7 +309,7 @@ def _metadata_attributes(record: dict) -> dict[str, Any]:
         "kind": kind,
         "namespace": _namespace(record),
         "labels": _meta(record).get("labels", {}),
-        "selector": spec.get("selector", {}) if kind == "Service" else {},
+        "selector": _str_map(spec.get("selector")) if kind == "Service" else {},
         "container_images": [],
         "host_network": False,
     }
@@ -357,17 +397,16 @@ def build_k8s_facts(
     nodes: list[FactNode] = []
     record_by_node_id: dict[str, dict] = {}
     for record in records:
-        kind = record["kind"]
-        node_type = _node_type(kind)
-        if node_type == "process":
-            attrs = _workload_attributes(record)
-        elif node_type == "data_store":
-            attrs = _store_attributes(record)
-        else:
-            attrs = _metadata_attributes(record)
+        try:
+            node_type, name, attrs = _record_node_fields(record)
+        except _READ_ERRORS as exc:
+            raise ValueError(
+                f"The {_label(record)} document has a field of an unexpected type, so the manifest could not be read. "
+                "Check it with `kubectl apply --dry-run=client -f <file>`."
+            ) from exc
         node = FactNode(
             id=new_fact_node_id(), run_id=run_id, application_id=application_id, node_type=node_type,
-            name=f"{kind}/{_name(record)}", attributes=attrs, source_ref=source_ref, discovered_at=now,
+            name=name, attributes=attrs, source_ref=source_ref, discovered_at=now,
         )
         nodes.append(node)
         record_by_node_id[node.id] = record
@@ -494,7 +533,7 @@ def _configured_texts(workload: FactNode, stores: dict[tuple[str, str, str], Fac
         store = stores.get(("ConfigMap", namespace, name))
         if store:
             texts.extend(store.attributes.get("data", {}).values())
-    return texts
+    return [text for text in texts if isinstance(text, str)]  # an image or value the file left empty or non-text
 
 
 def _referenced_hosts(text: str) -> list[tuple[str, str | None, str]]:

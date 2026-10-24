@@ -492,6 +492,21 @@ def test_extract_tarball_safely_keeps_hard_link_inside_root(tmp_path):
     assert (extract_dir / "c" / "copy.txt").read_bytes() == b"inside"
 
 
+def test_extract_tarball_safely_rejects_hard_link_to_missing_member(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    # Found by tests/fuzz: tarfile raised KeyError for a hard link naming no earlier member.
+    link = tarfile.TarInfo(name="c/copy.txt")
+    link.type = tarfile.LNKTYPE
+    link.linkname = "a/b/missing.txt"
+    tarball_path = _link_tarball(tmp_path, link)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    with pytest.raises(ValueError, match="hard link to a missing file"):
+        _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+
 def test_extract_tarball_safely_refuses_without_data_filter(tmp_path, monkeypatch):
     from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
 
@@ -796,3 +811,15 @@ def test_documentation_ingestor_produces_one_reference_node_with_a_content_previ
     assert nodes[0].node_type == "reference_document"
     assert nodes[0].attributes["filename"] == "runbook.md"
     assert len(nodes[0].attributes["content"]) == 2000
+
+
+def test_repository_manifest_with_a_wrongly_typed_field_is_skipped_and_counted(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _collect_k8s_records
+
+    (tmp_path / "good.yaml").write_text("apiVersion: v1\nkind: Service\nmetadata: {name: web}\nspec: {ports: [{port: 80}]}\n")
+    (tmp_path / "bad.yaml").write_text("apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: api}\nspec: {template: {spec: {containers: 5}}}\n")
+
+    records, stats = _collect_k8s_records(tmp_path)
+
+    assert [r["metadata"]["name"] for r in records] == ["web"]
+    assert stats["unparseable_skipped"] == 1

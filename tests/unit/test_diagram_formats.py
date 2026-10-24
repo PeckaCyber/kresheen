@@ -258,3 +258,11 @@ def test_component_and_flow_caps_are_enforced_and_reported():
 
 def test_oversized_content_is_refused():
     assert parse_diagram("flowchart LR\n" + "A --> B\n" * 1_000_000) is None
+
+
+def test_threat_dragon_cells_with_wrong_types_are_ignored_not_fatal():
+    # Found by tests/fuzz: a non-string shape or type, or non-list cells, raised TypeError.
+    import json
+
+    for diagrams in ([{"cells": [{"shape": [None]}]}], [{"cells": True}], [{"cells": [{"id": "a", "data": {"type": ["x"]}}]}]):
+        parse_diagram(json.dumps({"detail": {"diagrams": diagrams}}))

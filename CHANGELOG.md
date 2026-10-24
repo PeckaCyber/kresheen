@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- A Terraform plan value marked sensitive is redacted however deeply it is nested. Values more than six levels deep were stored as they were (found by the new fuzz tests).
+- A Kubernetes manifest with a field of the wrong type (a list where a mapping belongs, and so on) is refused with a message naming the document, instead of failing the run with an internal error. In a GitHub repository such a file is skipped and counted with the other unreadable files. A malformed Terraform plan is refused the same way.
+- Service selectors are compared as text, like pod labels, so a numeric selector value such as `version: 1` matches its pods.
+- A Threat Dragon file with a non-text shape or type, or a GitHub archive with a hard link to a missing file, no longer fails the run.
+
 ### Security
 
 - The web interface builds with npm install scripts turned off (`frontend/.npmrc`), in CI and in the image. None of the Linux dependencies needs one, and install scripts are how most malicious npm packages run.

@@ -210,3 +210,13 @@ def test_port_encryption_is_conservative_about_unknowns():
     assert port_is_plaintext(None, 5432) is True
     assert port_is_plaintext("grpc", 50051) is None
     assert port_is_plaintext("ssh", 22) is None
+
+
+def test_manifest_with_a_wrongly_typed_field_is_refused_with_a_clear_error():
+    import pytest
+
+    # Found by tests/fuzz: a list where a mapping belongs crashed the run with an AttributeError.
+    ingestor = ManifestUploadIngestor()
+    raw = "apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: web}\nspec: {template: {spec: {containers: 5}}}\n"
+    with pytest.raises(ValueError, match="Deployment/web document has a field of an unexpected type"):
+        ingestor.normalize(ingestor.parse(raw), run_id="R", application_id="A")

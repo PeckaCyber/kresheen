@@ -50,15 +50,22 @@ def _cells(parsed: dict) -> list[dict]:
         found = diagram.get("cells")
         if found is None and isinstance(diagram.get("diagramJson"), dict):
             found = diagram["diagramJson"].get("cells")
-        cells.extend(c for c in found or [] if isinstance(c, dict))
+        cells.extend(c for c in (found if isinstance(found, list) else []) if isinstance(c, dict))
     return cells
+
+
+def _shape_and_type(cell: dict) -> tuple[str, str]:
+    """The cell's shape and Threat Dragon type, "" when absent or not a string (the file is untrusted)."""
+    data = _data(cell)
+    raw_shape = cell.get("shape")
+    shape = raw_shape if isinstance(raw_shape, str) else ""
+    tm_type = next((t for t in (data.get("type"), cell.get("type")) if isinstance(t, str) and t), "")
+    return shape, tm_type
 
 
 def _kind(cell: dict) -> str:
     """component | boundary | flow | ignore"""
-    data = _data(cell)
-    shape = cell.get("shape") or ""
-    tm_type = data.get("type") or cell.get("type") or ""
+    shape, tm_type = _shape_and_type(cell)
     if isinstance(cell.get("source"), (dict, str)) and isinstance(cell.get("target"), (dict, str)):
         return "flow"
     if shape in _BOUNDARY_SHAPES or tm_type in _BOUNDARY_TM:
@@ -110,8 +117,7 @@ def parse_threat_dragon(parsed: dict) -> ParsedDiagram | None:
         if _kind(cell) != "component" or not isinstance(cell.get("id"), str):
             continue
         data = _data(cell)
-        shape = cell.get("shape") or ""
-        tm_type = data.get("type") or cell.get("type") or ""
+        shape, tm_type = _shape_and_type(cell)
         # An unknown shape is still a component (this importer's original behaviour); a process is the safe guess.
         node_type = _TYPE_BY_SHAPE.get(shape) or _TYPE_BY_TM.get(tm_type) or "process"
         boundary = None

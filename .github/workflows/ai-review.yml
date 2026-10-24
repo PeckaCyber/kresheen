@@ -3,6 +3,8 @@
 # the diff and the repository with read-only tools (Read, Grep, Glob; no shell, no edits, no network) and returns a
 # structured verdict. A second job, the only one that can write, posts it as a PR comment. It is never a required
 # check: merges do not wait for it. A security concern fails the comment job on purpose, so GitHub emails the maintainer.
+# Reads are confined to the checkout (no /proc, so the environment and its token are out of reach), and the comment job
+# refuses to post anything token-shaped: the known way AI review actions leaked secrets was through their own comment.
 # It uses the maintainer's Claude subscription (CLAUDE_CODE_OAUTH_TOKEN), so it stays small: Sonnet, few turns.
 name: ai-review
 on:
@@ -86,6 +88,7 @@ jobs:
             --max-turns 12
             --allowedTools "Read,Grep,Glob"
             --disallowedTools "Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch,Task"
+            --settings '{"permissions":{"blockReadsOutsideWorkingDirectories":true,"deny":["Read(//proc/**)","Read(//sys/**)","Read(//etc/**)","Read(//run/**)","Read(//dev/**)","Read(//**/.env)"]}}'
             --json-schema '{"type":"object","additionalProperties":false,"required":["verdict","summary","findings"],"properties":{"verdict":{"type":"string","enum":["clean","concern","security_concern"]},"summary":{"type":"string"},"findings":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["file","line","severity","issue"],"properties":{"file":{"type":"string"},"line":{"type":"integer"},"severity":{"type":"string","enum":["low","medium","high"]},"issue":{"type":"string"}}}}}}'
 
   comment:
@@ -110,6 +113,11 @@ jobs:
               r = json.loads(raw)
           except ValueError:
               r = {"verdict": "error", "summary": "The review returned no structured result; see the workflow run.", "findings": []}
+          import re
+          # Anything token-shaped (Anthropic, GitHub, AWS keys, private keys, JWTs) is never posted.
+          SECRET = re.compile(r"sk-ant-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.")
+          if SECRET.search(raw):
+              r = {"verdict": "withheld", "summary": "The review output contained something that looks like a credential, so it was not posted. Check the workflow run and rotate CLAUDE_CODE_OAUTH_TOKEN if it is real.", "findings": []}
           clean = lambda s: " ".join(str(s).split()).replace("@", "(at)")[:1000]
           print(f"**Advisory AI review** (not a required check): `{clean(r.get('verdict'))}`\n")
           print(clean(r.get("summary", "")) + "\n")
@@ -120,7 +128,7 @@ jobs:
           PY
           gh pr comment "$PR" --body-file comment.md
           cat comment.md >> "$GITHUB_STEP_SUMMARY"
-          if [ "$(cat verdict.txt)" = security_concern ]; then
-            echo "::error::The AI review flagged a possible security problem; see the PR comment."
-            exit 1
-          fi
+          case "$(cat verdict.txt)" in
+            security_concern) echo "::error::The AI review flagged a possible security problem; see the PR comment."; exit 1 ;;
+            withheld) echo "::error::The AI review output looked like it held a credential and was not posted."; exit 1 ;;
+          esac

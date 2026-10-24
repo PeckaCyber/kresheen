@@ -12,7 +12,8 @@ No AI-written code is merged without the maintainer. An automated AI review comm
 
 `main` is protected: changes arrive only through pull requests, and these checks must pass before a merge. The protection applies to administrators too.
 
-- `tests`: backend and frontend unit and integration tests, type checks and linting.
+- `tests`: backend unit and integration tests, type checks and linting.
+- `frontend`: frontend type checks, unit tests and production build.
 - `e2e`: browser tests against a real server.
 - `audit`: known vulnerabilities in Python and npm dependencies (pip-audit, npm audit).
 - `secrets`: gitleaks over the full history, and a check that rejects invisible and direction-changing Unicode characters ("Trojan Source").

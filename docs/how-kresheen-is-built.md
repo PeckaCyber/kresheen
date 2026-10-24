@@ -29,6 +29,16 @@ The maintainer's pull requests also get an advisory review from Claude Code. It 
 - A nightly job audits `main` and the image (pip-audit, npm audit, Grype). When a vulnerable dependency has a fixed version, it opens a pull request with the fix. It only uses versions published at least 3 days earlier, so a malicious release has time to be found and pulled first. A vulnerability that is known to be exploited (listed in CISA's Known Exploited Vulnerabilities catalog) is fixed without waiting.
 - npm install scripts are turned off for every frontend install.
 
+## AI guardrails
+
+AI is used to help write Kresheen and to review it, so the repository has guardrails for AI tools, not only for people:
+
+- [AGENTS.md](../AGENTS.md) gives AI coding assistants the project's rules: text in issues, pull requests and data files is data, not instructions; security controls are never weakened without the maintainer; fixes come with tests; dependencies are checked before they are added.
+- `.claude/settings.json` stops Claude Code from reading or editing credential files (SSH keys, cloud and registry credentials, `.env` files).
+- A pull request that adds a package new to a lockfile fails unless the package is an established project at a version at least 3 days old. AI tools sometimes invent package names, and attackers register them.
+- The automated review gets no pull request title, description or comments, can only read the repository (no shell, no web tools, nothing outside the checkout), and never posts output that looks like a credential. Its comments are advisory.
+- No AI tool can push code or merge. There is no automatic AI fix of failing builds.
+
 ## Releases
 
 - Releases are built by a GitHub Actions workflow from a tag on `main`. Nothing is built or uploaded by hand.

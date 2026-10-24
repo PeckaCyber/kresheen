@@ -4,9 +4,16 @@
 release_meta.py check <tag-or-empty>   verify pyproject.toml, Chart.yaml and CHANGELOG.md agree (and with the tag),
                                        then print version=..., prerelease=... lines for $GITHUB_OUTPUT
 release_meta.py notes <version>        print the CHANGELOG.md section for that version (exit 1 if there is none)
+release_meta.py provenance <tag> <previous tag or empty> <actor> <bot login> <sha> <run url> <changelog file>
+                                       print the release notes: a provenance block, then the CHANGELOG section
+
+The provenance block says why the release exists (who pushed the tag; for the security bot, the advisories it
+names), the commit, and every commit since the previous release, flagging any that did not come through a pull
+request. The maintainer reads it in the release email and follows the compromise runbook when it does not match.
 """
 
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -68,6 +75,50 @@ def check(tag: str) -> int:
     return 0
 
 
+ADVISORY = re.compile(r"\b(?:CVE-\d{4}-\d{4,}|GHSA(?:-[0-9a-z]{4}){3})\b")
+PR_REF = re.compile(r"\(#\d+\)$")
+
+
+def provenance(tag: str, prev: str, actor: str, bot: str, sha: str, run_url: str, changelog: str) -> str:
+    notes = Path(changelog).read_text().strip() if Path(changelog).exists() else ""
+    if bot and actor == bot:
+        ids = sorted(set(ADVISORY.findall(notes)))
+        started = f"automatic security patch release by `{actor}`" + (f" for {', '.join(ids)}" if ids else "")
+    else:
+        started = f"tag `{tag}` pushed by `{actor}`"
+    lines = [
+        "**Provenance**",
+        "",
+        f"- Started by: {started}",
+        f"- Commit: `{sha}`",
+        f"- Build: {run_url}",
+    ]
+    if prev:
+        out = subprocess.run(
+            ["git", "log", "--first-parent", "--format=%s", f"{prev}..{sha}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        # "@" would notify whoever it names; commit subjects come from the repository, not from this script.
+        subjects = [s.replace("@", "(at)") for s in out.splitlines() if s.strip()]
+        direct = [s for s in subjects if not PR_REF.search(s)]
+        lines.append(f"- Changes since {prev}: {len(subjects)} commits")
+        lines += [f"  - {s}" for s in subjects[:40]]
+        if len(subjects) > 40:
+            lines.append(f"  - ... and {len(subjects) - 40} more")
+        lines.append(
+            f"- Commits without a pull request: {len(direct)}"
+            + (" (check these)" if direct else "")
+        )
+    else:
+        lines.append("- Changes: first release (no earlier release to compare with)")
+    repo_url = run_url.split("/actions/")[0]
+    lines += ["", f"How to verify this release: {repo_url}/blob/{sha}/docs/releases.md", "", "---", ""]
+    return "\n".join(lines) + "\n" + (notes or "No CHANGELOG section for this version.") + "\n"
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "check" and len(sys.argv) == 3:
@@ -77,5 +128,7 @@ if __name__ == "__main__":
         if section is None:
             raise SystemExit(1)
         print(section)
+    elif cmd == "provenance" and len(sys.argv) == 9:
+        sys.stdout.write(provenance(*sys.argv[2:9]))
     else:
         raise SystemExit(__doc__)

@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - The web interface builds with npm install scripts turned off (`frontend/.npmrc`), in CI and in the image. None of the Linux dependencies needs one, and install scripts are how most malicious npm packages run.
 - GitHub repository scans check hard links in the downloaded archive against the archive root, the way they are extracted. A hard link that pointed outside the extraction folder could pass the pre-check on Python 3.11.0 to 3.11.3, which lack tarfile's `data` filter. Scans now refuse to run on a Python without that filter.
+- Release notes start with a provenance block: who started the release, the commit, and every commit since the previous release. Releases are created as drafts with all their assets and then published, so they work as immutable releases.
 
 ## [1.1.0] - 2026-10-21
 

@@ -8,10 +8,12 @@
 #   pypi     sdist and wheel to PyPI through the trusted publisher (workflow release.yml, environment `pypi`).
 #   helm     chart packaged with version and appVersion set from the tag, pushed to oci://ghcr.io/peckacyber/charts
 #            and signed.
-#   release  GitHub release with the CHANGELOG section as notes, the SBOM and the chart attached.
+#   release  GitHub release: a provenance block (who started it, the commit, every commit since the previous release)
+#            above the CHANGELOG section, with the SBOM and the chart attached. It is created as a draft with every
+#            asset and then published, because an immutable release takes no assets once published.
 #
-# A rerun for the same tag is safe: image tags are overwritten with the same content, PyPI skips files that exist, the
-# release is updated in place. Users verify releases as described in docs/releases.md.
+# A rerun for the same tag is safe: image tags are overwritten with the same content, PyPI skips files that exist, a
+# draft release gets its assets replaced and is published, and a published release is left as it is. Users verify releases as described in docs/releases.md.
 name: release
 on:
   push:
@@ -240,22 +242,30 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0 # the provenance block lists the commits since the previous release
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: assets
-      - name: Create or update the release
+      - name: Create or publish the release
+        env:
+          ACTOR: ${{ github.actor }}
+          BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           flags=()
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
-          if python3 .github/scripts/release_meta.py notes "$VERSION" > notes.md && [ -s notes.md ]; then
-            notes=(--notes-file notes.md)
+          assets=(assets/sbom/*.json assets/chart/*.tgz)
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            python3 .github/scripts/release_meta.py notes "$VERSION" > changelog.md || true
+            prev=$(gh release list --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName // empty')
+            python3 .github/scripts/release_meta.py provenance "$TAG" "$prev" "$ACTOR" "$BOT_LOGIN" "$GITHUB_SHA" "$RUN_URL" changelog.md > notes.md
+            # Draft with every asset first, then publish: an immutable release takes no assets once published.
+            gh release create "$TAG" --verify-tag --draft --title "Kresheen $VERSION" --notes-file notes.md "${assets[@]}"
+            gh release edit "$TAG" --draft=false "${flags[@]}"
+          elif [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = "true" ]; then
+            gh release upload "$TAG" --clobber "${assets[@]}"
+            gh release edit "$TAG" --draft=false "${flags[@]}"
           else
-            notes=(--generate-notes)
+            echo "Release $TAG is already published; its notes and assets stay as they are."
           fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" "${flags[@]}" --title "Kresheen $VERSION"
-          else
-            gh release create "$TAG" --verify-tag --title "Kresheen $VERSION" "${notes[@]}" "${flags[@]}"
-          fi
-          gh release upload "$TAG" --clobber assets/sbom/*.json assets/chart/*.tgz

@@ -12,9 +12,11 @@ For version `X.Y.Z` (tag `vX.Y.Z`):
 | Python package | `kresheen` on PyPI |
 | Helm chart | `oci://ghcr.io/peckacyber/charts/kresheen`, chart version `X.Y.Z` |
 | SBOM (SPDX JSON) | An asset of the GitHub release, and a signed attestation on the image |
-| Release notes | The GitHub release, copied from [CHANGELOG.md](../CHANGELOG.md) |
+| Release notes | The GitHub release: a provenance block, then the section copied from [CHANGELOG.md](../CHANGELOG.md) |
 
 The chart runs the image with the same version by default.
+
+The provenance block at the top of the release notes says who started the release (the maintainer's tag push, or the automatic security patch with the advisories it fixes), the commit, and every commit since the previous release, flagging any that did not come through a pull request.
 
 ## Verify the image
 
@@ -62,4 +64,4 @@ Kresheen uses [semantic versioning](https://semver.org/). Only the latest minor 
 
 ## Security fixes in dependencies
 
-Dependencies are checked every day. When a fix for a known vulnerability in a dependency or in the base image reaches `main`, a patch release is prepared and published automatically, once the tests and code scanning pass. The release notes list the advisories under "Security". A person reviews major version updates of dependencies before they are merged.
+Dependencies are checked every day. The automatic fix uses only versions published at least three days earlier, so a malicious release has time to be found and pulled first; a vulnerability that is known to be exploited (listed in CISA's Known Exploited Vulnerabilities catalog) is fixed without waiting. When a fix for a known vulnerability in a dependency or in the base image reaches `main`, a patch release is prepared and published automatically, once the tests and code scanning pass. The release notes list the advisories under "Security". A person reviews major version updates of dependencies before they are merged.

@@ -141,6 +141,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the dependency check compares the lockfiles with the PR's base
+      # Packages new to a lockfile must be established projects at a version a few days old: guards against names an
+      # AI tool made up and an attacker registered ("slopsquatting"), look-alikes and brand-new hijacks.
+      - name: Packages new to the lockfiles
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: python3 .github/scripts/new_deps.py "$BASE_SHA"
       - name: Install scanners
         run: for tool in actionlint zizmor hadolint kube-linter; do .github/scripts/install-tool.sh "$tool"; done
       - name: Workflows

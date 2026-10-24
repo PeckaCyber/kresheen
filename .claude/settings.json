@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(//proc/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.azure/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.git-credentials)",
+      "Read(~/.netrc)",
+      "Read(~/.pypirc)",
+      "Read(~/.npmrc)",
+      "Read(~/.config/gh/**)",
+      "Read(//**/.env)",
+      "Read(//**/.env.*)",
+      "Edit(//proc/**)",
+      "Edit(~/.ssh/**)",
+      "Edit(~/.aws/**)",
+      "Edit(~/.azure/**)",
+      "Edit(~/.config/gcloud/**)",
+      "Edit(~/.kube/**)",
+      "Edit(~/.docker/config.json)",
+      "Edit(~/.git-credentials)",
+      "Edit(~/.netrc)",
+      "Edit(~/.pypirc)",
+      "Edit(~/.npmrc)",
+      "Edit(~/.config/gh/**)",
+      "Edit(//**/.env)",
+      "Edit(//**/.env.*)"
+    ]
+  }
+}

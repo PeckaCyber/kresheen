@@ -26,3 +26,6 @@ stress/results/*
 
 # built SPA copied into the package by the release workflow
 src/kresheen/web/
+
+# Claude Code: the shared settings are committed, personal ones are not.
+.claude/settings.local.json

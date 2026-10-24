@@ -1,5 +1,7 @@
 # Kresheen
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/PeckaCyber/kresheen/badge)](https://scorecard.dev/viewer/?uri=github.com/PeckaCyber/kresheen)
+
 Open-source threat modeling and security analysis platform by Pecka Cyber.
 
 Kresheen builds a threat model of a system you describe, draw or upload: a data flow diagram with trust boundaries, the threats that follow from that design, vulnerabilities found in what you provided, and a ranked plan for fixing them. You host it yourself. It runs as one FastAPI service with a React web interface and keeps its data in SQLite or PostgreSQL.

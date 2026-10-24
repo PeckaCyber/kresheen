@@ -1,0 +1,65 @@
+# Keeps dependency bot PRs mergeable. The required checks are strict (a PR must be up to date with main), so when one
+# bot PR merges the others fall behind and auto-merge waits forever: Dependabot rebases only on a conflict. This
+# merges main into the oldest bot PR (Dependabot or the security bot) that has auto-merge on and is behind, one PR at
+# a time: nothing is updated while a bot PR's `ci` is still running, and a PR whose `ci` failed is skipped (a soak
+# wait is deps-recheck's; anything else needs a person) so it cannot hold up the rest. Auto-merge then finishes it. A schedule, because merges made by
+# auto-merge for Dependabot use GITHUB_TOKEN, which starts no workflows. The App token makes the update start CI. No
+# PR code is checked out and no PR text is used.
+name: bot-pr-update
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bot-pr-update
+
+jobs:
+  update:
+    if: vars.SECURITY_APP_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # the ci run on each PR's head
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SECURITY_APP_ID }}
+          private-key: ${{ secrets.SECURITY_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Update the oldest bot PR that is behind main
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          READ_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
+        run: |
+          gh api "repos/${GH_REPO}/pulls?state=open&sort=created&direction=asc&per_page=100" \
+            --jq ".[] | select(.auto_merge != null and .head.repo.full_name == env.GH_REPO
+                         and (.user.login == \"dependabot[bot]\" or (env.BOT_LOGIN != \"\" and .user.login == env.BOT_LOGIN)))
+                       | \"\(.number) \(.head.sha)\"" |
+          while read -r pr sha; do
+            ci=$(GH_TOKEN=$READ_TOKEN gh api "repos/${GH_REPO}/actions/runs?head_sha=${sha}&per_page=50" \
+              --jq '[.workflow_runs[] | select(.name == "ci")] | sort_by(.created_at) | last | "\(.status) \(.conclusion)"') || continue
+            behind=$(gh api "repos/${GH_REPO}/compare/main...${sha}" --jq .behind_by) || continue
+            if [ "$behind" -eq 0 ]; then
+              case "$ci" in queued* | in_progress* | waiting* | pending* | requested*) ;; *) continue ;; esac
+              echo "PR #${pr}: up to date, ci running; waiting for it" | tee -a "$GITHUB_STEP_SUMMARY"
+              break
+            fi
+            case "$ci" in
+              "completed failure" | "completed timed_out" | "completed cancelled")
+                echo "PR #${pr}: behind, but its ci failed; skipped" | tee -a "$GITHUB_STEP_SUMMARY"; continue ;;
+            esac
+            echo "PR #${pr} is ${behind} commit(s) behind main; merging main into it" | tee -a "$GITHUB_STEP_SUMMARY"
+            gh api -X PUT "repos/${GH_REPO}/pulls/${pr}/update-branch" -f expected_head_sha="$sha" >/dev/null ||
+              echo "PR #${pr}: update failed (a conflict?); Dependabot rebases conflicting PRs itself" | tee -a "$GITHUB_STEP_SUMMARY"
+            break
+          done

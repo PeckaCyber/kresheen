@@ -93,7 +93,7 @@ def test_reports_and_csv_include_the_action_plan(tmp_path):
 
     csv_response = client.get(f"{base}/action-plan.csv")
     assert csv_response.status_code == 200
-    lines = csv_response.text.lstrip("﻿").splitlines()
+    lines = csv_response.text.lstrip("\ufeff").splitlines()
     assert lines[0] == "rank,action,risk,basis,threats,elements,cwe,how_to_verify,status,note"
     assert len(lines) - 1 == len(client.get(f"{base}/action-plan").json()["actions"])
 

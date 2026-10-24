@@ -411,7 +411,7 @@ def test_csv_round_trips_multiline_and_quotes(tmp_path):
     repo = _repo_with_run(tmp_path, {})
     report = build_report("APP-1", "RUN-1", repo)
 
-    rows = list(csv.reader(io.StringIO(threats_csv(report).lstrip("﻿"))))
+    rows = list(csv.reader(io.StringIO(threats_csv(report).lstrip("\ufeff"))))
 
     assert tuple(rows[0]) == THREAT_COLUMNS
     assert all(len(row) == len(THREAT_COLUMNS) for row in rows)

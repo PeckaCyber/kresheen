@@ -79,6 +79,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Invisible and direction-changing characters (Trojan Source)
+        run: python3 .github/scripts/unicode_check.py
       # The gitleaks binary, pinned by checksum (the gitleaks action needs a licence key for organisation repos).
       - name: gitleaks
         env:

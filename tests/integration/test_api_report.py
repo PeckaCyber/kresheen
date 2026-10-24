@@ -129,8 +129,8 @@ def test_threats_csv_has_the_columns_rows_and_neutralises_formulas(tmp_path):
 
     assert response.headers["content-type"].startswith("text/csv")
     assert response.headers["content-disposition"].endswith('-threats.csv"')
-    assert response.text.startswith("﻿")
-    rows = list(csv.DictReader(io.StringIO(response.text.lstrip("﻿"))))
+    assert response.text.startswith("\ufeff")
+    rows = list(csv.DictReader(io.StringIO(response.text.lstrip("\ufeff"))))
     assert len(rows) == len(_threats(client, app_url, run)) > 0
     assert {r["element"] for r in rows} == {"'=cmd|' /C calc'!A0"}
     assert any(r["title"] == "'@SUM(1+1)" and r["origin"] == "manual" for r in rows)
@@ -142,7 +142,7 @@ def test_findings_csv_and_report_carry_scanned_findings_and_severity(tmp_path):
     application, run = _run_with_manifest(client, csrf)
     run_url = f"/api/applications/{application['id']}/runs/{run['id']}"
 
-    findings = list(csv.DictReader(io.StringIO(client.get(f"{run_url}/findings.csv").text.lstrip("﻿"))))
+    findings = list(csv.DictReader(io.StringIO(client.get(f"{run_url}/findings.csv").text.lstrip("\ufeff"))))
     report = client.get(f"{run_url}/report.html").text
 
     assert findings and {"id", "element", "title", "severity", "status"} <= set(findings[0])
@@ -225,6 +225,6 @@ def test_csv_exports_keep_the_how_to_verify_column(tmp_path):
     _application, run = _run_with_manifest(client, csrf)
     base = f"/api/applications/{_application['id']}/runs/{run['id']}"
 
-    header = client.get(f"{base}/threats.csv").text.lstrip("﻿").splitlines()[0]
+    header = client.get(f"{base}/threats.csv").text.lstrip("\ufeff").splitlines()[0]
     assert "how_to_verify" in header.split(",")
     assert "how_to_verify" in client.get(f"{base}/action-plan.csv").text.splitlines()[0]

@@ -65,7 +65,7 @@ def _write(columns: tuple[str, ...], rows: list[list[object]]) -> str:
     writer.writerow(columns)
     for row in rows:
         writer.writerow([safe_cell(cell) for cell in row])
-    return "﻿" + buffer.getvalue()
+    return "\ufeff" + buffer.getvalue()
 
 
 ACTION_COLUMNS = ("rank", "action", "risk", "basis", "threats", "elements", "cwe", "how_to_verify", "status", "note")

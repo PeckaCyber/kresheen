@@ -1,0 +1,6 @@
+flowchart LR
+  user((User)) -->|HTTPS| web[Web app]
+  subgraph cluster
+    web --> api[API]
+    api -.-> db[(Postgres)]
+  end

@@ -1,0 +1,16 @@
+technical_assets:
+  web:
+    id: web
+    type: process
+    internet: true
+    communication_links:
+      to-db:
+        target: db
+        protocol: jdbc
+  db:
+    id: db
+    type: datastore
+    encryption: transparent
+trust_boundaries:
+  vpc:
+    technical_assets_inside: [web, db]

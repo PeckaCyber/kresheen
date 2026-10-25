@@ -17,9 +17,11 @@ No AI-written code is merged without the maintainer. An automated AI review comm
 - `e2e`: browser tests against a real server.
 - `audit`: known vulnerabilities in Python and npm dependencies (pip-audit, npm audit).
 - `secrets`: gitleaks over the full history, and a check that rejects invisible and direction-changing Unicode characters ("Trojan Source").
-- `config-scan`: the GitHub workflows (actionlint, shellcheck, zizmor), the Dockerfile (hadolint) and the Helm chart (kube-linter).
+- `config-scan`: the GitHub workflows (actionlint, shellcheck, zizmor), the Dockerfiles (hadolint) and the Helm chart (kube-linter).
 - `image`: builds and starts the container image, and checks the licences of every bundled dependency.
 - CodeQL code scanning for Python and JavaScript/TypeScript.
+
+Every pull request is also fuzzed for five minutes (ClusterFuzzLite with Atheris) on the parsers that read untrusted input: architecture diagrams, Kubernetes manifests, Terraform plans and GitHub archives. A crash fails the run. This check is not required yet.
 
 The maintainer's pull requests also get an advisory review from Claude Code. It reads the diff with read-only tools (no shell, no edits, no network), treats the diff as untrusted content, and posts its findings as a comment. It is not a required check. If it flags a possible security problem, the maintainer is alerted.
 
@@ -53,6 +55,7 @@ How to verify a release: [releases.md](releases.md).
 ## Ongoing checks
 
 - [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/PeckaCyber/kresheen) rates the repository's practices every week.
+- Each night the same parsers are fuzzed for longer: property-based tests (Hypothesis) and a coverage-guided run (Atheris) that keeps its corpus between nights.
 - Each night the previous release is installed with Helm on PostgreSQL, upgraded to the latest release, checked for data integrity, and scanned with an authenticated OWASP ZAP API scan.
 - Dependabot alerts, secret scanning with push protection and private vulnerability reporting are on.
 

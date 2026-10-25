@@ -1,4 +1,4 @@
-"""CLI entry point: `kresheen create-user|serve|ci|audit-prune|db`."""
+"""CLI entry point: `kresheen create-user|serve|desktop|ci|audit-prune|db`."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import uvicorn
 
 from kresheen.cli.ci import ci as ci_command
 from kresheen.cli.db import db_group
+from kresheen.cli.desktop import desktop as desktop_command
 from kresheen.dashboard import create_app
 from kresheen.dashboard.auth import MIN_PASSWORD_LENGTH, hash_password
 from kresheen.dashboard.workers import MultiWorkerError
@@ -119,6 +120,7 @@ def serve(host: str, port: int, frontend_dist: str | None, forwarded_allow_ips: 
     uvicorn.run(app, host=host, port=port, proxy_headers=True, forwarded_allow_ips=forwarded_allow_ips)
 
 
+cli.add_command(desktop_command)
 cli.add_command(ci_command)
 cli.add_command(db_group)
 for _command in load_plugins().cli_commands():

@@ -1,0 +1,21 @@
+# nfpm config for the .deb and .rpm. build.py fills in the @...@ values and passes the result to nfpm.
+# The app goes to /opt/kresheen; `kresheen` on PATH and a menu entry that opens it in a terminal.
+name: kresheen
+arch: amd64
+platform: linux
+version: @VERSION@
+maintainer: Pecka Cyber LLC <pecka@peckacyber.com>
+vendor: Pecka Cyber LLC
+homepage: https://github.com/PeckaCyber/kresheen
+license: Apache-2.0
+description: |
+  Self-hosted threat-modeling platform. Run `kresheen` to start it on this computer and open it in the browser.
+contents:
+  - src: @APP_DIR@
+    dst: /opt/kresheen
+    type: tree
+  - src: /opt/kresheen/kresheen
+    dst: /usr/bin/kresheen
+    type: symlink
+  - src: @HERE@/kresheen.desktop
+    dst: /usr/share/applications/kresheen.desktop

@@ -11,6 +11,7 @@ import { HelpPage } from "./pages/Help";
 import { Login } from "./pages/Login";
 import { ModelRedirectPage } from "./pages/ModelRedirect";
 import { SettingsPage } from "./pages/Settings";
+import { Setup } from "./pages/Setup";
 import { ThreatKnowledgeBasePage } from "./pages/ThreatKnowledgeBase";
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
@@ -30,6 +31,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/setup" element={<Setup />} />
       <Route
         path="/dashboard"
         element={

@@ -1,12 +1,15 @@
 """Login/logout/session-check for the dashboard's JSON API.
 
 Deliberately no self-serve signup -- bootstrap the first (owner) account via
-`kresheen create-user`.
+`kresheen create-user`, or, in a desktop install (`kresheen desktop`), through the one-time setup link the launcher
+opens: `POST /api/auth/setup` creates the owner while no account exists and the request carries the launcher's token.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+import ipaddress
+import secrets
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
@@ -29,7 +32,7 @@ from kresheen.dashboard.auth import (
 from kresheen.dashboard.deps import get_repo
 from kresheen.dashboard.login_throttle import LoginThrottle
 from kresheen.models.auth import Session
-from kresheen.models.user import User
+from kresheen.models.user import User, new_user_id, normalize_email
 from kresheen.plugins import get_registry
 from kresheen.storage.repository import Repository
 
@@ -217,3 +220,53 @@ def me(session: Session = Depends(get_current_session), user: User = Depends(get
     """Polled by the SPA on load to check "am I logged in" and pick up the
     CSRF token -- also doubles as the session-refresh/validity check."""
     return SessionInfo(csrf_token=session.csrf_token, expires_at=session.expires_at, role=user.role, email=user.email)
+
+
+class SetupStatus(BaseModel):
+    needed: bool
+
+
+class SetupRequest(BaseModel):
+    token: str = Field(max_length=200)
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=200)
+
+
+def _is_loopback(request: Request) -> bool:
+    try:
+        return request.client is not None and ipaddress.ip_address(request.client.host).is_loopback
+    except ValueError:
+        return False
+
+
+def _setup_open(request: Request, repo: Repository) -> bool:
+    return getattr(request.app.state, "setup_token", None) is not None and not repo.list_users()
+
+
+@router.get("/setup", response_model=SetupStatus)
+def setup_status(request: Request, repo: Repository = Depends(get_repo)) -> SetupStatus:
+    """Whether the first-run setup page applies: only in a desktop install that has no account yet."""
+    return SetupStatus(needed=_setup_open(request, repo) and _is_loopback(request))
+
+
+@router.post("/setup", status_code=201)
+def setup(body: SetupRequest, request: Request, repo: Repository = Depends(get_repo)) -> dict[str, bool]:
+    """Creates the first (owner) account of a desktop install. Refused unless all hold: the app was started with a
+    setup token (`kresheen desktop` only; `serve` never sets one), no account exists yet, the request comes from this
+    machine, and it carries that token. The token is then discarded, so the route is closed for good. The SPA signs
+    in with the new password afterwards through the normal login."""
+    ip = request.client.host if request.client else None
+    with request.app.state.setup_lock:  # two requests racing must not both create an owner
+        expected = getattr(request.app.state, "setup_token", None)
+        if expected is None or repo.list_users():
+            raise HTTPException(status_code=404, detail="Not found")
+        if not _is_loopback(request) or not secrets.compare_digest(body.token.encode(), expected.encode()):
+            record_event(repo, action="auth.setup_refused", status_code=403, client_ip=ip)
+            raise HTTPException(status_code=403, detail="This setup link is not valid")
+        email = normalize_email(body.email)
+        user = User(id=new_user_id(), email=email, password_hash=hash_password(body.password), role="owner",
+                    created_at=datetime.now(UTC))
+        repo.save_user(user)
+        request.app.state.setup_token = None
+    record_event(repo, action="auth.setup_owner", user_id=user.id, user_email=email, status_code=201, client_ip=ip)
+    return {"ok": True}

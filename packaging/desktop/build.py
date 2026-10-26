@@ -155,6 +155,8 @@ def install_intel_macos_from_source(python: Path, requirements: Path) -> None:
         "-r", pinned, "-d", sdists)
     env = {
         **os.environ,
+        # The build backends run their tools (maturin, cmake helpers) by name from the venv.
+        "PATH": f"{python.parent}{os.pathsep}{os.environ.get('PATH', '')}",
         "MACOSX_DEPLOYMENT_TARGET": MACOS_DEPLOYMENT_TARGET,
         "OPENSSL_DIR": str(openssl),
         "OPENSSL_STATIC": "1",

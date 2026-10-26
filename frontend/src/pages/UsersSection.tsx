@@ -33,6 +33,7 @@ export function UsersSection({ defaultOpen }: { defaultOpen?: boolean } = {}) {
 
   useEffect(() => {
     void load();
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- load once on mount; `load` is rebuilt every render
   }, []);
 
   async function handleCreate(event: FormEvent) {

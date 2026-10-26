@@ -44,7 +44,8 @@ Frontend (from `frontend/`):
 
 ```bash
 npm run format
-npx tsc -b --noEmit
+npm run lint
+npm run typecheck
 npm test
 ```
 
@@ -55,6 +56,13 @@ Formatting is automatic, so style is never a review topic. Python follows PEP 8 
 [Prettier](https://prettier.io/) with its defaults; both use a 120-character line, set in `pyproject.toml` and
 `frontend/.prettierrc.json`. CI runs `ruff format --check` and `npm run format:check`, so run the formatters before
 you push. `.editorconfig` gives editors the same basics (UTF-8, LF, final newline, spaces).
+
+Linting: Python uses Ruff with the explicit rule list in `pyproject.toml`; the frontend uses
+[Oxlint](https://oxc.rs/docs/guide/usage/linter) (ESLint-compatible rules, including React hooks and accessibility)
+configured in `frontend/.oxlintrc.json`. Lint errors fail CI. A few rules are being phased in as warnings, because
+existing code still breaks them; `npm run lint` caps the number of warnings, so new code cannot add any. When you fix
+one, lower the `--max-warnings` number in `frontend/package.json`. Silence a finding only with an
+`oxlint-disable-next-line <rule> -- <reason>` comment, or `# noqa: <code>` with a reason in Python.
 
 New features and bug fixes come with tests: a fix adds a test that fails without it. Every pull request must pass the full suite, which runs as required checks in CI.
 

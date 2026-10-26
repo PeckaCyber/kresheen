@@ -75,6 +75,6 @@ describe("ExportMenu", () => {
     // jsdom has no real canvas/rendering support, so html-to-image's toPng
     // is expected to reject here -- the handler's catch must swallow it.
     fireEvent.click(screen.getByRole("button", { name: /Diagram \(PNG\)|Capturing/ }));
-    await screen.findByRole("button", { name: "Diagram (PNG)" });
+    expect(await screen.findByRole("button", { name: "Diagram (PNG)" })).toBeInTheDocument();
   });
 });

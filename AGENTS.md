@@ -39,6 +39,7 @@ CONTRIBUTING.md before you say the work is done, and report failures as they are
 
 Run `ruff format .` and, for frontend changes, `npm run format` in `frontend/` before you finish. Do not reformat
 code you are not otherwise changing in a feature or fix pull request, and do not change the formatter settings.
+Run `ruff check .` and `npm run lint`. Never raise the lint warning cap or disable a rule to make a check pass.
 
 ## Dependencies
 

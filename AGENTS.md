@@ -35,6 +35,11 @@ is wrong.
 A bug fix comes with a test that fails without the fix. A new feature comes with tests. Run the checks in
 CONTRIBUTING.md before you say the work is done, and report failures as they are.
 
+## Formatting
+
+Run `ruff format .` and, for frontend changes, `npm run format` in `frontend/` before you finish. Do not reformat
+code you are not otherwise changing in a feature or fix pull request, and do not change the formatter settings.
+
 ## Dependencies
 
 Add a dependency only when the standard library or an existing dependency cannot do the job. Before you add one:

@@ -30,6 +30,7 @@ jobs:
         run: |
           uv sync --locked --extra dev
           .venv/bin/python -m ruff check .
+          .venv/bin/python -m ruff format --check .
           .venv/bin/python -m mypy src/kresheen
           .venv/bin/python -m pytest -q -p no:cacheprovider -n auto
 
@@ -49,6 +50,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
+          npm run format:check
           npx tsc -b
           npx vitest run
           npm run build

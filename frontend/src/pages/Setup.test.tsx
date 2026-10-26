@@ -29,7 +29,10 @@ function stubServer(needed: boolean) {
     if (url.endsWith("/api/auth/setup") && (init?.method ?? "GET") === "GET") return jsonResponse({ needed }, 200);
     if (url.endsWith("/api/auth/setup")) return jsonResponse({ ok: true }, 201);
     if (url.endsWith("/api/auth/login"))
-      return jsonResponse({ csrf_token: "c", expires_at: "2099-01-01T00:00:00Z", role: "owner", email: "me@example.com" }, 200);
+      return jsonResponse(
+        { csrf_token: "c", expires_at: "2099-01-01T00:00:00Z", role: "owner", email: "me@example.com" },
+        200,
+      );
     return jsonResponse({ detail: "not found" }, 404);
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -54,8 +57,14 @@ describe("Setup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(await screen.findByText("dashboard page")).toBeInTheDocument();
-    const setupCall = fetchMock.mock.calls.find(([input, init]) => String(input).endsWith("/api/auth/setup") && init?.method === "POST");
-    expect(JSON.parse(String(setupCall?.[1]?.body))).toEqual({ token: "abc123", email: "me@example.com", password: "a-long-password" });
+    const setupCall = fetchMock.mock.calls.find(
+      ([input, init]) => String(input).endsWith("/api/auth/setup") && init?.method === "POST",
+    );
+    expect(JSON.parse(String(setupCall?.[1]?.body))).toEqual({
+      token: "abc123",
+      email: "me@example.com",
+      password: "a-long-password",
+    });
   });
 
   it("refuses mismatched passwords before calling the server", async () => {

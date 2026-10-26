@@ -94,14 +94,33 @@ def prepare_venv() -> Path:
     run(sys.executable, "-m", "venv", venv)
     python = venv_python(venv)
     requirements = BUILD / "requirements.txt"
-    run("uv", "export", "--frozen", "--no-dev", "--no-emit-project", "--format", "requirements-txt", "--no-header",
-        "-o", requirements, cwd=ROOT)
+    run(
+        "uv",
+        "export",
+        "--frozen",
+        "--no-dev",
+        "--no-emit-project",
+        "--format",
+        "requirements-txt",
+        "--no-header",
+        "-o",
+        requirements,
+        cwd=ROOT,
+    )
     if (sys.platform, platform.machine()) == ("darwin", "x86_64"):
         install_intel_macos_from_source(python, requirements)
     # Packages installed above count as satisfied here, so pip does not look for their (missing) wheels.
     run(python, "-m", "pip", "install", "--no-cache-dir", "--require-hashes", "-r", requirements)
-    run(python, "-m", "pip", "install", "--no-cache-dir", "--require-hashes", "-r",
-        ROOT / ".github" / "requirements" / "pyinstaller.txt")
+    run(
+        python,
+        "-m",
+        "pip",
+        "install",
+        "--no-cache-dir",
+        "--require-hashes",
+        "-r",
+        ROOT / ".github" / "requirements" / "pyinstaller.txt",
+    )
     run(python, "-m", "pip", "install", "--no-cache-dir", "--no-deps", ROOT)
     return python
 
@@ -132,8 +151,18 @@ def build_static_openssl() -> Path:
     shutil.unpack_archive(archive, src, filter="data")
     tree = src / f"openssl-{OPENSSL_VERSION}"
     env = {**os.environ, "MACOSX_DEPLOYMENT_TARGET": MACOS_DEPLOYMENT_TARGET}
-    run("perl", "./Configure", "darwin64-x86_64-cc", "no-shared", "no-tests", "no-docs", f"--prefix={prefix}",
-        "--libdir=lib", cwd=tree, env=env)
+    run(
+        "perl",
+        "./Configure",
+        "darwin64-x86_64-cc",
+        "no-shared",
+        "no-tests",
+        "no-docs",
+        f"--prefix={prefix}",
+        "--libdir=lib",
+        cwd=tree,
+        env=env,
+    )
     run("make", f"-j{os.cpu_count() or 2}", cwd=tree, env=env)
     run("make", "install_sw", cwd=tree, env=env)
     return prefix
@@ -141,8 +170,18 @@ def build_static_openssl() -> Path:
 
 def install_intel_macos_from_source(python: Path, requirements: Path) -> None:
     openssl = build_static_openssl()
-    run(python, "-m", "pip", "install", "--no-cache-dir", "--require-hashes", "--only-binary", ":all:", "-r",
-        ROOT / ".github" / "requirements" / "macos-intel-build.txt")
+    run(
+        python,
+        "-m",
+        "pip",
+        "install",
+        "--no-cache-dir",
+        "--require-hashes",
+        "--only-binary",
+        ":all:",
+        "-r",
+        ROOT / ".github" / "requirements" / "macos-intel-build.txt",
+    )
     run("rustup", "toolchain", "install", RUST_TOOLCHAIN, "--profile", "minimal")
     sdists, wheels = BUILD / "sdists", BUILD / "wheels"
     for folder in (sdists, wheels):
@@ -151,8 +190,21 @@ def install_intel_macos_from_source(python: Path, requirements: Path) -> None:
     pinned = BUILD / "from-source.txt"
     pinned.write_text("".join(requirement_block(requirements, name) for name in MACOS_INTEL_FROM_SOURCE))
     # The sdists are checked against the hashes in uv.lock; the build tools are hash-pinned above and used in place.
-    run(python, "-m", "pip", "download", "--no-cache-dir", "--require-hashes", "--no-deps", "--no-binary", ":all:",
-        "-r", pinned, "-d", sdists)
+    run(
+        python,
+        "-m",
+        "pip",
+        "download",
+        "--no-cache-dir",
+        "--require-hashes",
+        "--no-deps",
+        "--no-binary",
+        ":all:",
+        "-r",
+        pinned,
+        "-d",
+        sdists,
+    )
     env = {
         **os.environ,
         # The build backends run their tools (maturin, cmake helpers) by name from the venv.
@@ -163,13 +215,28 @@ def install_intel_macos_from_source(python: Path, requirements: Path) -> None:
         "RUSTUP_TOOLCHAIN": RUST_TOOLCHAIN,
     }
     for sdist in sorted(sdists.iterdir()):
-        run(python, "-m", "pip", "wheel", "--no-cache-dir", "--no-build-isolation", "--no-deps", "-w", wheels, sdist,
-            env=env)
+        run(
+            python,
+            "-m",
+            "pip",
+            "wheel",
+            "--no-cache-dir",
+            "--no-build-isolation",
+            "--no-deps",
+            "-w",
+            wheels,
+            sdist,
+            env=env,
+        )
     run(python, "-m", "pip", "install", "--no-cache-dir", "--no-deps", *sorted(wheels.iterdir()))
     # The wheels must link the static OpenSSL above, not a system one, and load on the oldest supported macOS.
-    run(python, "-c", "from cryptography.hazmat.backends.openssl.backend import backend; "
+    run(
+        python,
+        "-c",
+        "from cryptography.hazmat.backends.openssl.backend import backend; "
         f"v = backend.openssl_version_text(); print(v); assert v.startswith('OpenSSL {OPENSSL_VERSION} '), v; "
-        "import _argon2_cffi_bindings")
+        "import _argon2_cffi_bindings",
+    )
     built = [
         library
         for library in BUILD.joinpath("venv").rglob("*.so")
@@ -205,8 +272,19 @@ def fetch_grype(dest: Path) -> None:
 def bundle(python: Path) -> Path:
     dist, work = BUILD / "dist", BUILD / "work"
     shutil.rmtree(dist, ignore_errors=True)
-    run(python, "-m", "PyInstaller", "--noconfirm", "--clean", "--distpath", dist, "--workpath", work,
-        HERE / "kresheen.spec", cwd=HERE)
+    run(
+        python,
+        "-m",
+        "PyInstaller",
+        "--noconfirm",
+        "--clean",
+        "--distpath",
+        dist,
+        "--workpath",
+        work,
+        HERE / "kresheen.spec",
+        cwd=HERE,
+    )
     app = dist / "kresheen"
     fetch_grype(app)
     for name in ("LICENSE", "NOTICE"):
@@ -222,14 +300,19 @@ def package_linux(app: Path, version: str, out: Path) -> None:
         archive.add(app, arcname=f"kresheen-{version}")
     tools = BUILD / "tools"
     tools.mkdir(parents=True, exist_ok=True)
-    url = f"https://github.com/goreleaser/nfpm/releases/download/v{NFPM_VERSION}/nfpm_{NFPM_VERSION}_Linux_x86_64.tar.gz"
+    url = (
+        f"https://github.com/goreleaser/nfpm/releases/download/v{NFPM_VERSION}/nfpm_{NFPM_VERSION}_Linux_x86_64.tar.gz"
+    )
     nfpm = tools / "nfpm"
     nfpm.write_bytes(tar_member(download(url, NFPM_SHA256), "nfpm"))
     nfpm.chmod(0o755)
     config = BUILD / "nfpm.yaml"
     template = (HERE / "linux" / "nfpm.yaml").read_text()
-    config.write_text(template.replace("@VERSION@", version).replace("@APP_DIR@", app.as_posix())
-                      .replace("@HERE@", (HERE / "linux").as_posix()))
+    config.write_text(
+        template.replace("@VERSION@", version)
+        .replace("@APP_DIR@", app.as_posix())
+        .replace("@HERE@", (HERE / "linux").as_posix())
+    )
     for packager, name in (("deb", f"kresheen_{version}_amd64.deb"), ("rpm", f"kresheen-{version}.x86_64.rpm")):
         run(nfpm, "package", "--config", config, "--packager", packager, "--target", out / name)
 
@@ -238,13 +321,21 @@ def package_windows(app: Path, version: str, out: Path) -> None:
     stem = f"kresheen-{version}-windows-x86_64"
     shutil.make_archive(str(out / stem), "zip", app.parent, app.name)
     # On PATH, or where the machine-wide (GitHub's image) or per-user (winget) install puts it.
-    candidates = [Path(r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"),
-                  Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Inno Setup 6" / "ISCC.exe"]
+    candidates = [
+        Path(r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"),
+        Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Inno Setup 6" / "ISCC.exe",
+    ]
     iscc = shutil.which("iscc") or next((str(c) for c in candidates if c.exists()), None)
     if iscc is None:
         raise SystemExit("Inno Setup (ISCC.exe) not found")
-    run(iscc, f"/DAppVersion={version}", f"/DAppDir={app}", f"/DOutDir={out}", f"/DOutName={stem}-setup",
-        HERE / "windows" / "kresheen.iss")
+    run(
+        iscc,
+        f"/DAppVersion={version}",
+        f"/DAppDir={app}",
+        f"/DOutDir={out}",
+        f"/DOutName={stem}-setup",
+        HERE / "windows" / "kresheen.iss",
+    )
 
 
 def package_macos(app: Path, version: str, out: Path) -> None:
@@ -263,8 +354,18 @@ def package_macos(app: Path, version: str, out: Path) -> None:
     staging.mkdir()
     shutil.copytree(bundle_dir, staging / "Kresheen.app", symlinks=True)
     (staging / "Applications").symlink_to("/Applications")
-    run("hdiutil", "create", "-volname", "Kresheen", "-srcfolder", staging, "-ov", "-format", "UDZO",
-        out / f"kresheen-{version}-macos-{platform.machine()}.dmg")
+    run(
+        "hdiutil",
+        "create",
+        "-volname",
+        "Kresheen",
+        "-srcfolder",
+        staging,
+        "-ov",
+        "-format",
+        "UDZO",
+        out / f"kresheen-{version}-macos-{platform.machine()}.dmg",
+    )
 
 
 def main() -> None:

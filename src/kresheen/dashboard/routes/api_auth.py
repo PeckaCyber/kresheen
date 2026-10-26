@@ -264,8 +264,13 @@ def setup(body: SetupRequest, request: Request, repo: Repository = Depends(get_r
             record_event(repo, action="auth.setup_refused", status_code=403, client_ip=ip)
             raise HTTPException(status_code=403, detail="This setup link is not valid")
         email = normalize_email(body.email)
-        user = User(id=new_user_id(), email=email, password_hash=hash_password(body.password), role="owner",
-                    created_at=datetime.now(UTC))
+        user = User(
+            id=new_user_id(),
+            email=email,
+            password_hash=hash_password(body.password),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
         repo.save_user(user)
         request.app.state.setup_token = None
     record_event(repo, action="auth.setup_owner", user_id=user.id, user_email=email, status_code=201, client_ip=ip)

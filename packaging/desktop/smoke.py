@@ -1,6 +1,6 @@
 """Smoke test of a desktop build: start it like a first launch and check it serves the app and the setup page.
 
-    python packaging/desktop/smoke.py build/desktop/dist/kresheen
+python packaging/desktop/smoke.py build/desktop/dist/kresheen
 """
 
 from __future__ import annotations
@@ -34,8 +34,13 @@ def main() -> None:
         port = probe.getsockname()[1]
     with tempfile.TemporaryDirectory() as home:
         env = {**os.environ, "KRESHEEN_HOME": home}
-        process = subprocess.Popen([exe, "desktop", "--no-browser", "--port", str(port)], env=env,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        process = subprocess.Popen(
+            [exe, "desktop", "--no-browser", "--port", str(port)],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
         try:
             for _ in range(120):
                 try:

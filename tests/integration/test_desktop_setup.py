@@ -72,7 +72,9 @@ def test_setup_is_closed_once_any_account_exists(tmp_path):
     client, repo = _client(tmp_path)
     from kresheen.cli.main import cli
 
-    result = CliRunner().invoke(cli, ["create-user", "--email", "a@example.com", "--db", f"sqlite:///{tmp_path}/test.db"])
+    result = CliRunner().invoke(
+        cli, ["create-user", "--email", "a@example.com", "--db", f"sqlite:///{tmp_path}/test.db"]
+    )
     assert result.exit_code == 0
     assert _setup(client).status_code == 404
     assert [u.email for u in repo.list_users()] == ["a@example.com"]
@@ -137,7 +139,9 @@ def test_desktop_starts_with_a_setup_link_only_when_there_is_no_account(tmp_path
     if users:
         from kresheen.cli.main import cli
 
-        CliRunner().invoke(cli, ["create-user", "--email", "a@example.com", "--db", f"sqlite:///{tmp_path}/kresheen.db"])
+        CliRunner().invoke(
+            cli, ["create-user", "--email", "a@example.com", "--db", f"sqlite:///{tmp_path}/kresheen.db"]
+        )
     seen = {}
 
     def fake_run(app, **kwargs):
@@ -148,8 +152,11 @@ def test_desktop_starts_with_a_setup_link_only_when_there_is_no_account(tmp_path
     monkeypatch.setattr("kresheen.engine.threats.warmup.start_warmup", lambda repo: None)
     monkeypatch.setattr(desktop_module, "_port_free", lambda port: True)
     monkeypatch.setattr(desktop_module, "_open_when_ready", lambda *args: seen.setdefault("target", args[1]))
-    monkeypatch.setattr(desktop_module.threading, "Thread", lambda target, args, daemon: type(
-        "T", (), {"start": lambda self: target(*args)})())
+    monkeypatch.setattr(
+        desktop_module.threading,
+        "Thread",
+        lambda target, args, daemon: type("T", (), {"start": lambda self: target(*args)})(),
+    )
 
     result = CliRunner().invoke(desktop_module.desktop, ["--no-browser"])
 

@@ -115,8 +115,13 @@ def _open_when_ready(port: int, target: str, open_browser: bool) -> None:
 
 
 @click.command()
-@click.option("--port", default=DEFAULT_PORT, show_default=True, envvar="KRESHEEN_DESKTOP_PORT",
-              help="Port on 127.0.0.1. If it is taken by another program, a free one is used.")
+@click.option(
+    "--port",
+    default=DEFAULT_PORT,
+    show_default=True,
+    envvar="KRESHEEN_DESKTOP_PORT",
+    help="Port on 127.0.0.1. If it is taken by another program, a free one is used.",
+)
 @click.option("--no-browser", is_flag=True, help="Do not open the browser; print the address instead.")
 def desktop(port: int, no_browser: bool):
     """Run Kresheen on this computer only (what the installers start)."""

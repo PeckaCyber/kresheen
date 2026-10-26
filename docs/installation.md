@@ -20,6 +20,7 @@ For one person on their own computer, each release has installers on its [GitHub
 |---|---|
 | Windows 10 or 11 (x64) | `kresheen-X.Y.Z-windows-x86_64-setup.exe` (installs for your user, no administrator rights), or the `.zip` |
 | macOS 12 or newer (Apple silicon) | `kresheen-X.Y.Z-macos-arm64.dmg` |
+| macOS 12 or newer (Intel) | `kresheen-X.Y.Z-macos-x86_64.dmg` |
 | Debian, Ubuntu | `kresheen_X.Y.Z_amd64.deb` (`sudo apt install ./kresheen_X.Y.Z_amd64.deb`) |
 | Fedora, RHEL, Rocky | `kresheen-X.Y.Z.x86_64.rpm` (`sudo dnf install ./kresheen-X.Y.Z.x86_64.rpm`) |
 | Other Linux (x86_64, glibc 2.28 or newer) | `kresheen-X.Y.Z-linux-x86_64.tar.gz`: unpack it anywhere and run `kresheen` inside |
@@ -32,7 +33,7 @@ What the desktop app does differently from a server install:
 
 - It listens on `127.0.0.1` only (port 8765, or a free one if that is taken), so nothing else on the network can reach it. For a shared install, use Compose or Helm.
 - Everything is kept in one folder for your user: `%LOCALAPPDATA%\Kresheen` on Windows, `~/Library/Application Support/Kresheen` on macOS, `~/.local/share/kresheen` on Linux (set `KRESHEEN_HOME` to use another). It holds the database, the secret key that encrypts stored tokens (`secret.key`: back it up with the database) and Grype's vulnerability database. Uninstalling the app keeps this folder.
-- The installers are not code-signed yet. Windows SmartScreen shows "Windows protected your PC": choose More info, then Run anyway. On macOS, the first time, right-click Kresheen in Applications and choose Open. To check that a download is genuine, [verify it](releases.md#verify-the-desktop-installers) before running it.
+- The installers are not code-signed yet. Windows SmartScreen shows "Windows protected your PC": choose More info, then Run anyway. On macOS, the first launch is blocked ("Apple could not verify"): choose Done, then open System Settings, Privacy & Security, and choose Open Anyway next to the Kresheen message. To check that a download is genuine, [verify it](releases.md#verify-the-desktop-installers) before running it.
 
 The same executable is the full command line too: for example `kresheen create-user --db sqlite:///<data folder>/kresheen.db --email ...` adds an account.
 

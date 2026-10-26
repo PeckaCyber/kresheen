@@ -1,5 +1,5 @@
 # Desktop installers (packaging/desktop/build.py) for Linux (.tar.gz, .deb, .rpm), Windows (setup .exe, .zip) and
-# macOS (.dmg, Apple silicon), each built on its own runner and smoke-tested (first launch serves the app and offers
+# macOS (.dmg, Apple silicon and Intel), each built on its own runner and smoke-tested (first launch serves the app and offers
 # setup). release.yml calls this and signs and attaches the results; pull requests that touch the packaging, and a
 # manual run, build them as a check. The installers are not code-signed yet. Inno Setup comes with GitHub's Windows
 # image; hdiutil with macOS.
@@ -11,6 +11,7 @@ on:
       - src/kresheen/cli/desktop.py
       - .github/workflows/desktop.yml
       - .github/requirements/pyinstaller.txt
+      - .github/requirements/macos-intel-build.txt
   workflow_call:
   workflow_dispatch:
 
@@ -22,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2025, macos-15]
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     defaults:
@@ -60,6 +61,6 @@ jobs:
         run: python packaging/desktop/smoke.py build/desktop/dist/kresheen
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: desktop-${{ runner.os }}
+          name: desktop-${{ runner.os }}-${{ runner.arch }}
           path: dist-desktop/
           if-no-files-found: error

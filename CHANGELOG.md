@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- Desktop installers for Windows (setup .exe and .zip), macOS (.dmg, Apple silicon) and Linux (.deb, .rpm, .tar.gz), attached to each release with a signed checksums file. They run Kresheen on your own computer only (127.0.0.1), with SQLite and Grype included, and need no Python, Docker or Kubernetes. Not code-signed yet. See [installation.md](docs/installation.md#desktop-app).
+- Desktop installers for Windows (setup .exe and .zip), macOS (.dmg, Apple silicon and Intel) and Linux (.deb, .rpm, .tar.gz), attached to each release with a signed checksums file. They run Kresheen on your own computer only (127.0.0.1), with SQLite and Grype included, and need no Python, Docker or Kubernetes. Not code-signed yet. See [installation.md](docs/installation.md#desktop-app).
 - `kresheen desktop`, the command the installers start: a per-user data folder with a generated secret key, the browser opened for you, and on the first start a one-time setup link to create the owner account.
 
 ### Fixed

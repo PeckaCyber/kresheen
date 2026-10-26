@@ -1,0 +1,7 @@
+# Build tools for the two packages compiled from source for the Intel macOS desktop build (packaging/desktop/build.py:
+# cryptography and argon2-cffi-bindings publish no Intel macOS wheels). cffi matches uv.lock.
+cffi==2.1.1
+maturin>=1.14.1,<2
+setuptools
+scikit-build-core>=1.0
+setuptools-scm>=8

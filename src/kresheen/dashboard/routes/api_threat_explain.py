@@ -62,7 +62,9 @@ def _omitted_note(count: int) -> str:
 
 
 def build_explain_content(
-    threat: Threat, properties: dict, max_chars: int = limits.EXPLAIN_MAX_INPUT_CHARS  # type: ignore[type-arg]
+    threat: Threat,
+    properties: dict,
+    max_chars: int = limits.EXPLAIN_MAX_INPUT_CHARS,  # type: ignore[type-arg]
 ) -> ExplainContent:
     """The threat, rule text, mitigations and the component's name and type always go in full. Property
     values are shortened one by one, then whole properties are dropped, longest first, until it fits."""

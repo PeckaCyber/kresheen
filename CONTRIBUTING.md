@@ -34,7 +34,8 @@ Run these from the repository root.
 Backend:
 
 ```bash
-ruff check src tests
+ruff format .
+ruff check .
 mypy src/kresheen
 pytest -q
 ```
@@ -42,9 +43,18 @@ pytest -q
 Frontend (from `frontend/`):
 
 ```bash
+npm run format
 npx tsc -b --noEmit
 npm test
 ```
+
+### Code style
+
+Formatting is automatic, so style is never a review topic. Python follows PEP 8 as enforced by
+[Ruff's formatter](https://docs.astral.sh/ruff/formatter/) (Black-compatible), and the frontend uses
+[Prettier](https://prettier.io/) with its defaults; both use a 120-character line, set in `pyproject.toml` and
+`frontend/.prettierrc.json`. CI runs `ruff format --check` and `npm run format:check`, so run the formatters before
+you push. `.editorconfig` gives editors the same basics (UTF-8, LF, final newline, spaces).
 
 New features and bug fixes come with tests: a fix adds a test that fails without it. Every pull request must pass the full suite, which runs as required checks in CI.
 

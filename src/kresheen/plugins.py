@@ -246,7 +246,9 @@ class PluginRegistry:
                 decision = plugin.group_role(user, group, repo)
                 if decision is None:
                     continue
-                if not isinstance(decision, GroupRole) or (decision.role is not None and decision.role not in _GROUP_ROLES):
+                if not isinstance(decision, GroupRole) or (
+                    decision.role is not None and decision.role not in _GROUP_ROLES
+                ):
                     raise TypeError(f"invalid group role decision {decision!r}")
             except Exception:
                 logger.exception("Plugin %s failed in group_role; denying access to group %s", plugin.name, group.id)

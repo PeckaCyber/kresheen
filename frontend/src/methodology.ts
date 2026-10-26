@@ -45,7 +45,10 @@ let available: MethodologyInfo[] = [STRIDE_INFO];
 
 /** Installs the server's list. STRIDE is always the built-in entry; the server's other entries follow it in order. */
 export function setAvailableMethodologies(list: MethodologyInfo[] | null | undefined): void {
-  available = [STRIDE_INFO, ...(list ?? []).filter((m) => m.name !== STRIDE_METHODOLOGY && m.name !== CUSTOM_METHODOLOGY)];
+  available = [
+    STRIDE_INFO,
+    ...(list ?? []).filter((m) => m.name !== STRIDE_METHODOLOGY && m.name !== CUSTOM_METHODOLOGY),
+  ];
 }
 
 /** Names that can be selected for an application, STRIDE first. */

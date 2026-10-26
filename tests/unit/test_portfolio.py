@@ -32,6 +32,7 @@ def _app(
         open_action_count=open_action_count,
     )
 
+
 def test_summary_totals_across_applications():
     apps = [
         _app(
@@ -65,6 +66,7 @@ def test_summary_totals_across_applications():
     assert summary.avg_completeness == 60.0
     assert summary.stale_count == 1
 
+
 def test_never_reviewed_and_reviewed_over_90_days():
     apps = [
         _app("A", reviewed_at=None),
@@ -76,6 +78,7 @@ def test_never_reviewed_and_reviewed_over_90_days():
 
     assert summary.never_reviewed_count == 1
     assert summary.reviewed_over_90_days_count == 1
+
 
 def test_summary_with_no_applications_has_no_average_completeness():
     summary = build_portfolio_summary([], _NOW)

@@ -57,9 +57,7 @@ def load_dfd_model(application_id: str, run_id: str, repo: Repository) -> tuple[
     # components a designer would threat-model (a `go.sum` is not a process).
     fact_nodes = repo.list_fact_nodes_for_run(run_id)
     excluded_ids = {
-        node.id
-        for node in fact_nodes
-        if node.node_type == "code_artifact" or node.source_ref == "github_repository"
+        node.id for node in fact_nodes if node.node_type == "code_artifact" or node.source_ref == "github_repository"
     }
     name_by_id = {asset.id: asset.name for asset in merged.assets}
     flows = [
@@ -210,9 +208,7 @@ def load_derived_dfd_model(
     return _with_derived_controls(elements, context), flows
 
 
-def generate_run_threats(
-    application_id: str, run_id: str, repo: Repository
-) -> list[Threat]:
+def generate_run_threats(application_id: str, run_id: str, repo: Repository) -> list[Threat]:
     application = repo.get_application(application_id)
     # A selection this installation cannot generate for (a plugin methodology after its licence lapsed) is skipped,
     # not fatal; the UI says so (see `unavailable_methodologies`).
@@ -227,7 +223,10 @@ def generate_run_threats(
     # The curated feed is not part of the open-source core; a plugin supplies it through `threat_sources`.
     entries = [e for e in entries if e.source != "kresheen_curated"]
     generated = generate_threats(
-        elements_for_threats, flows, extra_rules=[*rules_from_kb_entries(entries), *get_registry().threat_rules(repo)], methodologies=methodologies
+        elements_for_threats,
+        flows,
+        extra_rules=[*rules_from_kb_entries(entries), *get_registry().threat_rules(repo)],
+        methodologies=methodologies,
     )
     if "STRIDE" in methodologies:
         generated += generate_config_threats(context, elements, flows)

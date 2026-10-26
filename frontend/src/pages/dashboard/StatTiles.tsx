@@ -31,7 +31,10 @@ function StatTile({
       <div className="pc-stat-sub">{sub}</div>
       {progress !== undefined && (
         <div className="pc-bar-track mt-2">
-          <div className="pc-bar-fill" style={{ width: `${Math.max(0, Math.min(100, progress))}%`, background: "var(--tone)" }} />
+          <div
+            className="pc-bar-fill"
+            style={{ width: `${Math.max(0, Math.min(100, progress))}%`, background: "var(--tone)" }}
+          />
         </div>
       )}
       {spark && <Sparkline values={spark} color="var(--tone)" />}
@@ -100,7 +103,9 @@ export function StatTiles({
       key: "addressed",
       label: "Addressed",
       value: `${Math.round(summary.addressed_pct)}%`,
-      sub: summary.total_threat_count ? `${summary.addressed_count} of ${summary.total_threat_count} threats` : "no threats yet",
+      sub: summary.total_threat_count
+        ? `${summary.addressed_count} of ${summary.total_threat_count} threats`
+        : "no threats yet",
       tone: summary.total_threat_count ? toneForPct(summary.addressed_pct) : "accent",
       progress: summary.addressed_pct,
     },

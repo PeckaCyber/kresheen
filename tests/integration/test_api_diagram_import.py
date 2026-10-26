@@ -10,7 +10,8 @@ def _import(client, csrf, content, filename="diagram.txt"):
     headers = {"X-CSRF-Token": csrf}
     application = client.post("/api/applications", json={"name": "Imported"}, headers=headers).json()
     client.post(
-        f"/api/applications/{application['id']}/data-sources", headers=headers,
+        f"/api/applications/{application['id']}/data-sources",
+        headers=headers,
         json={"type": "architecture_diagram", "connection_details": {"filename": filename, "content": content}},
     )
     run = client.post(f"/api/applications/{application['id']}/runs", headers=headers).json()
@@ -59,12 +60,19 @@ def test_facts_the_file_states_count_as_stated_and_the_owner_can_override_them(t
     questions = {i["element_name"] + "|" + i["check"] for i in client.get(f"{base}/completeness").json()["items"]}
     assert "Orders DB|encrypted_at_rest" not in questions  # the file already said so
     assert "Customer -> Web app|encrypted_in_transit" not in questions
-    assert any(i.endswith("encrypted_in_transit") and "Web app -> Orders DB" in i for i in questions)  # not stated: still asked
+    assert any(
+        i.endswith("encrypted_in_transit") and "Web app -> Orders DB" in i for i in questions
+    )  # not stated: still asked
 
     # The owner's own statement wins over the file's.
     client.put(
-        f"{base}/element-properties", headers=headers,
-        json={"element_kind": "component", "element_id": nodes["Orders DB"]["id"], "properties": {"is_encrypted": False}},
+        f"{base}/element-properties",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": nodes["Orders DB"]["id"],
+            "properties": {"is_encrypted": False},
+        },
     )
     after = {n["name"]: n for n in client.get(f"{base}/dfd").json()["nodes"]}
     assert after["Orders DB"]["properties"]["is_encrypted"] is False

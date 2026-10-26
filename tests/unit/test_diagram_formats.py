@@ -20,24 +20,45 @@ def _flow(diagram, source, target):
 
 # ---- Threat Dragon -----------------------------------------------------------------------------
 
+
 def _td(cells):
     return json.dumps({"summary": {"title": "t"}, "detail": {"diagrams": [{"title": "d", "cells": cells}]}})
 
 
 def _td_cell(cell_id, shape, name, x, y, w=100, h=60, **data):
-    return {"id": cell_id, "shape": shape, "position": {"x": x, "y": y}, "size": {"width": w, "height": h}, "data": {"name": name, **data}}
+    return {
+        "id": cell_id,
+        "shape": shape,
+        "position": {"x": x, "y": y},
+        "size": {"width": w, "height": h},
+        "data": {"name": name, **data},
+    }
 
 
-TD = _td([
-    _td_cell("z", "trust-boundary-box", "Internal", 0, 0, 500, 300),
-    _td_cell("z2", "trust-boundary-box", "Data zone", 300, 0, 180, 300),
-    _td_cell("u", "actor", "Customer", 600, 0),
-    _td_cell("w", "process", "Web app", 20, 20, isWebApplication=True),
-    _td_cell("d", "store", "Orders DB", 320, 20, isEncrypted=True, storesCredentials=False, isALog=False),
-    _td_cell("t", "td-text-block", "a note", 20, 200),
-    {"id": "f1", "shape": "flow", "source": {"cell": "u"}, "target": {"cell": "w"}, "data": {"name": "HTTPS", "isEncrypted": True, "isPublicNetwork": True, "protocol": "HTTPS"}},
-    {"id": "f2", "shape": "flow", "source": {"cell": "w"}, "target": {"cell": "d"}, "data": {"name": "SQL", "isEncrypted": False}},
-])
+TD = _td(
+    [
+        _td_cell("z", "trust-boundary-box", "Internal", 0, 0, 500, 300),
+        _td_cell("z2", "trust-boundary-box", "Data zone", 300, 0, 180, 300),
+        _td_cell("u", "actor", "Customer", 600, 0),
+        _td_cell("w", "process", "Web app", 20, 20, isWebApplication=True),
+        _td_cell("d", "store", "Orders DB", 320, 20, isEncrypted=True, storesCredentials=False, isALog=False),
+        _td_cell("t", "td-text-block", "a note", 20, 200),
+        {
+            "id": "f1",
+            "shape": "flow",
+            "source": {"cell": "u"},
+            "target": {"cell": "w"},
+            "data": {"name": "HTTPS", "isEncrypted": True, "isPublicNetwork": True, "protocol": "HTTPS"},
+        },
+        {
+            "id": "f2",
+            "shape": "flow",
+            "source": {"cell": "w"},
+            "target": {"cell": "d"},
+            "data": {"name": "SQL", "isEncrypted": False},
+        },
+    ]
+)
 
 
 def test_threat_dragon_types_boundaries_and_stated_properties_are_imported():
@@ -45,32 +66,58 @@ def test_threat_dragon_types_boundaries_and_stated_properties_are_imported():
     named = _by_name(diagram)
 
     assert diagram.format == "threat_dragon"
-    assert {n: c.type for n, c in named.items()} == {"Customer": "external_entity", "Web app": "process", "Orders DB": "data_store"}
+    assert {n: c.type for n, c in named.items()} == {
+        "Customer": "external_entity",
+        "Web app": "process",
+        "Orders DB": "data_store",
+    }
     assert "a note" not in named  # text blocks are not components
     assert named["Web app"].boundary == "Internal"
     assert named["Orders DB"].boundary == "Data zone"  # the smallest box that contains it
     assert named["Customer"].boundary is None
     assert named["Web app"].properties == {"is_web_application": True}
     assert named["Orders DB"].properties == {"is_encrypted": True}  # unticked boxes are "not stated", not "no"
-    assert _flow(diagram, "Customer", "Web app").properties == {"is_encrypted": True, "crosses_public_network": True, "protocol": "HTTPS"}
+    assert _flow(diagram, "Customer", "Web app").properties == {
+        "is_encrypted": True,
+        "crosses_public_network": True,
+        "protocol": "HTTPS",
+    }
     assert _flow(diagram, "Web app", "Orders DB").properties == {}
 
 
 def test_threat_dragon_files_without_shapes_still_import_as_processes():
     """The earlier importer's behaviour: an unknown cell is a process."""
-    cells = [{"id": "a", "data": {"name": "A"}}, {"id": "b", "data": {"name": "B"}}, {"id": "f", "source": "a", "target": "b", "data": {"name": "x"}}]
+    cells = [
+        {"id": "a", "data": {"name": "A"}},
+        {"id": "b", "data": {"name": "B"}},
+        {"id": "f", "source": "a", "target": "b", "data": {"name": "x"}},
+    ]
     diagram = parse_diagram(_td(cells))
     assert {c.type for c in diagram.components} == {"process"} and len(diagram.flows) == 1
 
 
 def test_threat_dragon_older_diagramjson_layout_is_read():
-    old = json.dumps({"detail": {"diagrams": [{"diagramJson": {"cells": [
-        {"id": "a", "data": {"name": "A", "type": "tm.Actor"}}, {"id": "s", "data": {"name": "S", "type": "tm.Store"}},
-    ]}}]}})
+    old = json.dumps(
+        {
+            "detail": {
+                "diagrams": [
+                    {
+                        "diagramJson": {
+                            "cells": [
+                                {"id": "a", "data": {"name": "A", "type": "tm.Actor"}},
+                                {"id": "s", "data": {"name": "S", "type": "tm.Store"}},
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    )
     assert {c.name: c.type for c in parse_diagram(old).components} == {"A": "external_entity", "S": "data_store"}
 
 
 # ---- draw.io -----------------------------------------------------------------------------------
+
 
 def _drawio(cells_xml):
     return f'<mxfile><diagram id="p1" name="Page-1"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>{cells_xml}</root></mxGraphModel></diagram></mxfile>'
@@ -93,8 +140,16 @@ def test_drawio_shapes_zones_and_connections():
     named = _by_name(diagram)
 
     assert diagram.format == "drawio"
-    assert {n: c.type for n, c in named.items()} == {"Web Server": "process", "Orders DB": "data_store", "Customer": "external_entity"}
-    assert named["Web Server"].boundary == "DMZ" and named["Orders DB"].boundary == "DMZ" and named["Customer"].boundary is None
+    assert {n: c.type for n, c in named.items()} == {
+        "Web Server": "process",
+        "Orders DB": "data_store",
+        "Customer": "external_entity",
+    }
+    assert (
+        named["Web Server"].boundary == "DMZ"
+        and named["Orders DB"].boundary == "DMZ"
+        and named["Customer"].boundary is None
+    )
     assert [(f.label) for f in diagram.flows] == ["HTTPS", "SQL"]  # the dangling edge is dropped
     assert "see wiki" not in named and "DMZ" not in named
 
@@ -229,11 +284,19 @@ def test_threagile_assets_links_boundaries_and_stated_facts():
     named = _by_name(diagram)
 
     assert diagram.format == "threagile"
-    assert {n: c.type for n, c in named.items()} == {"Customer Client": "external_entity", "Web App": "process", "Orders DB": "data_store"}
+    assert {n: c.type for n, c in named.items()} == {
+        "Customer Client": "external_entity",
+        "Web App": "process",
+        "Orders DB": "data_store",
+    }
     assert named["Customer Client"].boundary == "Internet"
     assert named["Web App"].boundary == "Company" and named["Orders DB"].boundary == "Data"  # smallest enclosing
     assert named["Orders DB"].properties == {"is_encrypted": True}
-    assert _flow(diagram, "Customer Client", "Web App").properties == {"protocol": "https", "is_encrypted": True, "authenticated": True}
+    assert _flow(diagram, "Customer Client", "Web App").properties == {
+        "protocol": "https",
+        "is_encrypted": True,
+        "authenticated": True,
+    }
     assert _flow(diagram, "Web App", "Orders DB").properties == {"protocol": "jdbc"}
 
 
@@ -243,8 +306,17 @@ def test_threagile_unsafe_yaml_tags_are_not_executed():
 
 # ---- dispatch and limits -----------------------------------------------------------------------
 
+
 def test_unrecognised_content_is_none():
-    for content in ("", "   ", "PNG\x89 binary-ish", '{"not": "a diagram"}', "<html><body>hi</body></html>", "[1, 2, 3]", "{broken json"):
+    for content in (
+        "",
+        "   ",
+        "PNG\x89 binary-ish",
+        '{"not": "a diagram"}',
+        "<html><body>hi</body></html>",
+        "[1, 2, 3]",
+        "{broken json",
+    ):
         assert parse_diagram(content) is None, content
 
 
@@ -264,5 +336,9 @@ def test_threat_dragon_cells_with_wrong_types_are_ignored_not_fatal():
     # Found by tests/fuzz: a non-string shape or type, or non-list cells, raised TypeError.
     import json
 
-    for diagrams in ([{"cells": [{"shape": [None]}]}], [{"cells": True}], [{"cells": [{"id": "a", "data": {"type": ["x"]}}]}]):
+    for diagrams in (
+        [{"cells": [{"shape": [None]}]}],
+        [{"cells": True}],
+        [{"cells": [{"id": "a", "data": {"type": ["x"]}}]}],
+    ):
         parse_diagram(json.dumps({"detail": {"diagrams": diagrams}}))

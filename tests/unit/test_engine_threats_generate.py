@@ -42,7 +42,12 @@ def test_stride_per_element_matrix():
         return {t.category for t in threats if t.element_name == kind_name}
 
     assert strides("API") == {
-        "Spoofing", "Tampering", "Repudiation", "InformationDisclosure", "DenialOfService", "ElevationOfPrivilege",
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "InformationDisclosure",
+        "DenialOfService",
+        "ElevationOfPrivilege",
     }
     assert strides("DB") == {"Tampering", "Repudiation", "InformationDisclosure", "DenialOfService"}
     assert {"Spoofing", "Repudiation"} <= strides("Vendor")
@@ -111,9 +116,7 @@ def test_keys_are_name_based_and_stable_across_ephemeral_ids():
 
 
 def test_duplicate_names_collapse_to_one_threat_per_key():
-    threats = generate_threats(
-        [DfdElement("1", "API", "process"), DfdElement("2", "API", "process")], []
-    )
+    threats = generate_threats([DfdElement("1", "API", "process"), DfdElement("2", "API", "process")], [])
 
     keys = [t.key for t in threats]
     assert len(keys) == len(set(keys))
@@ -145,8 +148,12 @@ def _kb_entry(**overrides):
 
     now = datetime.now(UTC)
     base = {
-        "id": "KB-abc12345", "source": "custom", "name": "Badge cloning at {name}",
-        "description": "Cloned badges.", "created_at": now, "updated_at": now,
+        "id": "KB-abc12345",
+        "source": "custom",
+        "name": "Badge cloning at {name}",
+        "description": "Cloned badges.",
+        "created_at": now,
+        "updated_at": now,
     }
     return ThreatKBEntry(**{**base, **overrides})
 
@@ -161,9 +168,7 @@ def test_kb_entry_without_applies_to_is_not_a_rule():
 def test_custom_rule_generates_on_matching_type_only_with_origin_and_no_stride_required():
     from kresheen.engine.threats.custom import rules_from_kb_entries
 
-    rules = rules_from_kb_entries(
-        [_kb_entry(applies_to="data_store", severity="high", mitigations=["Rotate badges."])]
-    )
+    rules = rules_from_kb_entries([_kb_entry(applies_to="data_store", severity="high", mitigations=["Rotate badges."])])
     elements = [DfdElement("p", "API", "process"), DfdElement("d", "Vault", "data_store")]
 
     threats = generate_threats(elements, [], extra_rules=rules)
@@ -180,9 +185,7 @@ def test_custom_rule_generates_on_matching_type_only_with_origin_and_no_stride_r
 def test_custom_methodology_rule_is_always_on_and_keeps_its_free_text_category():
     from kresheen.engine.threats.custom import rules_from_kb_entries
 
-    rules = rules_from_kb_entries(
-        [_kb_entry(applies_to="data_store", methodology="Custom", category="Insider fraud")]
-    )
+    rules = rules_from_kb_entries([_kb_entry(applies_to="data_store", methodology="Custom", category="Insider fraud")])
     elements = [DfdElement("d", "Vault", "data_store")]
 
     # Default methodologies are STRIDE-only; a Custom rule still applies.
@@ -218,8 +221,13 @@ def _manual(element_key, **overrides):
     from kresheen.models.threat import ManualThreat
 
     base = {
-        "id": "MT-11111111", "application_id": "APP-1", "element_kind": "component", "element_type": "process",
-        "element_key": element_key, "element_name": "x", "title": "Insider export",
+        "id": "MT-11111111",
+        "application_id": "APP-1",
+        "element_kind": "component",
+        "element_type": "process",
+        "element_key": element_key,
+        "element_name": "x",
+        "title": "Insider export",
         "created_at": datetime.now(UTC),
     }
     return ManualThreat(**{**base, **overrides})
@@ -260,19 +268,37 @@ def test_methodologies_filter_is_a_no_op_at_the_default():
 def _demo_spec() -> MethodologySpec:
     """A stand-in for a plugin methodology; the core knows nothing about which ones exist."""
     gated = ThreatRule(
-        id="DEMO-GATED-01", element_type="process", category="Gamma", title="Gated threat on {name}", description="d",
-        severity="low", mitigations=("m",), methodology="Demo", when=(("demo_flag", True),), asserted="demo flag set",
+        id="DEMO-GATED-01",
+        element_type="process",
+        category="Gamma",
+        title="Gated threat on {name}",
+        description="d",
+        severity="low",
+        mitigations=("m",),
+        methodology="Demo",
+        when=(("demo_flag", True),),
+        asserted="demo flag set",
     )
     always = ThreatRule(
-        id="DEMO-ALWAYS-01", element_type="process", category="Alpha", title="Demo threat on {name}", description="d",
-        severity="medium", mitigations=("m",), methodology="Demo",
+        id="DEMO-ALWAYS-01",
+        element_type="process",
+        category="Alpha",
+        title="Demo threat on {name}",
+        description="d",
+        severity="medium",
+        mitigations=("m",),
+        methodology="Demo",
     )
     from kresheen.engine.threats.properties import PropertySpec
 
     return MethodologySpec(
-        name="Demo", description="A demo methodology.", categories=("Alpha", "Gamma"),
-        category_descriptions={"Alpha": "First."}, cia={"Alpha": frozenset({"Availability", "Integrity"})},
-        rules=(always, gated), properties=(PropertySpec("demo_flag", "Demo flag", "bool"),),
+        name="Demo",
+        description="A demo methodology.",
+        categories=("Alpha", "Gamma"),
+        category_descriptions={"Alpha": "First."},
+        cia={"Alpha": frozenset({"Availability", "Integrity"})},
+        rules=(always, gated),
+        properties=(PropertySpec("demo_flag", "Demo flag", "bool"),),
     )
 
 

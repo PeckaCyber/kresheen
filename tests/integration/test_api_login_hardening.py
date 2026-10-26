@@ -17,8 +17,11 @@ PASSWORD = "correct-password"  # nosec: test fixture
 def _client(tmp_path):
     db_url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(db_url)
-    repo.save_user(User(id="USER-t", email=EMAIL, password_hash=hash_password(PASSWORD), role="owner",
-                        created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(
+            id="USER-t", email=EMAIL, password_hash=hash_password(PASSWORD), role="owner", created_at=datetime.now(UTC)
+        )
+    )
     return TestClient(create_app(db_url=db_url)), repo
 
 
@@ -37,7 +40,9 @@ def test_repeated_failures_get_429_with_retry_after_and_other_accounts_are_unaff
 def test_unknown_email_is_throttled_like_a_known_one(tmp_path, monkeypatch):
     monkeypatch.setenv("KRESHEEN_LOGIN_MAX_FAILURES_PER_ACCOUNT", "2")
     client, _ = _client(tmp_path)
-    codes = [client.post("/api/auth/login", json={"email": "ghost@x.test", "password": "x"}).status_code for _ in range(3)]
+    codes = [
+        client.post("/api/auth/login", json={"email": "ghost@x.test", "password": "x"}).status_code for _ in range(3)
+    ]
     assert codes == [401, 401, 429]
 
 
@@ -115,7 +120,9 @@ def test_failed_login_flood_cannot_evict_other_audit_history(tmp_path, monkeypat
     monkeypatch.setattr("kresheen.dashboard.audit.DEFAULT_MAX_FAILED_LOGINS", 20)
     _, repo = _client(tmp_path)
     for i in range(10):
-        record_event(repo, action="POST /api/groups", user_id="USER-t", user_email=EMAIL, subject={"n": str(i)}, status_code=200)
+        record_event(
+            repo, action="POST /api/groups", user_id="USER-t", user_email=EMAIL, subject={"n": str(i)}, status_code=200
+        )
     for i in range(500):
         record_event(repo, action="auth.login_failed", user_email=f"x{i}@x.test", status_code=401)
     events = repo.list_audit_events(limit=500)

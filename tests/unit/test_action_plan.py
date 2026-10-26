@@ -7,11 +7,23 @@ from kresheen.models.action_plan import ActionStatusRecord
 from kresheen.models.threat import ThreatOut
 
 
-def _threat(key, element, mitigations, *, severity="high", likelihood="likely", status="open", rule_id="PROC-S-01", **kw):
+def _threat(
+    key, element, mitigations, *, severity="high", likelihood="likely", status="open", rule_id="PROC-S-01", **kw
+):
     return ThreatOut(
-        key=key, rule_id=rule_id, element_kind="component", element_id=key, element_name=element,
-        element_type="process", title="t", description="d", severity=severity, likelihood=likelihood,
-        mitigations=mitigations, status=status, **kw,
+        key=key,
+        rule_id=rule_id,
+        element_kind="component",
+        element_id=key,
+        element_name=element,
+        element_type="process",
+        title="t",
+        description="d",
+        severity=severity,
+        likelihood=likelihood,
+        mitigations=mitigations,
+        status=status,
+        **kw,
     )
 
 
@@ -55,7 +67,9 @@ def test_config_observed_fixes_rank_before_specific_before_generic():
     plan = build_action_plan([generic, specific, observed], {})
 
     assert [(a.text, a.basis) for a in plan.actions] == [
-        ("Config advice.", "observed"), ("Specific advice.", "specific"), ("Generic advice.", "generic"),
+        ("Config advice.", "observed"),
+        ("Specific advice.", "specific"),
+        ("Generic advice.", "generic"),
     ]
 
 
@@ -73,10 +87,18 @@ def test_a_scanner_finding_alone_does_not_make_generic_advice_observed():
 
 
 def test_status_overlay_and_closed_actions_sink_below_open_ones():
-    threats = [_threat("a", "API", ["Big fix."], severity="critical"), _threat("b", "API", ["Small fix."], severity="low")]
+    threats = [
+        _threat("a", "API", ["Big fix."], severity="critical"),
+        _threat("b", "API", ["Small fix."], severity="low"),
+    ]
     big_id = action_id_for("big fix.")
     record = ActionStatusRecord(
-        id="AS-1", application_id="APP", action_id=big_id, status="done", note="shipped", updated_at=datetime.now(UTC),
+        id="AS-1",
+        application_id="APP",
+        action_id=big_id,
+        status="done",
+        note="shipped",
+        updated_at=datetime.now(UTC),
     )
     plan = build_action_plan(threats, {big_id: record})
 
@@ -110,5 +132,3 @@ def test_at_equal_risk_a_fix_for_a_critical_impact_threat_outranks_a_broader_one
 
     plan = build_action_plan([*broad, sensitive], {})
     assert [a.text for a in plan.actions][:2] == ["Protect the data.", "Broad hygiene."]
-
-

@@ -28,7 +28,12 @@ _IGNORED_TM = {"tm.Text", "tm.Boundary"}
 
 # Threat Dragon field -> this platform's property key, per element kind.
 _COMPONENT_PROPERTIES = {
-    "data_store": {"isEncrypted": "is_encrypted", "storesCredentials": "stores_credentials", "isALog": "is_a_log", "isSigned": "is_signed"},
+    "data_store": {
+        "isEncrypted": "is_encrypted",
+        "storesCredentials": "stores_credentials",
+        "isALog": "is_a_log",
+        "isSigned": "is_signed",
+    },
     "process": {"isWebApplication": "is_web_application"},
     "external_entity": {},
 }
@@ -88,7 +93,12 @@ def _rect(cell: dict) -> tuple[float, float, float, float] | None:
     position, size = cell.get("position"), cell.get("size")
     if not isinstance(position, dict) or not isinstance(size, dict):
         return None
-    x, y, w, h = _number(position.get("x")), _number(position.get("y")), _number(size.get("width")), _number(size.get("height"))
+    x, y, w, h = (
+        _number(position.get("x")),
+        _number(position.get("y")),
+        _number(size.get("width")),
+        _number(size.get("height")),
+    )
     if None in (x, y, w, h):
         return None
     return x, y, w, h  # type: ignore[return-value]
@@ -124,14 +134,22 @@ def parse_threat_dragon(parsed: dict) -> ParsedDiagram | None:
         rect = _rect(cell)
         if rect is not None:
             cx, cy = rect[0] + rect[2] / 2, rect[1] + rect[3] / 2
-            containing = [b for b in boundaries if b[2][0] <= cx <= b[2][0] + b[2][2] and b[2][1] <= cy <= b[2][1] + b[2][3]]
+            containing = [
+                b for b in boundaries if b[2][0] <= cx <= b[2][0] + b[2][2] and b[2][1] <= cy <= b[2][1] + b[2][3]
+            ]
             if containing:
                 boundary = min(containing, key=lambda b: b[1])[0]
         stated: dict[str, bool | str] = {
             ours: True for theirs, ours in _COMPONENT_PROPERTIES[node_type].items() if data.get(theirs) is True
         }
         diagram.components.append(
-            DiagramComponent(key=cell["id"], name=clean_name(data.get("name") or "unknown-component"), type=node_type, boundary=boundary, properties=stated)
+            DiagramComponent(
+                key=cell["id"],
+                name=clean_name(data.get("name") or "unknown-component"),
+                type=node_type,
+                boundary=boundary,
+                properties=stated,
+            )
         )
 
     for cell in cells:
@@ -141,12 +159,19 @@ def parse_threat_dragon(parsed: dict) -> ParsedDiagram | None:
         if source is None or target is None:
             continue
         data = _data(cell)
-        properties: dict[str, bool | str] = {ours: True for theirs, ours in _FLOW_PROPERTIES.items() if data.get(theirs) is True}
+        properties: dict[str, bool | str] = {
+            ours: True for theirs, ours in _FLOW_PROPERTIES.items() if data.get(theirs) is True
+        }
         protocol = data.get("protocol")
         if isinstance(protocol, str) and protocol.strip():
             properties["protocol"] = clean_name(protocol)
         label = data.get("name")
         diagram.flows.append(
-            DiagramFlow(source=source, target=target, label=clean_name(label) if isinstance(label, str) and label.strip() else None, properties=properties)
+            DiagramFlow(
+                source=source,
+                target=target,
+                label=clean_name(label) if isinstance(label, str) and label.strip() else None,
+                properties=properties,
+            )
         )
     return finish(diagram)

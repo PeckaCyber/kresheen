@@ -97,11 +97,7 @@ def find_attack_paths(elements: list[DfdElement], flows: list[DfdFlow]) -> list[
         adjacency.setdefault(flow.source_id, []).append(flow)
 
     sources = [e for e in in_scope_elements.values() if e.type == "external_entity"]
-    targets = {
-        e.id: e
-        for e in in_scope_elements.values()
-        if e.type == "data_store" or _is_crown_jewel(e)
-    }
+    targets = {e.id: e for e in in_scope_elements.values() if e.type == "data_store" or _is_crown_jewel(e)}
 
     paths: list[AttackPath] = []
     for source in sources:

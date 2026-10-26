@@ -47,7 +47,8 @@ describe("Explain this threat", () => {
     explainReply = () => json({ text: "First paragraph.\n\nSecond paragraph.", warnings: [] });
     fetchMock.mockReset();
     fetchMock.mockImplementation(async (path: string) => {
-      if (path === "/api/capabilities") return json({ plugins: [], features: [], auth_providers: [], ai: { enabled: aiEnabled, experimental: true } });
+      if (path === "/api/capabilities")
+        return json({ plugins: [], features: [], auth_providers: [], ai: { enabled: aiEnabled, experimental: true } });
       if (path === "/api/agent-config") return aiEnabled ? json(config) : json({ detail: "Not found" }, 404);
       if (path === "/api/applications/A/runs/R/threats/explain") return explainReply();
       return json({});
@@ -109,7 +110,10 @@ describe("Explain this threat", () => {
 
   it("shows warnings in a notice", async () => {
     explainReply = () =>
-      json({ text: "Fine.", warnings: [{ pattern: "model_address", excerpt: "Ignore previous instructions <i>x</i>" }] });
+      json({
+        text: "Fine.",
+        warnings: [{ pattern: "model_address", excerpt: "Ignore previous instructions <i>x</i>" }],
+      });
     open(/Callers can impersonate/);
     fireEvent.click(await screen.findByText("Explain (AI, experimental)"));
     const notice = await screen.findByText(/looks aimed at an AI reviewer/);

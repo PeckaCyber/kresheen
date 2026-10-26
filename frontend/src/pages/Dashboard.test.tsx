@@ -80,7 +80,12 @@ describe("DashboardPage", () => {
   });
 
   it("shows the trend empty state instead of a chart with fewer than two points", async () => {
-    open(payload({ applications: [app({ id: "1" })], trend: [{ day: "2026-09-26", open: 5, new: 0, resolved: 0, open_by_risk: {} }] }));
+    open(
+      payload({
+        applications: [app({ id: "1" })],
+        trend: [{ day: "2026-09-26", open: 5, new: 0, resolved: 0, open_by_risk: {} }],
+      }),
+    );
     expect(await screen.findByText(/Trend appears after a second day of data/)).toBeInTheDocument();
   });
 
@@ -88,7 +93,12 @@ describe("DashboardPage", () => {
     open(
       payload({
         applications: [app({ id: "1", open_threat_count: 201 })],
-        summary: { ...EMPTY_SUMMARY, application_count: 1, open_threat_count: 201, open_by_risk: { critical: 1, low: 200 } },
+        summary: {
+          ...EMPTY_SUMMARY,
+          application_count: 1,
+          open_threat_count: 201,
+          open_by_risk: { critical: 1, low: 200 },
+        },
       }),
     );
     expect(await screen.findByText("<1%")).toBeInTheDocument();
@@ -124,7 +134,16 @@ describe("DashboardPage", () => {
     fireEvent.click(await screen.findByTestId("dash-tile-models"));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("All applications")).toBeInTheDocument();
-    for (const header of ["Application", "Group", "Worst risk", "Open", "Addressed", "Completeness", "Last run", "Reviewed"]) {
+    for (const header of [
+      "Application",
+      "Group",
+      "Worst risk",
+      "Open",
+      "Addressed",
+      "Completeness",
+      "Last run",
+      "Reviewed",
+    ]) {
       expect(within(dialog).getByText(header)).toBeInTheDocument();
     }
     expect(within(dialog).getByText("Sample shop")).toBeInTheDocument();

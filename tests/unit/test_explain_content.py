@@ -9,10 +9,21 @@ from kresheen.models.threat import Threat
 
 def _threat(**kw) -> Threat:
     base = {
-        "key": "K", "rule_id": "R-1", "element_kind": "component", "element_id": "N-1", "element_name": "DB",
-        "element_type": "data_store", "methodology": "STRIDE", "category": "Tampering",
-        "title": "DB can be altered", "description": "Describes the threat.", "severity": "high",
-        "mitigations": ["Restrict writes."], "cwe_refs": [], "attack_refs": [], "risk_factors": ["No auth"],
+        "key": "K",
+        "rule_id": "R-1",
+        "element_kind": "component",
+        "element_id": "N-1",
+        "element_name": "DB",
+        "element_type": "data_store",
+        "methodology": "STRIDE",
+        "category": "Tampering",
+        "title": "DB can be altered",
+        "description": "Describes the threat.",
+        "severity": "high",
+        "mitigations": ["Restrict writes."],
+        "cwe_refs": [],
+        "attack_refs": [],
+        "risk_factors": ["No auth"],
         "origin": "predefined",
     }
     base.update(kw)

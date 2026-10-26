@@ -2,7 +2,13 @@ import { Fragment, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Alert, Badge, Button, Form, Modal, Table } from "react-bootstrap";
 import { apiFetch } from "../api/client";
 import { PageHeader } from "../components/PageHeader";
-import { CUSTOM_METHODOLOGY, threatMethodologies, methodologyCategories, categoryLabel, type Methodology } from "../methodology";
+import {
+  CUSTOM_METHODOLOGY,
+  threatMethodologies,
+  methodologyCategories,
+  categoryLabel,
+  type Methodology,
+} from "../methodology";
 
 interface ThreatKBEntryOut {
   id: string;
@@ -126,9 +132,7 @@ export function ThreatKnowledgeBasePage() {
     } else if (sourceFilter === "custom") {
       return entries.filter((e) => e.source === "custom").map((e) => ({ ...e, type: "entry" as const }));
     } else {
-      return entries
-        .filter((e) => e.source === sourceFilter)
-        .map((e) => ({ ...e, type: "entry" as const }));
+      return entries.filter((e) => e.source === sourceFilter).map((e) => ({ ...e, type: "entry" as const }));
     }
   }, [sourceFilter, rules, entries]);
 
@@ -138,7 +142,7 @@ export function ThreatKnowledgeBasePage() {
       // Search filter
       if (searchTerm.trim()) {
         const search = searchTerm.trim().toLowerCase();
-        const id = item.type === "rule" ? item.id : item.external_id ?? "";
+        const id = item.type === "rule" ? item.id : (item.external_id ?? "");
         const name = item.type === "rule" ? item.title : item.name;
         const desc = item.description;
         const matches =
@@ -187,7 +191,10 @@ export function ThreatKnowledgeBasePage() {
           methodology,
           category: category || null,
           severity,
-          mitigations: mitigations.split("\n").map((m) => m.trim()).filter(Boolean),
+          mitigations: mitigations
+            .split("\n")
+            .map((m) => m.trim())
+            .filter(Boolean),
         }),
       });
       setShowCreate(false);
@@ -223,7 +230,10 @@ export function ThreatKnowledgeBasePage() {
       />
 
       <Alert variant="info" className="small">
-        Pre-defined rules generate threats automatically on every matching element of a run's data flow diagram. A custom threat does the same when you choose what it applies to; otherwise it is reference only, and you can attach it to a specific component or flow from a run's Threats section. Threat feed entries are reference only for now.
+        Pre-defined rules generate threats automatically on every matching element of a run's data flow diagram. A
+        custom threat does the same when you choose what it applies to; otherwise it is reference only, and you can
+        attach it to a specific component or flow from a run's Threats section. Threat feed entries are reference only
+        for now.
       </Alert>
 
       <div className="d-flex flex-wrap gap-2 mb-2">
@@ -336,74 +346,77 @@ export function ThreatKnowledgeBasePage() {
           </thead>
           <tbody>
             {filteredItems.map((item) => {
-            if (item.type === "rule") {
-              const isExpandedRow = isExpanded(item.id);
-              return (
-                <Fragment key={item.id}>
-                  <tr
-                    onClick={() => setExpandedRuleId(isExpandedRow ? null : item.id)}
-                    style={{ cursor: "pointer" }}
-                    aria-expanded={isExpandedRow}
-                  >
+              if (item.type === "rule") {
+                const isExpandedRow = isExpanded(item.id);
+                return (
+                  <Fragment key={item.id}>
+                    <tr
+                      onClick={() => setExpandedRuleId(isExpandedRow ? null : item.id)}
+                      style={{ cursor: "pointer" }}
+                      aria-expanded={isExpandedRow}
+                    >
+                      <td>
+                        <Badge bg="primary">Pre-defined</Badge>
+                      </td>
+                      <td>{item.id}</td>
+                      <td>{item.title}</td>
+                      <td>
+                        {ENTITY_LABEL[item.element_type] ?? item.element_type}
+                        <div className="small text-muted">{item.applies_when}</div>
+                      </td>
+                      <CategoryCell
+                        framework={item.methodology}
+                        category={categoryLabel(item.methodology, item.category)}
+                      />
+                      <td>{item.severity}</td>
+                      <td className="small">{item.description}</td>
+                    </tr>
+                    {isExpandedRow && (
+                      <tr>
+                        <td colSpan={7}>
+                          <div className="p-2">
+                            <strong>Suggested mitigations</strong>
+                            <ul className="small">
+                              {item.mitigations.map((m, i) => (
+                                <li key={i}>{m}</li>
+                              ))}
+                            </ul>
+                            <p className="small text-muted">
+                              {item.cwe_refs.join(" · ")} {item.attack_refs.join(" · ")}
+                              {item.taxonomy_id && ` · Research taxonomy ${item.taxonomy_id}`}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              } else {
+                return (
+                  <tr key={item.id}>
                     <td>
-                      <Badge bg="primary">Pre-defined</Badge>
+                      <Badge bg={item.source === "custom" ? "info" : "secondary"}>
+                        {SOURCE_LABEL[item.source] ?? item.source}
+                      </Badge>
                     </td>
-                    <td>{item.id}</td>
-                    <td>{item.title}</td>
+                    <td>{item.external_id ?? "—"}</td>
+                    <td>{item.name}</td>
                     <td>
-                      {ENTITY_LABEL[item.element_type] ?? item.element_type}
-                      <div className="small text-muted">{item.applies_when}</div>
+                      {item.applies_to ? (ENTITY_LABEL[item.applies_to] ?? item.applies_to) : "—"}
+                      {!item.applies_to && <div className="small text-muted">Reference only</div>}
+                      {item.applies_to && item.boundary_hint && (
+                        <div className="small text-muted">boundary contains "{item.boundary_hint}"</div>
+                      )}
                     </td>
-                    <CategoryCell framework={item.methodology} category={categoryLabel(item.methodology, item.category)} />
-                    <td>{item.severity}</td>
+                    <CategoryCell
+                      framework={item.category ? item.methodology : (FEED_FRAMEWORK[item.source] ?? null)}
+                      category={item.category ? categoryLabel(item.methodology, item.category) : null}
+                    />
+                    <td>{item.applies_to ? item.severity : "—"}</td>
                     <td className="small">{item.description}</td>
                   </tr>
-                  {isExpandedRow && (
-                    <tr>
-                      <td colSpan={7}>
-                        <div className="p-2">
-                          <strong>Suggested mitigations</strong>
-                          <ul className="small">
-                            {item.mitigations.map((m, i) => (
-                              <li key={i}>{m}</li>
-                            ))}
-                          </ul>
-                          <p className="small text-muted">
-                            {item.cwe_refs.join(" · ")} {item.attack_refs.join(" · ")}
-                            {item.taxonomy_id && ` · Research taxonomy ${item.taxonomy_id}`}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              );
-            } else {
-              return (
-                <tr key={item.id}>
-                  <td>
-                    <Badge bg={item.source === "custom" ? "info" : "secondary"}>
-                      {SOURCE_LABEL[item.source] ?? item.source}
-                    </Badge>
-                  </td>
-                  <td>{item.external_id ?? "—"}</td>
-                  <td>{item.name}</td>
-                  <td>
-                    {item.applies_to ? (ENTITY_LABEL[item.applies_to] ?? item.applies_to) : "—"}
-                    {!item.applies_to && <div className="small text-muted">Reference only</div>}
-                    {item.applies_to && item.boundary_hint && (
-                      <div className="small text-muted">boundary contains "{item.boundary_hint}"</div>
-                    )}
-                  </td>
-                  <CategoryCell
-                    framework={item.category ? item.methodology : (FEED_FRAMEWORK[item.source] ?? null)}
-                    category={item.category ? categoryLabel(item.methodology, item.category) : null}
-                  />
-                  <td>{item.applies_to ? item.severity : "—"}</td>
-                  <td className="small">{item.description}</td>
-                </tr>
-              );
-            }
+                );
+              }
             })}
           </tbody>
         </Table>
@@ -414,8 +427,8 @@ export function ThreatKnowledgeBasePage() {
           {sourceFilter === "custom"
             ? "No custom threats yet. Use Add custom threat to create one."
             : sourceFilter !== "all" && sourceFilter !== "predefined"
-            ? "No entries loaded for this feed yet."
-            : null}
+              ? "No entries loaded for this feed yet."
+              : null}
         </p>
       )}
 
@@ -445,10 +458,7 @@ export function ThreatKnowledgeBasePage() {
             </Form.Group>
             <Form.Group className="mb-3" controlId="kb-applies-to">
               <Form.Label>Generate this threat automatically on</Form.Label>
-              <Form.Select
-                value={appliesTo}
-                onChange={(e) => setAppliesTo(e.target.value)}
-              >
+              <Form.Select value={appliesTo} onChange={(e) => setAppliesTo(e.target.value)}>
                 <option value="">Nothing (reference only)</option>
                 <option value="process">Every process</option>
                 <option value="data_store">Every data store</option>
@@ -457,7 +467,8 @@ export function ThreatKnowledgeBasePage() {
               </Form.Select>
               {!appliesTo && (
                 <Form.Text className="text-muted">
-                  Leave as reference only to attach this threat to specific components by hand from a run's Threats section.
+                  Leave as reference only to attach this threat to specific components by hand from a run's Threats
+                  section.
                 </Form.Text>
               )}
             </Form.Group>
@@ -474,10 +485,7 @@ export function ThreatKnowledgeBasePage() {
             )}
             <Form.Group className="mb-3" controlId="kb-severity">
               <Form.Label>Severity</Form.Label>
-              <Form.Select
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-              >
+              <Form.Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
                 <option value="critical">Critical</option>
                 <option value="high">High</option>
                 <option value="medium">Medium</option>
@@ -501,7 +509,9 @@ export function ThreatKnowledgeBasePage() {
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-3" controlId="kb-category">
-              <Form.Label>{methodology === CUSTOM_METHODOLOGY ? "Custom category (optional)" : "Category (optional)"}</Form.Label>
+              <Form.Label>
+                {methodology === CUSTOM_METHODOLOGY ? "Custom category (optional)" : "Category (optional)"}
+              </Form.Label>
               {methodology === CUSTOM_METHODOLOGY ? (
                 <Form.Control
                   value={category}
@@ -509,17 +519,14 @@ export function ThreatKnowledgeBasePage() {
                   placeholder="Your own category, e.g. Insider fraud"
                 />
               ) : (
-              <Form.Select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">None</option>
-                {methodologyCategories(methodology).map((c) => (
-                  <option key={c} value={c}>
-                    {categoryLabel(methodology, c)}
-                  </option>
-                ))}
-              </Form.Select>
+                <Form.Select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">None</option>
+                  {methodologyCategories(methodology).map((c) => (
+                    <option key={c} value={c}>
+                      {categoryLabel(methodology, c)}
+                    </option>
+                  ))}
+                </Form.Select>
               )}
             </Form.Group>
             <Form.Group className="mb-3" controlId="kb-mitigations">

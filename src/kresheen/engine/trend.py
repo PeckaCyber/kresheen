@@ -97,7 +97,5 @@ def compute_trend(snapshots: list[ThreatSnapshot]) -> list[TrendPoint]:
                 before, after = set(previous.open_keys), set(current.open_keys)
                 new += len(after - before)
                 resolved += len(before - after)
-        points.append(
-            TrendPoint(day=day, open=open_total, new=new, resolved=resolved, open_by_risk=dict(risk_total))
-        )
+        points.append(TrendPoint(day=day, open=open_total, new=new, resolved=resolved, open_by_risk=dict(risk_total)))
     return points

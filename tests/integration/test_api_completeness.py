@@ -11,7 +11,8 @@ def _drawn_model(client, csrf):
     db = _add(client, app_url, headers, "Patient DB", "data_store", "Data")
     for a, b, label in ((user, web, "HTTPS"), (web, db, "SQL")):
         client.post(
-            f"{app_url}/manual-flows", headers=headers,
+            f"{app_url}/manual-flows",
+            headers=headers,
             json={"source_ref": f"asset:{a['id']}", "target_ref": f"asset:{b['id']}", "label": label},
         )
     return run, app_url, headers, {"web": web, "db": db}
@@ -27,11 +28,18 @@ def test_completeness_lists_questions_and_score_rises_as_they_are_answered(tmp_p
 
     before = _completeness(client, app_url, run)
     assert before["total"] > 0 and before["score"] == 0
-    assert {"data_classification", "authenticates_callers", "encrypted_in_transit"} <= {i["check"] for i in before["items"]}
+    assert {"data_classification", "authenticates_callers", "encrypted_in_transit"} <= {
+        i["check"] for i in before["items"]
+    }
 
     client.patch(
-        f"{app_url}/runs/{run['id']}/element-properties", headers=headers,
-        json={"element_kind": "component", "element_id": parts["web"]["id"], "properties": {"authenticates_callers": True}},
+        f"{app_url}/runs/{run['id']}/element-properties",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": parts["web"]["id"],
+            "properties": {"authenticates_callers": True},
+        },
     )
     after = _completeness(client, app_url, run)
     assert after["score"] > before["score"] and after["answered"] == before["answered"] + 1
@@ -60,7 +68,12 @@ def test_patch_validates_and_needs_csrf(tmp_path):
 
     assert client.patch(url, json=body).status_code == 403
     assert client.patch(url, headers=headers, json=body).status_code == 422
-    assert client.patch(url, headers=headers, json={**body, "element_id": "nope", "properties": {"is_encrypted": True}}).status_code == 404
+    assert (
+        client.patch(
+            url, headers=headers, json={**body, "element_id": "nope", "properties": {"is_encrypted": True}}
+        ).status_code
+        == 404
+    )
 
 
 def test_no_sensitive_data_answers_the_question_without_raising_impact(tmp_path):
@@ -69,7 +82,8 @@ def test_no_sensitive_data_answers_the_question_without_raising_impact(tmp_path)
     severities_before = {t["key"]: t["severity"] for t in _threats(client, app_url, run)}
 
     client.patch(
-        f"{app_url}/runs/{run['id']}/element-properties", headers=headers,
+        f"{app_url}/runs/{run['id']}/element-properties",
+        headers=headers,
         json={"element_kind": "component", "element_id": parts["db"]["id"], "properties": {"no_sensitive_data": True}},
     )
 
@@ -84,8 +98,13 @@ def test_classifying_data_raises_threat_impact_as_the_panel_promises(tmp_path):
     before = {t["key"]: t["severity"] for t in _threats(client, app_url, run) if t["element_name"] == "Patient DB"}
 
     client.patch(
-        f"{app_url}/runs/{run['id']}/element-properties", headers=headers,
-        json={"element_kind": "component", "element_id": parts["db"]["id"], "properties": {"data_classification": "PHI"}},
+        f"{app_url}/runs/{run['id']}/element-properties",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": parts["db"]["id"],
+            "properties": {"data_classification": "PHI"},
+        },
     )
     after = {t["key"]: t["severity"] for t in _threats(client, app_url, run) if t["element_name"] == "Patient DB"}
     assert before and all(rank[after[k]] >= rank[before[k]] for k in before) and after != before
@@ -96,7 +115,8 @@ def test_docs_only_model_reports_the_unanalysed_input(tmp_path):
     headers = {"X-CSRF-Token": csrf}
     application = client.post("/api/applications", json={"name": "Docs"}, headers=headers).json()
     client.post(
-        f"/api/applications/{application['id']}/data-sources", headers=headers,
+        f"/api/applications/{application['id']}/data-sources",
+        headers=headers,
         json={"type": "documentation", "connection_details": {"filename": "d.md", "content": "x"}},
     )
     run = client.post(f"/api/applications/{application['id']}/runs", headers=headers).json()

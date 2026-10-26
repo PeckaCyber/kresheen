@@ -37,16 +37,26 @@ def _setup(tmp_path, response=None, *, enable=True, key=True):
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-owner", email="owner@example.com", password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-owner",
+            email="owner@example.com",
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     provider = FakeProvider(models=[ModelInfo("claude-x", "Claude X")], default=_GOOD if response is None else response)
     client = TestClient(create_app(db_url=db_url, llm_provider=provider))
-    csrf = client.post("/api/auth/login", json={"email": "owner@example.com", "password": _PASSWORD}).json()["csrf_token"]
+    csrf = client.post("/api/auth/login", json={"email": "owner@example.com", "password": _PASSWORD}).json()[
+        "csrf_token"
+    ]
     headers = {"X-CSRF-Token": csrf}
     if enable:
         assert client.put("/api/settings/ai", json={"enabled": True}, headers=headers).status_code == 200
     if enable and key:
-        saved = client.put("/api/agent-config", json={"api_key": "sk-ant-test", "default_model": "claude-x"}, headers=headers)
+        saved = client.put(
+            "/api/agent-config", json={"api_key": "sk-ant-test", "default_model": "claude-x"}, headers=headers
+        )
         assert saved.status_code == 200
     return client, repo, provider, headers
 
@@ -154,6 +164,12 @@ def test_ai_call_audited_with_tokens_and_no_content(tmp_path):
     client, repo, _, headers = _setup(tmp_path)
     _draft(client, headers, "SECRET-DESCRIPTION-TEXT about a portal")
     (event,) = _events(repo, "ai.call")
-    assert event.subject == {"task": "intake_draft", "model": "claude-x", "outcome": "ok", "input_tokens": "10", "output_tokens": "5"}
+    assert event.subject == {
+        "task": "intake_draft",
+        "model": "claude-x",
+        "outcome": "ok",
+        "input_tokens": "10",
+        "output_tokens": "5",
+    }
     assert "SECRET-DESCRIPTION-TEXT" not in repr(event)
     assert "sk-ant-test" not in repr(event)

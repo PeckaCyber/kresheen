@@ -41,7 +41,8 @@ interface GroupListOut {
 // Path segment (and `group_id` query value) for applications with no group.
 export const UNGROUPED_ID = "ungrouped";
 
-type SortKey = "name" | "group" | "worst_risk" | "open_threats" | "addressed" | "completeness" | "last_run" | "reviewed";
+type SortKey =
+  "name" | "group" | "worst_risk" | "open_threats" | "addressed" | "completeness" | "last_run" | "reviewed";
 type SortOrder = "asc" | "desc";
 
 interface SortState {
@@ -301,7 +302,11 @@ export function GroupsPage() {
           <Dropdown.Divider />
           <Dropdown.Header>Explore a sample</Dropdown.Header>
           {SAMPLES.map((sample) => (
-            <Dropdown.Item key={sample.key} disabled={sampleBusy !== null} onClick={() => void handleSample(sample.key)}>
+            <Dropdown.Item
+              key={sample.key}
+              disabled={sampleBusy !== null}
+              onClick={() => void handleSample(sample.key)}
+            >
               {sampleBusy === sample.key ? "Creating the sample..." : `Sample: ${sample.title}`}
             </Dropdown.Item>
           ))}
@@ -542,12 +547,7 @@ export function GroupsPage() {
               {formError && <Alert variant="danger">{formError}</Alert>}
               <Form.Group className="mb-2" controlId="group-name">
                 <Form.Label>Name</Form.Label>
-                <Form.Control
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  required
-                  autoFocus
-                />
+                <Form.Control value={name} onChange={(event) => setName(event.target.value)} required autoFocus />
               </Form.Group>
               <Form.Group className="mb-2" controlId="group-description">
                 <Form.Label>Description</Form.Label>
@@ -571,7 +571,8 @@ export function GroupsPage() {
           <Modal.Title>Delete group</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Delete the group <strong>{deleteTarget?.name}</strong>? Its threat models are not deleted -- they move to Ungrouped.
+          Delete the group <strong>{deleteTarget?.name}</strong>? Its threat models are not deleted -- they move to
+          Ungrouped.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setDeleteTarget(null)}>

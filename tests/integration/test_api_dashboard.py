@@ -30,9 +30,7 @@ def test_dashboard_is_empty_with_no_applications(tmp_path):
 
 def test_dashboard_lists_applications_and_records_a_snapshot(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
-    created = client.post(
-        "/api/applications", json={"name": "Shop", "description": ""}, headers={"X-CSRF-Token": csrf}
-    )
+    created = client.post("/api/applications", json={"name": "Shop", "description": ""}, headers={"X-CSRF-Token": csrf})
     assert created.status_code in (200, 201), created.text
     body = client.get("/api/dashboard").json()
     assert [a["name"] for a in body["applications"]] == ["Shop"]
@@ -43,7 +41,13 @@ def _owner_client(tmp_path) -> tuple[TestClient, SQLRepository, str]:
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-owner", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-owner",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     client = TestClient(create_app(db_url=db_url))
     csrf = client.post("/api/auth/login", json={"email": _OWNER_EMAIL, "password": _PASSWORD}).json()["csrf_token"]
@@ -53,7 +57,13 @@ def _owner_client(tmp_path) -> tuple[TestClient, SQLRepository, str]:
 def test_recent_activity_is_owner_only(tmp_path):
     client, repo, csrf = _owner_client(tmp_path)
     repo.save_user(
-        User(id="USER-member", email=_MEMBER_EMAIL, password_hash=hash_password(_PASSWORD), role="member", created_at=datetime.now(UTC))
+        User(
+            id="USER-member",
+            email=_MEMBER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="member",
+            created_at=datetime.now(UTC),
+        )
     )
     client.post("/api/applications", json={"name": "Shop", "description": ""}, headers={"X-CSRF-Token": csrf})
 
@@ -75,7 +85,13 @@ def test_a_completed_run_records_todays_snapshot(tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-test", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-test",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     client = TestClient(create_app(db_url=db_url))
     csrf = client.post("/api/auth/login", json={"email": _OWNER_EMAIL, "password": _PASSWORD}).json()["csrf_token"]
@@ -94,7 +110,13 @@ def test_a_threat_status_change_records_todays_snapshot(tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-test", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-test",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     client = TestClient(create_app(db_url=db_url))
     csrf = client.post("/api/auth/login", json={"email": _OWNER_EMAIL, "password": _PASSWORD}).json()["csrf_token"]

@@ -116,9 +116,7 @@ class AnthropicProvider:
                 max_tokens=max_output_tokens,
                 system=system,
                 messages=[{"role": "user", "content": user}],
-                output_config={
-                    "format": {"type": "json_schema", "schema": anthropic.transform_schema(response_model)}
-                },
+                output_config={"format": {"type": "json_schema", "schema": anthropic.transform_schema(response_model)}},
             )
         except anthropic.AnthropicError as exc:
             raise _map_sdk_error(exc) from None

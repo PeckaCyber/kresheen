@@ -78,7 +78,11 @@ import { RiskBadge } from "./components/RiskBadge";
 
 describe("RiskBadge", () => {
   it("keeps its palette colours when the caller passes a style", () => {
-    const { container } = render(<RiskBadge level="high" style={{ fontSize: 10 }}>high</RiskBadge>);
+    const { container } = render(
+      <RiskBadge level="high" style={{ fontSize: 10 }}>
+        high
+      </RiskBadge>,
+    );
     const badge = container.querySelector("span") as HTMLSpanElement;
     expect(badge.style.background).toContain("--pc-sev-high");
     expect(badge.style.fontSize).toBe("10px");

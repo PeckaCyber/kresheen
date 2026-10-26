@@ -63,9 +63,7 @@ export function orderBoundaries(nodes: LayoutNode[], edges: LayoutEdge[]): strin
     const d = depth.get(node.id) ?? Number.MAX_SAFE_INTEGER;
     boundaryDepth.set(node.trust_boundary, Math.min(boundaryDepth.get(node.trust_boundary) ?? d, d));
   }
-  return [...boundaryDepth.entries()]
-    .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))
-    .map(([name]) => name);
+  return [...boundaryDepth.entries()].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0])).map(([name]) => name);
 }
 
 export interface Box {

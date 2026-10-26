@@ -3,7 +3,14 @@ import { openThreatSignal, worseOf } from "./threatSignal";
 import type { ThreatOut } from "./ThreatsPanel";
 
 const threat = (overrides: Partial<ThreatOut>): ThreatOut =>
-  ({ element_kind: "component", element_id: "A", status: "open", severity: "medium", risk: "medium", ...overrides }) as ThreatOut;
+  ({
+    element_kind: "component",
+    element_id: "A",
+    status: "open",
+    severity: "medium",
+    risk: "medium",
+    ...overrides,
+  }) as ThreatOut;
 
 describe("worseOf", () => {
   it("picks the more severe of two, tolerating absent values", () => {

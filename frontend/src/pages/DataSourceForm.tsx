@@ -54,11 +54,15 @@ const YAML_FILE = /\.ya?ml$/i;
 // Several Kubernetes YAML files are one application, so they are joined into a single manifest with
 // document separators. A Terraform plan is one JSON document and cannot be joined, so it stays
 // single-file. Returns an error message instead of content when the selection cannot be combined.
-export async function combineManifestFiles(files: File[]): Promise<{ fileName: string; content: string } | { error: string }> {
+export async function combineManifestFiles(
+  files: File[],
+): Promise<{ fileName: string; content: string } | { error: string }> {
   if (files.length === 1) return { fileName: files[0].name, content: await files[0].text() };
   const notYaml = files.filter((file) => !YAML_FILE.test(file.name));
   if (notYaml.length > 0) {
-    return { error: `Select several Kubernetes YAML files, or a single Terraform plan (JSON). Not YAML: ${notYaml.map((f) => f.name).join(", ")}.` };
+    return {
+      error: `Select several Kubernetes YAML files, or a single Terraform plan (JSON). Not YAML: ${notYaml.map((f) => f.name).join(", ")}.`,
+    };
   }
   const texts = await Promise.all(files.map((file) => file.text()));
   const names = files.map((file) => file.name);

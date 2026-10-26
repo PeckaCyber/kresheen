@@ -54,14 +54,22 @@
   --bs-accordion-bg: var(--pc-panel);
   --bs-accordion-border-color: var(--pc-border);
 }
-.card { box-shadow: var(--pc-glow); }
+.card {
+  box-shadow: var(--pc-glow);
+}
 .accordion-button:not(.collapsed) {
   background: color-mix(in srgb, var(--pc-accent) 12%, var(--pc-panel));
   color: var(--bs-body-color);
   box-shadow: inset 3px 0 0 var(--pc-accent);
 }
-.table { --bs-table-bg: transparent; }
-.offcanvas, .modal-content { --bs-offcanvas-bg: var(--pc-panel); --bs-modal-bg: var(--pc-panel); }
+.table {
+  --bs-table-bg: transparent;
+}
+.offcanvas,
+.modal-content {
+  --bs-offcanvas-bg: var(--pc-panel);
+  --bs-modal-bg: var(--pc-panel);
+}
 
 /* Sidebar */
 .pc-sidebar {
@@ -77,18 +85,42 @@
   background-clip: text;
   color: transparent !important;
 }
-.pc-sidebar .nav-link { border-radius: 6px; margin-bottom: 2px; opacity: 0.85; }
-.pc-sidebar .nav-link:hover { background: rgba(255, 255, 255, 0.07); opacity: 1; }
+.pc-sidebar .nav-link {
+  border-radius: 6px;
+  margin-bottom: 2px;
+  opacity: 0.85;
+}
+.pc-sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  opacity: 1;
+}
 .pc-sidebar .nav-link.active {
   background: linear-gradient(90deg, rgba(87, 148, 242, 0.32), rgba(87, 148, 242, 0.08));
   box-shadow: inset 3px 0 0 #5794f2;
   opacity: 1;
 }
-.pc-nav-icon { font-size: 1.05rem; width: 1.25em; text-align: center; flex-shrink: 0; }
-.pc-nav-divider { border-color: rgba(255, 255, 255, 0.12); margin: 8px 4px; }
-.pc-sidebar-collapsed { width: 64px; }
-.pc-sidebar-collapsed .pc-nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
-.pc-sidebar-collapsed .navbar-brand { text-align: center; width: 100%; }
+.pc-nav-icon {
+  font-size: 1.05rem;
+  width: 1.25em;
+  text-align: center;
+  flex-shrink: 0;
+}
+.pc-nav-divider {
+  border-color: rgba(255, 255, 255, 0.12);
+  margin: 8px 4px;
+}
+.pc-sidebar-collapsed {
+  width: 64px;
+}
+.pc-sidebar-collapsed .pc-nav-link {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.pc-sidebar-collapsed .navbar-brand {
+  text-align: center;
+  width: 100%;
+}
 
 /* Dashboard panels */
 .pc-panel {
@@ -112,7 +144,9 @@
   text-transform: uppercase;
   color: var(--pc-muted);
 }
-.pc-panel-body { padding: 14px; }
+.pc-panel-body {
+  padding: 14px;
+}
 
 .pc-stat {
   --tone: var(--pc-accent);
@@ -126,10 +160,11 @@
   border: 1px solid var(--pc-border);
   border-radius: 8px;
   background:
-    linear-gradient(160deg, color-mix(in srgb, var(--tone) 16%, transparent), transparent 62%),
-    var(--pc-panel);
+    linear-gradient(160deg, color-mix(in srgb, var(--tone) 16%, transparent), transparent 62%), var(--pc-panel);
   box-shadow: var(--pc-glow);
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
   overflow: hidden;
 }
 .pc-stat::before {
@@ -139,27 +174,94 @@
   height: 3px;
   background: var(--tone);
 }
-.pc-stat:hover { transform: translateY(-2px); border-color: var(--tone); }
-.pc-stat:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
-.pc-stat-label { font-size: 0.72rem; letter-spacing: 0.6px; text-transform: uppercase; color: var(--pc-muted); }
-.pc-stat-value { font-size: 2.3rem; font-weight: 700; line-height: 1.1; margin-top: 4px; }
-.pc-stat-sub { font-size: 0.78rem; color: var(--pc-muted); margin-top: 2px; min-height: 1.1em; }
-.pc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--tone); margin-right: 6px; box-shadow: 0 0 8px var(--tone); }
+.pc-stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--tone);
+}
+.pc-stat:focus-visible {
+  outline: 2px solid var(--tone);
+  outline-offset: 2px;
+}
+.pc-stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--pc-muted);
+}
+.pc-stat-value {
+  font-size: 2.3rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+.pc-stat-sub {
+  font-size: 0.78rem;
+  color: var(--pc-muted);
+  margin-top: 2px;
+  min-height: 1.1em;
+}
+.pc-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tone);
+  margin-right: 6px;
+  box-shadow: 0 0 8px var(--tone);
+}
 
-.pc-tone-critical { --tone: var(--pc-sev-critical); }
-.pc-tone-high { --tone: var(--pc-sev-high); }
-.pc-tone-medium { --tone: var(--pc-sev-medium); }
-.pc-tone-low { --tone: var(--pc-sev-low); }
-.pc-tone-good { --tone: var(--pc-good); }
-.pc-tone-accent { --tone: var(--pc-accent); }
-.pc-tone-accent2 { --tone: var(--pc-accent-2); }
-.pc-tone-warn { --tone: var(--pc-sev-medium); }
+.pc-tone-critical {
+  --tone: var(--pc-sev-critical);
+}
+.pc-tone-high {
+  --tone: var(--pc-sev-high);
+}
+.pc-tone-medium {
+  --tone: var(--pc-sev-medium);
+}
+.pc-tone-low {
+  --tone: var(--pc-sev-low);
+}
+.pc-tone-good {
+  --tone: var(--pc-good);
+}
+.pc-tone-accent {
+  --tone: var(--pc-accent);
+}
+.pc-tone-accent2 {
+  --tone: var(--pc-accent-2);
+}
+.pc-tone-warn {
+  --tone: var(--pc-sev-medium);
+}
 
-.pc-bar-track { height: 10px; border-radius: 5px; background: var(--pc-panel-2); border: 1px solid var(--pc-border); overflow: hidden; }
-.pc-bar-fill { height: 100%; border-radius: 4px 0 0 4px; }
-.pc-segbar { display: flex; gap: 2px; height: 16px; }
-.pc-segbar > span { border-radius: 3px; min-width: 3px; }
-.pc-legend-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+.pc-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--pc-panel-2);
+  border: 1px solid var(--pc-border);
+  overflow: hidden;
+}
+.pc-bar-fill {
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+.pc-segbar {
+  display: flex;
+  gap: 2px;
+  height: 16px;
+}
+.pc-segbar > span {
+  border-radius: 3px;
+  min-width: 3px;
+}
+.pc-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 8px;
+}
 
 .pc-tooltip {
   position: absolute;
@@ -175,19 +277,69 @@
 }
 
 /* Page shell: every page uses one of these wrappers plus <PageHeader>. */
-.pc-page { max-width: 1600px; margin: 0 auto; padding: 20px 24px 32px; }
-.pc-page-narrow { max-width: 880px; margin: 0 auto; padding: 20px 24px 32px; }
-@media (max-width: 576px) { .pc-page, .pc-page-narrow { padding: 16px; } }
-.pc-page-header { margin-bottom: 18px; }
-.pc-page-header-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.pc-page-header-text { min-width: 0; }
-.pc-page-title { font-size: 1.6rem; font-weight: 600; margin: 0; line-height: 1.25; overflow-wrap: anywhere; }
-.pc-page-subtitle { margin: 4px 0 0; color: var(--pc-muted); }
-.pc-page-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.pc-crumbs { font-size: 0.85rem; color: var(--pc-muted); margin-bottom: 4px; }
-.pc-crumbs a { color: var(--pc-muted); text-decoration: none; }
-.pc-crumbs a:hover { color: var(--pc-accent); text-decoration: underline; }
-.pc-crumb-sep { margin: 0 6px; opacity: 0.6; }
+.pc-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+}
+.pc-page-narrow {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+}
+@media (max-width: 576px) {
+  .pc-page,
+  .pc-page-narrow {
+    padding: 16px;
+  }
+}
+.pc-page-header {
+  margin-bottom: 18px;
+}
+.pc-page-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pc-page-header-text {
+  min-width: 0;
+}
+.pc-page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.pc-page-subtitle {
+  margin: 4px 0 0;
+  color: var(--pc-muted);
+}
+.pc-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pc-crumbs {
+  font-size: 0.85rem;
+  color: var(--pc-muted);
+  margin-bottom: 4px;
+}
+.pc-crumbs a {
+  color: var(--pc-muted);
+  text-decoration: none;
+}
+.pc-crumbs a:hover {
+  color: var(--pc-accent);
+  text-decoration: underline;
+}
+.pc-crumb-sep {
+  margin: 0 6px;
+  opacity: 0.6;
+}
 
 /* DFD canvas */
 .xyflow {
@@ -202,11 +354,28 @@
 
 /* Dashboard v2 -- executive summary with trends (append-only; do not edit rules above this point) */
 
-.pc-headlines { min-width: 0; flex: 1 1 auto; }
-.pc-headline { margin: 0 0 6px; color: var(--bs-body-color); }
-.pc-headline-lead { font-size: 1.15rem; font-weight: 600; }
+.pc-headlines {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.pc-headline {
+  margin: 0 0 6px;
+  color: var(--bs-body-color);
+}
+.pc-headline-lead {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
 
-.pc-segctl { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--pc-border); border-radius: 8px; background: var(--pc-panel-2); flex-shrink: 0; }
+.pc-segctl {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--pc-border);
+  border-radius: 8px;
+  background: var(--pc-panel-2);
+  flex-shrink: 0;
+}
 .pc-segctl-btn {
   border: none;
   background: transparent;
@@ -217,14 +386,31 @@
   border-radius: 6px;
   cursor: pointer;
 }
-.pc-segctl-btn:hover { color: var(--bs-body-color); }
-.pc-segctl-btn.active { background: var(--pc-accent); color: #fff; }
+.pc-segctl-btn:hover {
+  color: var(--bs-body-color);
+}
+.pc-segctl-btn.active {
+  background: var(--pc-accent);
+  color: #fff;
+}
 
-.pc-empty-stat { padding: 24px 0; text-align: center; }
-.pc-empty-hero { text-align: center; }
+.pc-empty-stat {
+  padding: 24px 0;
+  text-align: center;
+}
+.pc-empty-hero {
+  text-align: center;
+}
 
-.pc-heat-scroll { overflow-x: auto; }
-.pc-heat-table { border-collapse: separate; border-spacing: 2px; font-size: 0.78rem; white-space: nowrap; }
+.pc-heat-scroll {
+  overflow-x: auto;
+}
+.pc-heat-table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
 .pc-heat-row-head {
   text-align: left;
   padding: 4px 10px 4px 2px;
@@ -259,9 +445,16 @@
    above): the run page's 6-tile stat strip needs a smaller value type so it
    doesn't dominate the page above the tabs the way the full-size dashboard
    tiles do. */
-.pc-stat-compact .pc-stat-value { font-size: 1.6rem; margin-top: 2px; }
-.pc-stat-compact .pc-stat-label { font-size: 0.68rem; }
-.pc-stat-compact { padding: 10px 12px 9px; }
+.pc-stat-compact .pc-stat-value {
+  font-size: 1.6rem;
+  margin-top: 2px;
+}
+.pc-stat-compact .pc-stat-label {
+  font-size: 0.68rem;
+}
+.pc-stat-compact {
+  padding: 10px 12px 9px;
+}
 
 /* Tabs: same panel look (border/background/shadow) as .pc-panel, so a tab's
    content reads like a single-section panel, and the active tab is
@@ -415,7 +608,9 @@
   color: var(--bs-body-color);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   white-space: nowrap;
 }
 .pc-stat-chip:hover {

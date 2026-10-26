@@ -126,7 +126,9 @@ for _command in load_plugins().cli_commands():
 
 
 @cli.command("audit-prune")
-@click.option("--days", required=True, type=click.IntRange(min=1), help="Delete audit events older than this many days.")
+@click.option(
+    "--days", required=True, type=click.IntRange(min=1), help="Delete audit events older than this many days."
+)
 @click.option("--db", default="sqlite:///kresheen.db", envvar="KRESHEEN_DB_URL", show_default=True)
 def audit_prune(days: int, db: str):
     """Delete old audit-log rows (or set KRESHEEN_AUDIT_RETENTION_DAYS for automatic pruning)."""

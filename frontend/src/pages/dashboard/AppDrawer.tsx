@@ -42,7 +42,10 @@ function rowsFor(panel: TileKey, apps: DashboardApplication[]): DashboardApplica
     case "attention":
       return apps
         .filter((a) => a.stale || a.reviewed_at === null)
-        .sort((a, b) => Number(a.reviewed_at !== null) - Number(b.reviewed_at !== null) || Number(b.stale) - Number(a.stale));
+        .sort(
+          (a, b) =>
+            Number(a.reviewed_at !== null) - Number(b.reviewed_at !== null) || Number(b.stale) - Number(a.stale),
+        );
     default:
       return [...apps].sort((a, b) => a.name.localeCompare(b.name));
   }

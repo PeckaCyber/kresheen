@@ -44,7 +44,8 @@ export function ElementPropertiesForm({
       <ul className="small text-muted ps-3">
         {stated.map((spec) => (
           <li key={spec.key}>
-            {spec.label}: {typeof value[spec.key] === "boolean" ? (value[spec.key] ? "Yes" : "No") : String(value[spec.key])}
+            {spec.label}:{" "}
+            {typeof value[spec.key] === "boolean" ? (value[spec.key] ? "Yes" : "No") : String(value[spec.key])}
           </li>
         ))}
       </ul>

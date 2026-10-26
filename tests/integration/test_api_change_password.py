@@ -78,7 +78,10 @@ def test_change_password_is_refused_for_sso_users(tmp_path):
     # generate a real one here only so this test can still log in as them.
     repo.save_user(
         User(
-            id="USER-sso", email=_EMAIL, password_hash=hash_password(_PASSWORD), auth_source="sso",
+            id="USER-sso",
+            email=_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            auth_source="sso",
             created_at=datetime.now(UTC),
         )
     )

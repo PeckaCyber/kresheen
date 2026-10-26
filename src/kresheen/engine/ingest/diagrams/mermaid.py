@@ -74,7 +74,9 @@ def parse_mermaid(content: str) -> ParsedDiagram | None:
         kind, label = _shape(rest)
         existing = components.get(key)
         if existing is None:
-            components[key] = DiagramComponent(key=key, name=label or key, type=kind, boundary=zones[-1] if zones else None)
+            components[key] = DiagramComponent(
+                key=key, name=label or key, type=kind, boundary=zones[-1] if zones else None
+            )
         elif label and existing.name == key:
             existing.name, existing.type = label, kind  # defined properly after first being referenced
         return key

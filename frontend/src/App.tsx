@@ -108,7 +108,11 @@ function AppRoutes() {
         }
       />
       {extensions.routes.map((route) => (
-        <Route key={route.path} path={route.path} element={<ProtectedRoute>{route.element as ReactElement}</ProtectedRoute>} />
+        <Route
+          key={route.path}
+          path={route.path}
+          element={<ProtectedRoute>{route.element as ReactElement}</ProtectedRoute>}
+        />
       ))}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

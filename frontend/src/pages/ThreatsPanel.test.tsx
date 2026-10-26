@@ -56,7 +56,9 @@ describe("ThreatsPanel", () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
-    fetchMock.mockImplementation(async () => new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } }));
+    fetchMock.mockImplementation(
+      async () => new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
     vi.stubGlobal("fetch", fetchMock);
   });
 
@@ -218,7 +220,12 @@ describe("ThreatsPanel", () => {
   });
   it("offers Edit only on manual threats, and only when the owner provides a handler", () => {
     const onEdit = vi.fn();
-    const manual = threat({ key: "MT-1|process:API", title: "Insider export", origin: "manual", manual_threat_id: "MT-1" });
+    const manual = threat({
+      key: "MT-1|process:API",
+      title: "Insider export",
+      origin: "manual",
+      manual_threat_id: "MT-1",
+    });
     const { rerender } = render(
       <ThreatsPanel applicationId="A" runId="R" threats={[manual, THREATS[0]]} onChanged={vi.fn()} />,
     );
@@ -226,7 +233,13 @@ describe("ThreatsPanel", () => {
     expect(screen.queryByText("Edit this threat")).not.toBeInTheDocument();
 
     rerender(
-      <ThreatsPanel applicationId="A" runId="R" threats={[manual, THREATS[0]]} onChanged={vi.fn()} onEditThreat={onEdit} />,
+      <ThreatsPanel
+        applicationId="A"
+        runId="R"
+        threats={[manual, THREATS[0]]}
+        onChanged={vi.fn()}
+        onEditThreat={onEdit}
+      />,
     );
     fireEvent.click(screen.getByText("Edit this threat"));
     expect(onEdit).toHaveBeenCalledWith(manual);
@@ -265,7 +278,9 @@ describe("ThreatsPanel", () => {
     setAvailableMethodologies(null);
     render(<ThreatsPanel applicationId="A" runId="R" threats={THREATS} onChanged={vi.fn()} />);
 
-    const options = within(screen.getByLabelText("Filter by methodology")).getAllByRole("option").map((o) => o.textContent);
+    const options = within(screen.getByLabelText("Filter by methodology"))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
     expect(options).toEqual(["All methodologies", "STRIDE", "Custom"]);
   });
 
@@ -274,15 +289,22 @@ describe("ThreatsPanel", () => {
     const stale = threat({ key: "DEMO-1|process:API", title: "Stale threat", methodology: "Demo", category: "Alpha" });
     render(
       <ThreatsPanel
-        applicationId="A" runId="R" threats={[...THREATS, stale]} onChanged={vi.fn()}
+        applicationId="A"
+        runId="R"
+        threats={[...THREATS, stale]}
+        onChanged={vi.fn()}
         unavailableMethodologies={["Demo"]}
       />,
     );
 
-    expect(screen.getByText(/This model selects Demo, which is not available in this installation/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This model selects Demo, which is not available in this installation/),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Filter by methodology"), { target: { value: "Demo" } });
     expect(screen.getByText(/Stale threat/)).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Filter by category")).getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Filter by category")).getByRole("option", { name: "Alpha" }),
+    ).toBeInTheDocument();
   });
 
   it("shows CIA impact badges for a threat's category", () => {
@@ -301,7 +323,11 @@ describe("ThreatsPanel", () => {
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     const [, init] = firstWrite();
-    expect(JSON.parse(init.body)).toEqual({ threat_key: "PROC-S-01|process:API", status: "open", note: "Investigating" });
+    expect(JSON.parse(init.body)).toEqual({
+      threat_key: "PROC-S-01|process:API",
+      status: "open",
+      note: "Investigating",
+    });
   });
 
   it("saves a DREAD score alongside the current status and note", async () => {
@@ -360,7 +386,9 @@ describe("ThreatsPanel", () => {
     const onChanged = vi.fn();
     render(<ThreatsPanel applicationId="A" runId="R" threats={THREATS} onChanged={onChanged} />);
 
-    fireEvent.change(screen.getByLabelText(/Status for Callers can impersonate/), { target: { value: "not_applicable" } });
+    fireEvent.change(screen.getByLabelText(/Status for Callers can impersonate/), {
+      target: { value: "not_applicable" },
+    });
     expect(fetchMock).not.toHaveBeenCalled();
     const save = screen.getByRole("button", { name: "Save" });
     expect(save).toBeDisabled();
@@ -370,7 +398,9 @@ describe("ThreatsPanel", () => {
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(JSON.parse(firstWrite()[1].body)).toEqual({
-      threat_key: "PROC-S-01|process:API", status: "not_applicable", note: "Internal only",
+      threat_key: "PROC-S-01|process:API",
+      status: "not_applicable",
+      note: "Internal only",
     });
   });
 
@@ -398,7 +428,11 @@ describe("ThreatsPanel", () => {
   });
 
   it("applies one status to several selected threats in a single request", async () => {
-    const list = [threat({ key: "a", title: "First" }), threat({ key: "b", title: "Second" }), threat({ key: "c", title: "Third" })];
+    const list = [
+      threat({ key: "a", title: "First" }),
+      threat({ key: "b", title: "Second" }),
+      threat({ key: "c", title: "Third" }),
+    ];
     const onChanged = vi.fn();
     render(<ThreatsPanel applicationId="A" runId="R" threats={list} onChanged={onChanged} />);
 
@@ -424,7 +458,9 @@ describe("ThreatsPanel", () => {
     fireEvent.change(screen.getByLabelText("Set selected threats to"), { target: { value: "accepted" } });
 
     expect(screen.getByRole("button", { name: "Apply" })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText("Reason for the selected threats"), { target: { value: "Accepted by CISO" } });
+    fireEvent.change(screen.getByLabelText("Reason for the selected threats"), {
+      target: { value: "Accepted by CISO" },
+    });
     expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
   });
 

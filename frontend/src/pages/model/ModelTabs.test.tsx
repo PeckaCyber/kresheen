@@ -17,9 +17,7 @@ describe("isModelTabKey", () => {
 
 describe("ModelTabs", () => {
   it("shows the counts in the Threats, Action plan and Findings labels", () => {
-    render(
-      <ModelTabs active="overview" onSelect={() => {}} counts={{ threats: 12, actions: 4, findings: 2 }} />,
-    );
+    render(<ModelTabs active="overview" onSelect={() => {}} counts={{ threats: 12, actions: 4, findings: 2 }} />);
     expect(screen.getByText("Threats (12)")).toBeInTheDocument();
     expect(screen.getByText("Action plan (4)")).toBeInTheDocument();
     expect(screen.getByText("Findings (2)")).toBeInTheDocument();

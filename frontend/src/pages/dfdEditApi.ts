@@ -13,56 +13,68 @@ export function dfdEditApi(applicationId: string, diagramId: string) {
   const base = `/api/applications/${encodeURIComponent(applicationId)}`;
   const layoutBase = `${base}/diagrams/${encodeURIComponent(diagramId)}/layout`;
 
-  async function createManualAsset(spec: {id?: string; name: string; type: string; trust_boundary?: string | null; position_x?: number | null; position_y?: number | null}): Promise<{id: string}> {
-    return apiFetch<{id: string}>(`${base}/manual-assets`, {
-      method: 'POST',
-      body: JSON.stringify(spec)
+  async function createManualAsset(spec: {
+    id?: string;
+    name: string;
+    type: string;
+    trust_boundary?: string | null;
+    position_x?: number | null;
+    position_y?: number | null;
+  }): Promise<{ id: string }> {
+    return apiFetch<{ id: string }>(`${base}/manual-assets`, {
+      method: "POST",
+      body: JSON.stringify(spec),
     });
   }
 
   async function deleteManualAsset(id: string): Promise<void> {
     await apiFetch<void>(`${base}/manual-assets/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
   }
 
   async function renameManualAsset(id: string, name: string): Promise<void> {
     await apiFetch<void>(`${base}/manual-assets/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify({name})
+      method: "PATCH",
+      body: JSON.stringify({ name }),
     });
   }
 
   async function updateManualFlowLabel(id: string, label: string): Promise<void> {
     await apiFetch<void>(`${base}/manual-flows/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      body: JSON.stringify({label})
+      method: "PATCH",
+      body: JSON.stringify({ label }),
     });
   }
 
-  async function createManualFlow(spec: {id?: string; source_ref: string; target_ref: string; label?: string | null}): Promise<{id: string}> {
-    return apiFetch<{id: string}>(`${base}/manual-flows`, {
-      method: 'POST',
-      body: JSON.stringify(spec)
+  async function createManualFlow(spec: {
+    id?: string;
+    source_ref: string;
+    target_ref: string;
+    label?: string | null;
+  }): Promise<{ id: string }> {
+    return apiFetch<{ id: string }>(`${base}/manual-flows`, {
+      method: "POST",
+      body: JSON.stringify(spec),
     });
   }
 
   async function deleteManualFlow(id: string): Promise<void> {
     await apiFetch<void>(`${base}/manual-flows/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
   }
 
   async function setBoundary(componentName: string, label: string): Promise<void> {
     await apiFetch<void>(`${base}/trust-boundaries`, {
-      method: 'PUT',
-      body: JSON.stringify({component_name: componentName, trust_boundary: label})
+      method: "PUT",
+      body: JSON.stringify({ component_name: componentName, trust_boundary: label }),
     });
   }
 
   async function clearBoundary(componentName: string): Promise<void> {
     await apiFetch<void>(`${base}/trust-boundaries?component_name=${encodeURIComponent(componentName)}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
   }
 
@@ -83,14 +95,14 @@ export function dfdEditApi(applicationId: string, diagramId: string) {
     patch: { hidden?: boolean; position_x?: number; position_y?: number },
   ): Promise<DiagramElementLayoutOut> {
     return apiFetch<DiagramElementLayoutOut>(`${layoutBase}?element_key=${encodeURIComponent(elementKey)}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(patch),
     });
   }
 
   async function clearElementLayout(elementKey: string): Promise<void> {
     await apiFetch<void>(`${layoutBase}?element_key=${encodeURIComponent(elementKey)}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
@@ -98,10 +110,7 @@ export function dfdEditApi(applicationId: string, diagramId: string) {
     await saveElementLayout(elementKey, { position_x: x, position_y: y });
   }
 
-  async function restoreElementPosition(
-    elementKey: string,
-    pos: { x: number; y: number } | null,
-  ): Promise<void> {
+  async function restoreElementPosition(elementKey: string, pos: { x: number; y: number } | null): Promise<void> {
     if (pos === null) {
       await clearElementLayout(elementKey);
     } else {

@@ -154,7 +154,7 @@ def test_migration_runs_log_nothing_when_current(db_url, caplog):
 
 # -- an upgrade over a throwaway migration ------------------------------------------------------------------------
 
-_TEST_MIGRATION = '''
+_TEST_MIGRATION = """
 import sqlalchemy as sa
 from alembic import op
 
@@ -181,16 +181,14 @@ def upgrade() -> None:
             data["description"] = data["description"] + " (migrated)"
             bind.execute(apps.update().where(apps.c.id == row_id).values(data=data))
         last = rows[-1][0]
-'''
+"""
 
 
 @pytest.fixture
 def extra_migration(tmp_path, monkeypatch):
     """A copy of the core migration tree plus one more revision, standing in for the next release's migration."""
     tree = tmp_path / "migrations_with_0002"
-    shutil.copytree(
-        migrate.core_location().script_location, tree, ignore=shutil.ignore_patterns("__pycache__")
-    )
+    shutil.copytree(migrate.core_location().script_location, tree, ignore=shutil.ignore_patterns("__pycache__"))
     (tree / "versions" / "0002_test_nickname.py").write_text(_TEST_MIGRATION)
     location = MigrationLocation("core", tree, "alembic_version", metadata)
     return location, monkeypatch
@@ -350,7 +348,7 @@ def test_stamp_baseline_refuses_a_mismatch_and_lists_it(db_url):
 
 # -- Postgres advisory lock ---------------------------------------------------------------------------------------
 
-_LOCK_PROBE = '''
+_LOCK_PROBE = """
 import sqlalchemy as sa
 from alembic import op
 
@@ -364,7 +362,7 @@ def upgrade() -> None:
     held = op.get_bind().execute(sa.text("SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND granted")).scalar()
     op.get_bind().execute(sa.text("CREATE TABLE lock_probe (held integer)"))
     op.get_bind().execute(sa.text("INSERT INTO lock_probe VALUES (:h)"), {"h": held})
-'''
+"""
 
 
 def test_postgres_takes_an_advisory_lock_while_migrating(db_url, tmp_path, extra_migration):

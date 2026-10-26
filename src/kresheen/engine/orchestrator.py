@@ -125,7 +125,9 @@ def execute_run(repo: Repository, run_id: str) -> None:
     except Exception as exc:
         logger.exception("Threat model run %s failed", run.id)
         run.status = "failed"
-        run.error_message = source_run_error(reading_source, exc) if reading_source else safe_run_error(exc)  # never the raw text: SQL, parameters and server paths stay in the log
+        run.error_message = (
+            source_run_error(reading_source, exc) if reading_source else safe_run_error(exc)
+        )  # never the raw text: SQL, parameters and server paths stay in the log
         run.completed_at = datetime.now(UTC)
         save_run_reliably(repo, run)
         raise

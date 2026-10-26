@@ -53,7 +53,14 @@ STRIDE_SPEC = MethodologySpec(
         "Six ways an attacker can misuse a system: spoofing, tampering, repudiation, information disclosure, "
         "denial of service and elevation of privilege."
     ),
-    categories=("Spoofing", "Tampering", "Repudiation", "InformationDisclosure", "DenialOfService", "ElevationOfPrivilege"),
+    categories=(
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "InformationDisclosure",
+        "DenialOfService",
+        "ElevationOfPrivilege",
+    ),
     category_descriptions=MappingProxyType(
         {
             "Spoofing": "Someone pretends to be a user or service they are not.",

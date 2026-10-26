@@ -34,7 +34,9 @@ ALLOW_FILE = ROOT / ".github" / "new-dependency-allow.txt"
 
 
 def at_ref(ref: str, path: str) -> str | None:
-    result = subprocess.run(["git", "-C", str(ROOT), "show", f"{ref}:{path}"], capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), "show", f"{ref}:{path}"], capture_output=True, text=True, check=False
+    )
     return result.stdout if result.returncode == 0 else None
 
 
@@ -43,11 +45,7 @@ def uv_packages(text: str | None) -> dict[str, str]:
         return {}
     lock = tomllib.loads(text)
     # Registry packages only: the project itself and path or git sources have no registry history to check.
-    return {
-        p["name"]: p["version"]
-        for p in lock.get("package", [])
-        if "registry" in (p.get("source") or {})
-    }
+    return {p["name"]: p["version"] for p in lock.get("package", []) if "registry" in (p.get("source") or {})}
 
 
 def npm_packages(text: str | None) -> dict[str, str]:
@@ -70,7 +68,9 @@ _REGISTRIES = ("https://pypi.org/pypi/", "https://registry.npmjs.org/")
 def fetch(url: str) -> dict:
     if not url.startswith(_REGISTRIES):
         raise ValueError(f"not a registry URL: {url}")
-    with urllib.request.urlopen(url, timeout=30) as response:  # nosemgrep: dynamic-urllib-use-detected (https prefix checked above)
+    with urllib.request.urlopen(
+        url, timeout=30
+    ) as response:  # nosemgrep: dynamic-urllib-use-detected (https prefix checked above)
         return json.load(response)
 
 
@@ -144,8 +144,10 @@ def main(base: str) -> int:
         print(f"\nNew packages younger than {MIN_PROJECT_DAYS} days (project) or {MIN_VERSION_DAYS} days (version):")
         for problem in problems:
             print(f"  {problem}")
-        print(f"Check each is the package you meant (not a look-alike or a name an AI tool made up). If it is, add it "
-              f"to {ALLOW_FILE.relative_to(ROOT)} with a comment saying why.")
+        print(
+            f"Check each is the package you meant (not a look-alike or a name an AI tool made up). If it is, add it "
+            f"to {ALLOW_FILE.relative_to(ROOT)} with a comment saying why."
+        )
         return 1
     return 0
 

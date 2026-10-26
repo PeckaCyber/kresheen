@@ -53,7 +53,14 @@ function SuggestedTag({ show }: { show: boolean }) {
   ) : null;
 }
 
-const EMPTY: Answers = { system_type: "", users: [], authentication: "", data: [], third_parties: [], has_admin: false };
+const EMPTY: Answers = {
+  system_type: "",
+  users: [],
+  authentication: "",
+  data: [],
+  third_parties: [],
+  has_admin: false,
+};
 
 function toggle(list: string[], id: string): string[] {
   return list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
@@ -201,7 +208,8 @@ export function IntakeWizard({
         const next = { ...prev };
         if (out.filled.includes("system_type") && a.system_type !== undefined) next.system_type = a.system_type;
         if (out.filled.includes("users") && a.users !== undefined) next.users = a.users;
-        if (out.filled.includes("authentication") && a.authentication !== undefined) next.authentication = a.authentication;
+        if (out.filled.includes("authentication") && a.authentication !== undefined)
+          next.authentication = a.authentication;
         if (out.filled.includes("data") && a.data !== undefined) next.data = a.data;
         if (out.filled.includes("third_parties") && a.third_parties !== undefined) next.third_parties = a.third_parties;
         if (out.filled.includes("has_admin") && a.has_admin !== undefined) next.has_admin = a.has_admin;
@@ -338,7 +346,12 @@ export function IntakeWizard({
                     input.value = "";
                   }}
                 />
-                <Button type="button" size="sm" disabled={drafting || !describe.trim()} onClick={() => void handleDraft()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={drafting || !describe.trim()}
+                  onClick={() => void handleDraft()}
+                >
                   {drafting ? "Drafting..." : "Draft answers"}
                 </Button>
               </div>
@@ -349,8 +362,8 @@ export function IntakeWizard({
               )}
               {warnings.length > 0 && (
                 <Alert variant="warning" className="mt-2 mb-0 py-2" data-testid="ai-warning">
-                  This text contains wording aimed at automated tools (for example:{" "}
-                  <q>{warnings[0].excerpt}</q>). It was treated as data, not instructions. The event is in the audit log.
+                  This text contains wording aimed at automated tools (for example: <q>{warnings[0].excerpt}</q>). It
+                  was treated as data, not instructions. The event is in the audit log.
                 </Alert>
               )}
               {aiFilled.size > 0 && (
@@ -409,7 +422,9 @@ export function IntakeWizard({
                 </legend>
                 {radios("system_type", options.system_types)}
                 {answers.system_type && (
-                  <div className="small text-muted">{options.system_types.find((o) => o.id === answers.system_type)?.help}</div>
+                  <div className="small text-muted">
+                    {options.system_types.find((o) => o.id === answers.system_type)?.help}
+                  </div>
                 )}
               </fieldset>
 

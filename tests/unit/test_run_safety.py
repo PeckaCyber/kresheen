@@ -11,8 +11,14 @@ from kresheen.storage.sql_repo import SQLRepository
 
 
 def _run(status="ingesting", age_minutes=0.0, rid="RUN-x"):
-    return ThreatModelRun(id=rid, application_id="A", triggered_by_user_id="U", data_source_config_ids=[],
-                          status=status, started_at=datetime.now(UTC) - timedelta(minutes=age_minutes))
+    return ThreatModelRun(
+        id=rid,
+        application_id="A",
+        triggered_by_user_id="U",
+        data_source_config_ids=[],
+        status=status,
+        started_at=datetime.now(UTC) - timedelta(minutes=age_minutes),
+    )
 
 
 def test_database_errors_never_expose_sql_or_parameters():
@@ -22,11 +28,16 @@ def test_database_errors_never_expose_sql_or_parameters():
 
 
 def test_paths_are_stripped_and_messages_bounded():
-    assert "/tmp/kresheen-ghrepo-abc" not in rs.safe_run_error(ValueError("bad file /tmp/kresheen-ghrepo-abc/x.yaml here"))
+    assert "/tmp/kresheen-ghrepo-abc" not in rs.safe_run_error(
+        ValueError("bad file /tmp/kresheen-ghrepo-abc/x.yaml here")
+    )
     assert "<path>" in rs.safe_run_error(ValueError("bad file /tmp/kresheen-ghrepo-abc/x.yaml here"))
     assert "/tmp" not in rs.safe_run_error(OSError(36, "File name too long: '/tmp/x/y'"))
     assert len(rs.safe_run_error(ValueError("x" * 5000))) <= 300
-    assert rs.safe_run_error(ValueError("while scanning a plain scalar\n  in line 3")) == "while scanning a plain scalar in line 3"
+    assert (
+        rs.safe_run_error(ValueError("while scanning a plain scalar\n  in line 3"))
+        == "while scanning a plain scalar in line 3"
+    )
     assert "nested" in rs.safe_run_error(RecursionError("maximum recursion depth exceeded"))
 
 
@@ -105,7 +116,12 @@ def test_data_source_label_prefers_filename_or_repo_and_hides_credentials():
 
     assert data_source_label("manifest_upload", {"filename": "a.yaml"}) == "a.yaml"
     assert data_source_label("manifest_upload", {"content": "secret"}) == "manifest upload"
-    assert data_source_label("github_repository", {"repo_url": "https://tok:x@github.com/o/r"}) == "https://github.com/o/r"
+    assert (
+        data_source_label("github_repository", {"repo_url": "https://tok:x@github.com/o/r"}) == "https://github.com/o/r"
+    )
     assert data_source_label("manifest_upload", {"filename": 'we"ird\nname'}) == "we'ird name"
     assert len(data_source_label("manifest_upload", {"filename": "n" * 500})) <= 80
-    assert source_run_error("a.yaml", MemoryError()) == 'Could not read data source "a.yaml": The input was too large to process.'
+    assert (
+        source_run_error("a.yaml", MemoryError())
+        == 'Could not read data source "a.yaml": The input was too large to process.'
+    )

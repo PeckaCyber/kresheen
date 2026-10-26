@@ -1,7 +1,16 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Form, Table } from "react-bootstrap";
 import { apiFetch, ApiError } from "../api/client";
-import { threatMethodologiesWith, methodologyCategories, isMethodologyAvailable, categoryLabel, categoryDescription, CIA_DESCRIPTIONS, methodologyDescription, type Methodology } from "../methodology";
+import {
+  threatMethodologiesWith,
+  methodologyCategories,
+  isMethodologyAvailable,
+  categoryLabel,
+  categoryDescription,
+  CIA_DESCRIPTIONS,
+  methodologyDescription,
+  type Methodology,
+} from "../methodology";
 import { RiskBadge } from "../components/RiskBadge";
 import { InfoTip } from "../components/InfoTip";
 import { useToast } from "../components/Toasts";
@@ -247,7 +256,9 @@ export function ThreatsPanel({
   const hiddenGeneric = visible.length - listed.length;
   const addressed = scoped.filter((t) => t.status !== "open").length;
   const addressedPct = scoped.length ? Math.round((100 * addressed) / scoped.length) : 0;
-  const highOpen = scoped.filter((t) => t.status === "open" && (riskOf(t) === "critical" || riskOf(t) === "high")).length;
+  const highOpen = scoped.filter(
+    (t) => t.status === "open" && (riskOf(t) === "critical" || riskOf(t) === "high"),
+  ).length;
   const specificCount = scoped.filter((t) => t.basis === "observed" || t.basis === "specific").length;
   const genericCount = scoped.length - specificCount;
 
@@ -350,8 +361,8 @@ export function ThreatsPanel({
   const coverageBanner = !elementId && coverageGaps && coverageGaps.length > 0 && (
     <Alert variant="warning" className="mb-3">
       <strong>{coverageGaps.length}</strong> entry point{coverageGaps.length === 1 ? "" : "s"} in the ingested
-      configuration {coverageGaps.length === 1 ? "was" : "were"} never evaluated by any rule (not the same as
-      "no threat found"):
+      configuration {coverageGaps.length === 1 ? "was" : "were"} never evaluated by any rule (not the same as "no threat
+      found"):
       <ul className="mb-0 mt-1">
         {coverageGaps.map((gap, i) => (
           <li key={i}>
@@ -364,16 +375,16 @@ export function ThreatsPanel({
 
   const unavailableBanner = !elementId && unavailableMethodologies && unavailableMethodologies.length > 0 && (
     <Alert variant="warning" className="mb-3">
-      This model selects {unavailableMethodologies.join(", ")}, which {unavailableMethodologies.length === 1 ? "is" : "are"} not
-      available in this installation, so no threats were generated for {unavailableMethodologies.length === 1 ? "it" : "them"} (not
-      the same as "no threat found").
+      This model selects {unavailableMethodologies.join(", ")}, which{" "}
+      {unavailableMethodologies.length === 1 ? "is" : "are"} not available in this installation, so no threats were
+      generated for {unavailableMethodologies.length === 1 ? "it" : "them"} (not the same as "no threat found").
     </Alert>
   );
 
   const docConflictBanner = !elementId && docConflicts && docConflicts.length > 0 && (
     <Alert variant="warning" className="mb-3">
-      <strong>{docConflicts.length}</strong> component{docConflicts.length === 1 ? "" : "s"} in the architecture
-      diagram {docConflicts.length === 1 ? "doesn't" : "don't"} match anything ingested (documentation drift):
+      <strong>{docConflicts.length}</strong> component{docConflicts.length === 1 ? "" : "s"} in the architecture diagram{" "}
+      {docConflicts.length === 1 ? "doesn't" : "don't"} match anything ingested (documentation drift):
       <ul className="mb-0 mt-1">
         {docConflicts.map((c, i) => (
           <li key={i}>
@@ -404,8 +415,8 @@ export function ThreatsPanel({
                 ) : (
                   <>
                     Threats are derived from the diagram&apos;s components, and this run has none. A repository scan
-                    finds components only when the repository contains plain Kubernetes manifests (Helm templates
-                    are not rendered). Attach a manifest, or add components in the diagram&apos;s edit mode.
+                    finds components only when the repository contains plain Kubernetes manifests (Helm templates are
+                    not rendered). Attach a manifest, or add components in the diagram&apos;s edit mode.
                   </>
                 )}
               </>
@@ -454,60 +465,66 @@ export function ThreatsPanel({
           ))}
         </Form.Select>
         {!elementId && (
-        <Form.Select
-          size="sm"
-          style={{ width: "auto" }}
-          aria-label="Filter by risk"
-          value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
-        >
-          <option value="all">All risk levels</option>
-          {["critical", "high", "medium", "low"].map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Form.Select>
-        )}
-        {!elementId && (
-        <Form.Select
-          size="sm"
-          style={{ width: "auto" }}
-          aria-label="Filter by methodology"
-          value={methodologyFilter}
-          onChange={(e) => {
-            setMethodologyFilter(e.target.value);
-            setCategoryFilter("all");
-          }}
-        >
-          <option value="all">All methodologies</option>
-          {threatMethodologiesWith(threats.map((t) => t.methodology)).map((methodology) => (
-            <option key={methodology} value={methodology}>
-              {methodology}
-            </option>
-          ))}
-        </Form.Select>
-        )}
-        {!elementId && (
-        <Form.Select
-          size="sm"
-          style={{ width: "auto" }}
-          aria-label="Filter by category"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          disabled={methodologyFilter === "all"}
-        >
-          <option value="all">All categories</option>
-          {methodologyFilter !== "all" &&
-            (methodologyFilter === "Custom" || !isMethodologyAvailable(methodologyFilter)
-              ? [...new Set(threats.filter((t) => t.methodology === methodologyFilter && t.category).map((t) => t.category as string))]
-              : methodologyCategories(methodologyFilter)
-            ).map((category) => (
-              <option key={category} value={category}>
-                {categoryLabel(methodologyFilter, category)}
+          <Form.Select
+            size="sm"
+            style={{ width: "auto" }}
+            aria-label="Filter by risk"
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
+          >
+            <option value="all">All risk levels</option>
+            {["critical", "high", "medium", "low"].map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
-        </Form.Select>
+          </Form.Select>
+        )}
+        {!elementId && (
+          <Form.Select
+            size="sm"
+            style={{ width: "auto" }}
+            aria-label="Filter by methodology"
+            value={methodologyFilter}
+            onChange={(e) => {
+              setMethodologyFilter(e.target.value);
+              setCategoryFilter("all");
+            }}
+          >
+            <option value="all">All methodologies</option>
+            {threatMethodologiesWith(threats.map((t) => t.methodology)).map((methodology) => (
+              <option key={methodology} value={methodology}>
+                {methodology}
+              </option>
+            ))}
+          </Form.Select>
+        )}
+        {!elementId && (
+          <Form.Select
+            size="sm"
+            style={{ width: "auto" }}
+            aria-label="Filter by category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            disabled={methodologyFilter === "all"}
+          >
+            <option value="all">All categories</option>
+            {methodologyFilter !== "all" &&
+              (methodologyFilter === "Custom" || !isMethodologyAvailable(methodologyFilter)
+                ? [
+                    ...new Set(
+                      threats
+                        .filter((t) => t.methodology === methodologyFilter && t.category)
+                        .map((t) => t.category as string),
+                    ),
+                  ]
+                : methodologyCategories(methodologyFilter)
+              ).map((category) => (
+                <option key={category} value={category}>
+                  {categoryLabel(methodologyFilter, category)}
+                </option>
+              ))}
+          </Form.Select>
         )}
         {addButton && <div className="ms-auto">{addButton}</div>}
       </div>
@@ -529,12 +546,18 @@ export function ThreatsPanel({
           </div>
           <div className="small text-muted mt-1">
             <strong>{addressed}</strong> of {scoped.length} addressed (mitigated, accepted or not applicable).{" "}
-            {highOpen === 0 ? "No high or critical risk threats are still open." : `${highOpen} high or critical risk still open.`}
+            {highOpen === 0
+              ? "No high or critical risk threats are still open."
+              : `${highOpen} high or critical risk still open.`}
           </div>
         </div>
       )}
       {selected.size > 0 && (
-        <div className="d-flex flex-wrap align-items-center gap-2 p-2 mb-2 border rounded bg-body-tertiary" role="region" aria-label="Bulk actions">
+        <div
+          className="d-flex flex-wrap align-items-center gap-2 p-2 mb-2 border rounded bg-body-tertiary"
+          role="region"
+          aria-label="Bulk actions"
+        >
           <strong className="small">{selected.size} selected</strong>
           <Form.Select
             size="sm"
@@ -557,7 +580,11 @@ export function ThreatsPanel({
             value={bulk.reason}
             onChange={(e) => setBulk((prev) => ({ ...prev, reason: e.target.value }))}
           />
-          <Button size="sm" disabled={REASON_REQUIRED.includes(bulk.status) && !bulk.reason.trim()} onClick={() => void applyBulk()}>
+          <Button
+            size="sm"
+            disabled={REASON_REQUIRED.includes(bulk.status) && !bulk.reason.trim()}
+            onClick={() => void applyBulk()}
+          >
             Apply
           </Button>
           <Button size="sm" variant="outline-secondary" onClick={() => setSelected(new Set())}>
@@ -638,31 +665,29 @@ export function ThreatsPanel({
                     </td>
                     {!elementId && <td>{threat.element_name}</td>}
                     {!elementId && (
-                    <td>
-                      {threat.category ? (
-                        <>
-                          <div>
-                            <InfoTip text={methodologyDescription(threat.methodology)}>
-                              {threat.methodology}
-                            </InfoTip>
-                          </div>
-                          <div className="small text-muted">
-                            <InfoTip text={categoryDescription(threat.methodology, threat.category)}>
-                              {categoryLabel(threat.methodology, threat.category)}
-                            </InfoTip>
-                          </div>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                      {(threat.cia_impacts ?? []).map((impact) => (
-                        <InfoTip key={impact} text={CIA_DESCRIPTIONS[impact]}>
-                          <Badge bg={CIA_BADGE[impact]} className="me-1 mt-1" title={impact}>
-                            {impact[0]}
-                          </Badge>
-                        </InfoTip>
-                      ))}
-                    </td>
+                      <td>
+                        {threat.category ? (
+                          <>
+                            <div>
+                              <InfoTip text={methodologyDescription(threat.methodology)}>{threat.methodology}</InfoTip>
+                            </div>
+                            <div className="small text-muted">
+                              <InfoTip text={categoryDescription(threat.methodology, threat.category)}>
+                                {categoryLabel(threat.methodology, threat.category)}
+                              </InfoTip>
+                            </div>
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                        {(threat.cia_impacts ?? []).map((impact) => (
+                          <InfoTip key={impact} text={CIA_DESCRIPTIONS[impact]}>
+                            <Badge bg={CIA_BADGE[impact]} className="me-1 mt-1" title={impact}>
+                              {impact[0]}
+                            </Badge>
+                          </InfoTip>
+                        ))}
+                      </td>
                     )}
                     <td>
                       {threat.title}
@@ -670,7 +695,9 @@ export function ThreatsPanel({
                           exports but are not shown: they mean nothing to a user. */}
                       {threat.basis && (
                         <Badge
-                          bg={threat.basis === "observed" ? "danger" : threat.basis === "specific" ? "primary" : "light"}
+                          bg={
+                            threat.basis === "observed" ? "danger" : threat.basis === "specific" ? "primary" : "light"
+                          }
                           text={threat.basis === "generic" ? "muted" : undefined}
                           className="ms-2 fw-normal"
                           title={BASIS_HINTS[threat.basis]}
@@ -685,9 +712,7 @@ export function ThreatsPanel({
                       )}
                       {elementId && (
                         <div className="small text-muted mt-1">
-                          <InfoTip text={methodologyDescription(threat.methodology)}>
-                            {threat.methodology}
-                          </InfoTip>
+                          <InfoTip text={methodologyDescription(threat.methodology)}>{threat.methodology}</InfoTip>
                           {threat.category && (
                             <>
                               {": "}
@@ -703,19 +728,19 @@ export function ThreatsPanel({
                     </td>
                     {!elementId && (
                       <td onClick={(e) => e.stopPropagation()}>
-                      <Form.Select
-                        size="sm"
-                        style={{ minWidth: 150 }}
-                        aria-label={`Status for ${threat.title}`}
-                        value={threat.status}
-                        onChange={(e) => changeStatus(threat, e.target.value as ThreatStatus)}
-                      >
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </Form.Select>
+                        <Form.Select
+                          size="sm"
+                          style={{ minWidth: 150 }}
+                          aria-label={`Status for ${threat.title}`}
+                          value={threat.status}
+                          onChange={(e) => changeStatus(threat, e.target.value as ThreatStatus)}
+                        >
+                          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </Form.Select>
                       </td>
                     )}
                   </tr>
@@ -756,23 +781,28 @@ export function ThreatsPanel({
                         {elementId && (
                           <div className="mb-2" onClick={(e) => e.stopPropagation()}>
                             <Form.Label className="small mb-1">Status</Form.Label>
-                      <Form.Select
-                        size="sm"
-                        style={{ maxWidth: 220 }}
-                        aria-label={`Status for ${threat.title}`}
-                        value={threat.status}
-                        onChange={(e) => changeStatus(threat, e.target.value as ThreatStatus)}
-                      >
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </Form.Select>
+                            <Form.Select
+                              size="sm"
+                              style={{ maxWidth: 220 }}
+                              aria-label={`Status for ${threat.title}`}
+                              value={threat.status}
+                              onChange={(e) => changeStatus(threat, e.target.value as ThreatStatus)}
+                            >
+                              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                                <option key={value} value={value}>
+                                  {label}
+                                </option>
+                              ))}
+                            </Form.Select>
                           </div>
                         )}
                         <p className="mb-2">{threat.description}</p>
-                        <ExplainThreat key={threat.key} applicationId={applicationId} runId={runId} threatKey={threat.key} />
+                        <ExplainThreat
+                          key={threat.key}
+                          applicationId={applicationId}
+                          runId={runId}
+                          threatKey={threat.key}
+                        />
                         {threat.risk_factors.length > 0 && (
                           <p className="small mb-2">
                             <strong>Why it applies:</strong> {threat.risk_factors.join("; ")}
@@ -798,7 +828,10 @@ export function ThreatsPanel({
                                   </RiskBadge>
                                   {item.title}
                                   {item.scope === "repository" && (
-                                    <span className="text-muted"> (source repository, not confirmed in this component)</span>
+                                    <span className="text-muted">
+                                      {" "}
+                                      (source repository, not confirmed in this component)
+                                    </span>
                                   )}
                                 </li>
                               ))}
@@ -844,7 +877,9 @@ export function ThreatsPanel({
                           {[...threat.cwe_refs, ...threat.attack_refs].join(" · ")}
                         </p>
                         <Form.Group controlId={`threat-note-${threat.key}`}>
-                          <Form.Label className="small mb-1">Note (why mitigated, accepted, or not applicable)</Form.Label>
+                          <Form.Label className="small mb-1">
+                            Note (why mitigated, accepted, or not applicable)
+                          </Form.Label>
                           <Form.Control
                             as="textarea"
                             rows={2}
@@ -866,7 +901,11 @@ export function ThreatsPanel({
                           <p className="small fw-semibold mb-1">DREAD score (optional)</p>
                           <div className="d-flex flex-wrap gap-2 mb-2">
                             {DREAD_AXES.map((axis) => (
-                              <Form.Group key={axis.key} controlId={`dread-${axis.key}-${threat.key}`} style={{ width: 110 }}>
+                              <Form.Group
+                                key={axis.key}
+                                controlId={`dread-${axis.key}-${threat.key}`}
+                                style={{ width: 110 }}
+                              >
                                 <Form.Label className="small mb-0">{axis.label}</Form.Label>
                                 <Form.Control
                                   type="number"

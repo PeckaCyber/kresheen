@@ -66,8 +66,13 @@ class DemoPlugin(Plugin):
     def threat_sources(self, repo):
         return [
             ThreatRule(
-                id="DEMO-01", element_type="process", category="Spoofing", title="Demo threat on {name}",
-                description="d", severity="low", mitigations=("m",),
+                id="DEMO-01",
+                element_type="process",
+                category="Spoofing",
+                title="Demo threat on {name}",
+                description="d",
+                severity="low",
+                mitigations=("m",),
             )
         ]
 
@@ -101,7 +106,13 @@ def _client(tmp_path, *plugins: Plugin) -> tuple[TestClient, SQLRepository]:
     db_url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="U1", email="o@example.com", password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="U1",
+            email="o@example.com",
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     return TestClient(create_app(db_url=db_url, plugins=PluginRegistry(list(plugins)))), repo
 
@@ -131,7 +142,9 @@ def test_plugin_adds_router_capabilities_and_dashboard_data(tmp_path):
     caps = client.get("/api/capabilities").json()
     assert caps["plugins"] == [{"name": "demo", "version": "1.2.3", "features": ["demo-feature"]}]
     assert caps["features"] == ["demo-feature"]
-    assert caps["auth_providers"] == [{"id": "demo-sso", "label": "Demo SSO", "login_url": "/api/demo/login", "password_login": True}]
+    assert caps["auth_providers"] == [
+        {"id": "demo-sso", "label": "Demo SSO", "login_url": "/api/demo/login", "password_login": True}
+    ]
     _login(client)
     assert client.get("/api/dashboard").json()["extensions"] == {"demo": {"answer": 42}}
 
@@ -224,8 +237,17 @@ def test_core_threats_carry_no_guidance_without_a_plugin():
 
     set_registry(PluginRegistry())
     threat = Threat(
-        key="k", rule_id="SC-T01", element_kind="component", element_id="1", element_name="X",
-        element_type="process", category="DenialOfService", title="t", description="d", severity="high", mitigations=["m"],
+        key="k",
+        rule_id="SC-T01",
+        element_kind="component",
+        element_id="1",
+        element_name="X",
+        element_type="process",
+        category="DenialOfService",
+        title="t",
+        description="d",
+        severity="high",
+        mitigations=["m"],
     )
     assert threat.verification == [] and threat.fix_example == "" and threat.fix_example_for == ""
 
@@ -276,8 +298,18 @@ def _sample_plugin_rule():
     from kresheen.engine.threats.config_rules import ConfigRule, Hit
 
     return ConfigRule(
-        "PLUG-CFG-01", "T01", "process", "Spoofing", "{name} is a plugin finding", "d", "low", ("m",), ("CWE-306",), (),
-        "always", lambda ctx: [Hit("component", w.name, ["plugin evidence"]) for w in ctx.workloads],
+        "PLUG-CFG-01",
+        "T01",
+        "process",
+        "Spoofing",
+        "{name} is a plugin finding",
+        "d",
+        "low",
+        ("m",),
+        ("CWE-306",),
+        (),
+        "always",
+        lambda ctx: [Hit("component", w.name, ["plugin evidence"]) for w in ctx.workloads],
     )
 
 
@@ -298,7 +330,9 @@ def test_plugin_config_rules_run_and_are_listed(tmp_path):
         "apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: web, namespace: n}\n"
         "spec: {template: {spec: {containers: [{name: c, image: app:1}]}}}\n"
     )
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": manifest})
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": manifest}
+    )
     context = FactContext(nodes, edges)
     elements = [DfdElement(id="E1", name="Deployment/web", type="process")]
 
@@ -326,7 +360,9 @@ def test_a_rule_that_supersedes_another_replaces_it_on_the_same_element_only():
 
     general = _sample_plugin_rule()
     specific = replace(
-        general, id="PLUG-CFG-02", supersedes=("PLUG-CFG-01",),
+        general,
+        id="PLUG-CFG-02",
+        supersedes=("PLUG-CFG-01",),
         detect=lambda ctx: [Hit("component", w.name, ["specific"]) for w in ctx.workloads if w.name.endswith("/web")],
     )
 
@@ -341,11 +377,18 @@ def test_a_rule_that_supersedes_another_replaces_it_on_the_same_element_only():
         "spec: {template: {spec: {containers: [{name: c, image: app:1}]}}}\n"
         for n in ("web", "api")
     )
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": manifest})
-    elements = [DfdElement(id="E1", name="Deployment/web", type="process"), DfdElement(id="E2", name="Deployment/api", type="process")]
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": manifest}
+    )
+    elements = [
+        DfdElement(id="E1", name="Deployment/web", type="process"),
+        DfdElement(id="E2", name="Deployment/api", type="process"),
+    ]
     set_registry(PluginRegistry([Rules()]))
     try:
-        found = sorted((t.rule_id, t.element_name) for t in generate_config_threats(FactContext(nodes, edges), elements, []))
+        found = sorted(
+            (t.rule_id, t.element_name) for t in generate_config_threats(FactContext(nodes, edges), elements, [])
+        )
     finally:
         set_registry(PluginRegistry())
     assert found == [("PLUG-CFG-01", "Deployment/api"), ("PLUG-CFG-02", "Deployment/web")]

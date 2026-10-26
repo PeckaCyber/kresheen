@@ -15,7 +15,8 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Overview",
-    content: "Start here. It shows the few things worth doing next: questions that sharpen your threats, and the fixes that matter most.",
+    content:
+      "Start here. It shows the few things worth doing next: questions that sharpen your threats, and the fixes that matter most.",
     tabKey: "overview",
   },
   {
@@ -25,7 +26,8 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: "Threats",
-    content: "Every threat the rules found, riskiest first. Mark each one mitigated, accepted or not applicable as you go.",
+    content:
+      "Every threat the rules found, riskiest first. Mark each one mitigated, accepted or not applicable as you go.",
     tabKey: "threats",
   },
   {
@@ -111,12 +113,7 @@ export function ModelTour({ onGoToTab }: ModelTourProps) {
         </div>
 
         <div className="d-flex gap-2 mb-3">
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={handleGoToTab}
-            className="flex-grow-1"
-          >
+          <Button size="sm" variant="primary" onClick={handleGoToTab} className="flex-grow-1">
             Go to {step.title}
           </Button>
         </div>
@@ -136,21 +133,11 @@ export function ModelTour({ onGoToTab }: ModelTourProps) {
               Back
             </Button>
             {!isLastStep ? (
-              <Button
-                size="sm"
-                variant="outline-secondary"
-                onClick={handleNext}
-                className="btn-sm"
-              >
+              <Button size="sm" variant="outline-secondary" onClick={handleNext} className="btn-sm">
                 Next
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant="outline-secondary"
-                onClick={handleDone}
-                className="btn-sm"
-              >
+              <Button size="sm" variant="outline-secondary" onClick={handleDone} className="btn-sm">
                 Done
               </Button>
             )}
@@ -158,12 +145,7 @@ export function ModelTour({ onGoToTab }: ModelTourProps) {
         </div>
 
         <div className="text-center mt-2">
-          <Button
-            variant="link"
-            size="sm"
-            className="text-decoration-none text-muted p-0"
-            onClick={handleSkip}
-          >
+          <Button variant="link" size="sm" className="text-decoration-none text-muted p-0" onClick={handleSkip}>
             Skip tour
           </Button>
         </div>

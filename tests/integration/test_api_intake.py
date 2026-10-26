@@ -3,8 +3,13 @@
 from tests.integration.test_api_applications import _logged_in_client
 
 ANSWERS = {
-    "name": "Portal", "system_type": "web_app", "users": ["customers"], "authentication": "password",
-    "data": ["health"], "third_parties": ["email"], "has_admin": True,
+    "name": "Portal",
+    "system_type": "web_app",
+    "users": ["customers"],
+    "authentication": "password",
+    "data": ["health"],
+    "third_parties": ["email"],
+    "has_admin": True,
 }
 
 
@@ -19,7 +24,9 @@ def test_options_serve_every_question_and_the_templates(tmp_path):
 
     assert {o["id"] for o in options["system_types"]} >= {"web_app", "ai_rag_app"}
     assert {o["id"] for o in options["authentication"]} == {"password", "sso", "api_keys", "none"}
-    assert options["templates"] and all({"id", "title", "description", "answers"} <= t.keys() for t in options["templates"])
+    assert options["templates"] and all(
+        {"id", "title", "description", "answers"} <= t.keys() for t in options["templates"]
+    )
 
 
 def test_intake_creates_and_runs_an_ordinary_editable_model(tmp_path):
@@ -33,7 +40,15 @@ def test_intake_creates_and_runs_an_ordinary_editable_model(tmp_path):
     assert client.get(base).json()["status"] == "completed"
     dfd = client.get(f"{base}/dfd").json()
     names = {n["name"] for n in dfd["nodes"]}
-    assert {"Customer", "Web frontend", "Application server", "Database", "Email service", "Administrator", "Admin panel"} <= names
+    assert {
+        "Customer",
+        "Web frontend",
+        "Application server",
+        "Database",
+        "Email service",
+        "Administrator",
+        "Admin panel",
+    } <= names
     assert all(n["is_manual"] for n in dfd["nodes"])  # editable like anything hand-drawn
 
     application = client.get(f"/api/applications/{ids['application_id']}").json()
@@ -78,5 +93,7 @@ def test_every_template_creates_a_model_that_runs(tmp_path):
     for template in client.get("/api/intake/options").json()["templates"]:
         response = _create(client, csrf, **template["answers"])
         assert response.status_code == 200, template["id"]
-        run = client.get(f"/api/applications/{response.json()['application_id']}/runs/{response.json()['run_id']}").json()
+        run = client.get(
+            f"/api/applications/{response.json()['application_id']}/runs/{response.json()['run_id']}"
+        ).json()
         assert run["status"] == "completed", template["id"]

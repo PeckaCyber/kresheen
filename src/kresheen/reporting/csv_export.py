@@ -83,7 +83,8 @@ def actions_csv(report: ThreatModelReport) -> str:
                 a.max_risk,
                 a.basis,
                 a.threat_count,
-                ", ".join(a.elements) + (f" (+{a.element_count - len(a.elements)} more)" if a.element_count > len(a.elements) else ""),
+                ", ".join(a.elements)
+                + (f" (+{a.element_count - len(a.elements)} more)" if a.element_count > len(a.elements) else ""),
                 ", ".join(a.cwe_refs),
                 " | ".join(a.verification),
                 a.status.replace("_", " "),
@@ -128,7 +129,17 @@ def findings_csv(report: ThreatModelReport) -> str:
     return _write(
         FINDING_COLUMNS,
         [
-            [f.id, f.element, f.title, f.severity, f.status, f.domain, f.source_tool, f.discovered_at.isoformat(), f.description]
+            [
+                f.id,
+                f.element,
+                f.title,
+                f.severity,
+                f.status,
+                f.domain,
+                f.source_tool,
+                f.discovered_at.isoformat(),
+                f.description,
+            ]
             for f in report.findings
         ],
     )

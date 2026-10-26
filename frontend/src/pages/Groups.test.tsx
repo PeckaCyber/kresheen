@@ -77,9 +77,7 @@ describe("GroupsPage", () => {
   });
 
   function render_page() {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(DASHBOARD_DATA))
-      .mockResolvedValueOnce(jsonResponse(GROUPS_DATA));
+    fetchMock.mockResolvedValueOnce(jsonResponse(DASHBOARD_DATA)).mockResolvedValueOnce(jsonResponse(GROUPS_DATA));
     return render(
       <MemoryRouter>
         <GroupsPage />
@@ -207,19 +205,58 @@ describe("GroupsPage", () => {
   it("sorts worst risk first by default, ties broken by open threats, and a header click reverses it", async () => {
     const base = DASHBOARD_DATA.applications[1];
     const apps = [
-      { ...base, id: "m", name: "Medium many", worst_severity: null, worst_threat_risk: "medium", open_threat_count: 90, not_analysed: false },
-      { ...base, id: "h1", name: "High few", worst_severity: null, worst_threat_risk: "high", open_threat_count: 5, not_analysed: false },
-      { ...base, id: "h2", name: "High more", worst_severity: null, worst_threat_risk: "high", open_threat_count: 40, not_analysed: false },
-      { ...base, id: "c", name: "Critical", worst_severity: "critical", worst_threat_risk: null, open_threat_count: 1, not_analysed: false },
+      {
+        ...base,
+        id: "m",
+        name: "Medium many",
+        worst_severity: null,
+        worst_threat_risk: "medium",
+        open_threat_count: 90,
+        not_analysed: false,
+      },
+      {
+        ...base,
+        id: "h1",
+        name: "High few",
+        worst_severity: null,
+        worst_threat_risk: "high",
+        open_threat_count: 5,
+        not_analysed: false,
+      },
+      {
+        ...base,
+        id: "h2",
+        name: "High more",
+        worst_severity: null,
+        worst_threat_risk: "high",
+        open_threat_count: 40,
+        not_analysed: false,
+      },
+      {
+        ...base,
+        id: "c",
+        name: "Critical",
+        worst_severity: "critical",
+        worst_threat_risk: null,
+        open_threat_count: 1,
+        not_analysed: false,
+      },
     ];
-    fetchMock.mockResolvedValueOnce(jsonResponse({ applications: apps })).mockResolvedValueOnce(jsonResponse(GROUPS_DATA));
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ applications: apps }))
+      .mockResolvedValueOnce(jsonResponse(GROUPS_DATA));
     render(
       <MemoryRouter>
         <GroupsPage />
       </MemoryRouter>,
     );
     await screen.findByRole("table");
-    expect(rowNames().map((n) => n.split(/needs|inputs/)[0].trim())).toEqual(["Critical", "High more", "High few", "Medium many"]);
+    expect(rowNames().map((n) => n.split(/needs|inputs/)[0].trim())).toEqual([
+      "Critical",
+      "High more",
+      "High few",
+      "Medium many",
+    ]);
 
     fireEvent.click(screen.getByText("Worst risk"));
     expect(rowNames()[0]).toContain("Medium many");

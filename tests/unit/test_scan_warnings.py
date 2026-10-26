@@ -45,8 +45,12 @@ def test_each_grype_failure_mode_records_a_reason(tmp_path, monkeypatch):
 
 @responses.activate
 def test_skipped_scan_becomes_a_warning_on_the_source_result():
-    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball",
-                  body=_tarball({"package-lock.json": "{}", "k8s/d.yaml": "kind: Deployment"}), status=200)
+    responses.add(
+        responses.GET,
+        "https://api.github.com/repos/acme/widget/tarball",
+        body=_tarball({"package-lock.json": "{}", "k8s/d.yaml": "kind: Deployment"}),
+        status=200,
+    )
     with patch.object(G, "_run_grype_scan", return_value=None):  # also covers callers that stub the scanner out
         nodes, _ = G.GithubRepositoryIngestor().run(
             run_id="R", application_id="A", connection_details={"repo_url": "https://github.com/acme/widget"}
@@ -58,8 +62,12 @@ def test_skipped_scan_becomes_a_warning_on_the_source_result():
 
 @responses.activate
 def test_successful_scan_has_no_warning():
-    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball",
-                  body=_tarball({"package-lock.json": "{}"}), status=200)
+    responses.add(
+        responses.GET,
+        "https://api.github.com/repos/acme/widget/tarball",
+        body=_tarball({"package-lock.json": "{}"}),
+        status=200,
+    )
     empty_docs = ({"bomFormat": "CycloneDX", "components": []}, {"matches": []})
     with patch.object(G, "_run_grype_scan", return_value=empty_docs):
         nodes, _ = G.GithubRepositoryIngestor().run(
@@ -70,9 +78,16 @@ def test_successful_scan_has_no_warning():
 
 
 def test_scan_note_is_not_a_diagram_component():
-    note = FactNode(id="N", run_id="R", application_id="A", node_type="scan_note", name="x",
-                    attributes={"warnings": ["w"]}, source_ref="github_repository",
-                    discovered_at=__import__("datetime").datetime.now(__import__("datetime").UTC))
+    note = FactNode(
+        id="N",
+        run_id="R",
+        application_id="A",
+        node_type="scan_note",
+        name="x",
+        attributes={"warnings": ["w"]},
+        source_ref="github_repository",
+        discovered_at=__import__("datetime").datetime.now(__import__("datetime").UTC),
+    )
     r = classify_source("DS", "github_repository", [note])
     assert r.component_count == 0 and r.warnings == ["w"]
 
@@ -80,8 +95,13 @@ def test_scan_note_is_not_a_diagram_component():
 def test_dashboard_flag_and_completeness_see_the_warning():
     from kresheen.engine.completeness import assess_completeness
 
-    partial = SourceResult(data_source_id="DS-1", type="github_repository", status="analysed", component_count=2,
-                           warnings=["The vulnerability scan timed out."])
+    partial = SourceResult(
+        data_source_id="DS-1",
+        type="github_repository",
+        status="analysed",
+        component_count=2,
+        warnings=["The vulnerability scan timed out."],
+    )
     assert has_unanalysed([partial])
     out = assess_completeness([], [], [partial])
     assert any(i.check == "partial_input" and "timed out" in i.why for i in out.items)

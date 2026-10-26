@@ -46,7 +46,12 @@ describe("ElementPropertiesForm", () => {
 
   it("read-only mode lists only the stated properties, and nothing when none are stated", () => {
     const { rerender, container } = render(
-      <ElementPropertiesForm specs={SPECS} value={{ is_encrypted: true, out_of_scope_reason: "Vendor" }} readOnly onSave={vi.fn()} />,
+      <ElementPropertiesForm
+        specs={SPECS}
+        value={{ is_encrypted: true, out_of_scope_reason: "Vendor" }}
+        readOnly
+        onSave={vi.fn()}
+      />,
     );
 
     expect(screen.getByText("Encrypted at rest: Yes")).toBeInTheDocument();

@@ -58,6 +58,9 @@ def check_worker_count(env: Mapping[str, str] | None = None) -> int:
         )
     logger.warning(
         "%d worker processes configured and %s is set: the sign-in throttle is per process, so the effective limit "
-        "is about %d times the configured one.", count, ALLOW_ENV, count,
+        "is about %d times the configured one.",
+        count,
+        ALLOW_ENV,
+        count,
     )
     return count

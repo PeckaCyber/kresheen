@@ -42,7 +42,9 @@ describe("ModelRedirectPage", () => {
   });
 
   it("redirects to the latest run when none completed, so a failed first run shows its tools", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse([{ id: "RUN-1", status: "failed", started_at: "2026-09-01T00:00:00Z" }]));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse([{ id: "RUN-1", status: "failed", started_at: "2026-09-01T00:00:00Z" }]),
+    );
     renderAt("APP-2");
 
     expect(await screen.findByText("run page")).toBeInTheDocument();
@@ -57,6 +59,9 @@ describe("ModelRedirectPage", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ id: "RUN-9", status: "completed" }));
     fireEvent.click(screen.getByRole("button", { name: "Run this model now" }));
     expect(await screen.findByText("run page")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenLastCalledWith("/api/applications/APP-3/runs", expect.objectContaining({ method: "POST" }));
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/applications/APP-3/runs",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

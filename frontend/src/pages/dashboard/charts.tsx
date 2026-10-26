@@ -14,7 +14,14 @@ export function Sparkline({ values, color }: { values: number[]; color: string }
   const pts = values.map((v, i) => [(i * W) / (values.length - 1), H - 4 - ((v - min) / span) * (H - 8)] as const);
   const line = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} aria-hidden="true" preserveAspectRatio="none" style={{ marginTop: 6 }}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height={H}
+      aria-hidden="true"
+      preserveAspectRatio="none"
+      style={{ marginTop: 6 }}
+    >
       <path d={`${line} L${W},${H} L0,${H} Z`} fill={color} opacity="0.18" />
       <path d={line} fill="none" stroke={color} strokeWidth="1.8" vectorEffect="non-scaling-stroke" />
     </svg>
@@ -88,7 +95,14 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
             />
           ))}
           {hover !== null && (
-            <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={H - pad.b} stroke="var(--pc-muted)" strokeDasharray="3 3" />
+            <line
+              x1={x(hover)}
+              x2={x(hover)}
+              y1={pad.t}
+              y2={H - pad.b}
+              stroke="var(--pc-muted)"
+              strokeDasharray="3 3"
+            />
           )}
           <text x={pad.l} y={H - 6} fontSize="11" fill="var(--pc-muted)">
             {first.day}
@@ -100,7 +114,11 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
         {shown && hover !== null && (
           <div
             className="pc-tooltip"
-            style={{ left: `${(x(hover) / W) * 100}%`, top: 8, transform: hover > points.length / 2 ? "translateX(-105%)" : "translateX(8px)" }}
+            style={{
+              left: `${(x(hover) / W) * 100}%`,
+              top: 8,
+              transform: hover > points.length / 2 ? "translateX(-105%)" : "translateX(8px)",
+            }}
           >
             <div className="fw-semibold mb-1">{shown.day}</div>
             <div>
@@ -111,7 +129,8 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
               <span className="pc-legend-swatch" style={{ background: "var(--pc-series-new)" }} />+{shown.new} new
             </div>
             <div>
-              <span className="pc-legend-swatch" style={{ background: "var(--pc-series-resolved)" }} />-{shown.resolved} resolved
+              <span className="pc-legend-swatch" style={{ background: "var(--pc-series-resolved)" }} />-{shown.resolved}{" "}
+              resolved
             </div>
           </div>
         )}

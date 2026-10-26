@@ -68,7 +68,9 @@ def test_diagram_routes_require_csrf(tmp_path):
     assert client.patch(f"{app_url}/diagrams/{diagram['id']}", json={"name": "X"}).status_code == 403
     assert client.delete(f"{app_url}/diagrams/{diagram['id']}").status_code == 403
     assert (
-        client.put(f"{app_url}/diagrams/{diagram['id']}/layout?element_key=process:X", json={"hidden": True}).status_code
+        client.put(
+            f"{app_url}/diagrams/{diagram['id']}/layout?element_key=process:X", json={"hidden": True}
+        ).status_code
         == 403
     )
 
@@ -81,7 +83,9 @@ def test_diagram_from_another_application_is_404(tmp_path):
     diagram_a = client.get(f"{app_a_url}/diagrams").json()[0]
 
     assert client.get(f"{app_b_url}/diagrams/{diagram_a['id']}/layout").status_code == 404
-    assert client.patch(f"{app_b_url}/diagrams/{diagram_a['id']}", json={"name": "X"}, headers=headers).status_code == 404
+    assert (
+        client.patch(f"{app_b_url}/diagrams/{diagram_a['id']}", json={"name": "X"}, headers=headers).status_code == 404
+    )
 
 
 def test_hiding_a_component_on_one_diagram_does_not_affect_another(tmp_path):

@@ -70,7 +70,13 @@ def test_audit_log_is_owner_only_and_needs_auth(tmp_path):
     from kresheen.models.user import User
 
     client.app.state.repo.save_user(
-        User(id="U2", email="m@example.com", password_hash=hash_password("pw-member-1"), role="member", created_at=datetime.now(UTC))
+        User(
+            id="U2",
+            email="m@example.com",
+            password_hash=hash_password("pw-member-1"),
+            role="member",
+            created_at=datetime.now(UTC),
+        )
     )
     member = TestClient(client.app)
     member.post("/api/auth/login", json={"email": "m@example.com", "password": "pw-member-1"})

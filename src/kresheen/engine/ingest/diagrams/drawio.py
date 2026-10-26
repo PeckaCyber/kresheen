@@ -33,7 +33,9 @@ from kresheen.engine.ingest.diagrams.model import (
 
 _MAX_INFLATED_BYTES = 10_000_000
 _TAG = re.compile(r"<[^>]*>")
-_DATA_STORE = re.compile(r"cylinder|database|datastore|data_store|mxgraph\.flowchart\.database|rds|bucket|dynamodb", re.IGNORECASE)
+_DATA_STORE = re.compile(
+    r"cylinder|database|datastore|data_store|mxgraph\.flowchart\.database|rds|bucket|dynamodb", re.IGNORECASE
+)
 _EXTERNAL = re.compile(r"actor|umlactor|mxgraph\.[a-z0-9_.]*users?\b|shape=mxgraph\.[a-z0-9_.]*\.user", re.IGNORECASE)
 
 
@@ -191,13 +193,17 @@ def _parse_model(model: Element, page: int) -> ParsedDiagram:
             if inside:
                 zone = min(inside, key=lambda z: z[1][2] * z[1][3])[0]
         diagram.components.append(
-            DiagramComponent(key=f"{page}:{cell['id']}", name=cell["label"], type=_component_type(cell["style"]), boundary=zone)
+            DiagramComponent(
+                key=f"{page}:{cell['id']}", name=cell["label"], type=_component_type(cell["style"]), boundary=zone
+            )
         )
 
     for cell in cells:
         if cell["edge"] and cell["source"] and cell["target"]:
             diagram.flows.append(
-                DiagramFlow(source=f"{page}:{cell['source']}", target=f"{page}:{cell['target']}", label=cell["label"] or None)
+                DiagramFlow(
+                    source=f"{page}:{cell['source']}", target=f"{page}:{cell['target']}", label=cell["label"] or None
+                )
             )
     return diagram
 

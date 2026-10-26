@@ -93,7 +93,9 @@ def _script(location: MigrationLocation) -> ScriptDirectory:
 def _head(script: ScriptDirectory, location: MigrationLocation) -> str:
     heads = script.get_heads()
     if len(heads) != 1:
-        raise MigrationError(f"The {location.name} migrations have {len(heads)} heads ({', '.join(heads)}); expected one.")
+        raise MigrationError(
+            f"The {location.name} migrations have {len(heads)} heads ({', '.join(heads)}); expected one."
+        )
     return heads[0]
 
 
@@ -285,7 +287,9 @@ def _backup_before(engine: Engine, pending: Sequence[TreeState]) -> None:
     try:
         dest = backup_sqlite(path, label)
     except Exception as exc:
-        raise MigrationError(f"Could not back up {path} before upgrading ({exc}); the database was not changed.") from exc
+        raise MigrationError(
+            f"Could not back up {path} before upgrading ({exc}); the database was not changed."
+        ) from exc
     logger.warning("Backed up the database to %s before upgrading (%s)", dest, _describe(existing))
 
 

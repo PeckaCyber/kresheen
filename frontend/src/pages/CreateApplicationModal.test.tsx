@@ -33,7 +33,9 @@ describe("CreateApplicationModal", () => {
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith("APP-1", "RUN-1"));
     expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
-      name: "Shop", description: "", group_id: "GRP-1",
+      name: "Shop",
+      description: "",
+      group_id: "GRP-1",
     });
     expect(fetchMock.mock.calls[1][0]).toBe("/api/applications/APP-1/runs");
     expect(fetchMock).toHaveBeenCalledTimes(2); // no data source was attached
@@ -41,7 +43,9 @@ describe("CreateApplicationModal", () => {
   });
 
   it("opens with the preset's input type selected", () => {
-    render(<CreateApplicationModal show onHide={() => {}} groupId="GRP-1" preset="github_repository" onCreated={() => {}} />);
+    render(
+      <CreateApplicationModal show onHide={() => {}} groupId="GRP-1" preset="github_repository" onCreated={() => {}} />,
+    );
 
     expect(screen.getByPlaceholderText("https://github.com/owner/repo")).toBeInTheDocument();
     expect(screen.queryByLabelText("Group")).not.toBeInTheDocument(); // no group list given: fixed group

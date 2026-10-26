@@ -43,7 +43,7 @@ describe("ReviewStamp", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Mark as reviewed" }));
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });

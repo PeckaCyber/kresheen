@@ -17,9 +17,9 @@ _TECHNIQUES = _TABLE["attack"]["techniques"]
 _ATLAS = _TABLE["atlas"]["techniques"]
 _CWES = _TABLE["cwe"]["entries"]
 
-_CITATIONS = [
-    (rule.id, "attack", ref) for rule in (*RULES, *CONFIG_RULES) for ref in rule.attack
-] + [(rule.id, "cwe", ref) for rule in (*RULES, *CONFIG_RULES) for ref in rule.cwe]
+_CITATIONS = [(rule.id, "attack", ref) for rule in (*RULES, *CONFIG_RULES) for ref in rule.attack] + [
+    (rule.id, "cwe", ref) for rule in (*RULES, *CONFIG_RULES) for ref in rule.cwe
+]
 
 
 def test_reference_table_is_populated():

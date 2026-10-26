@@ -102,8 +102,10 @@ def _when_matches(rule: ThreatRule, properties: dict) -> bool:
     """True when every property the rule needs has exactly the stated value.
     An unset property never matches, so an element with no properties gets
     exactly the generic threats it always did."""
-    return all(key in properties and type(properties[key]) is type(value) and properties[key] == value
-               for key, value in rule.when)
+    return all(
+        key in properties and type(properties[key]) is type(value) and properties[key] == value
+        for key, value in rule.when
+    )
 
 
 def _asserted_factors(rule: ThreatRule, properties: dict) -> list[str]:
@@ -242,9 +244,7 @@ def generate_threats(
     return _sorted(threats.values())
 
 
-def apply_manual_threats(
-    manual: list[ManualThreat], elements: list[DfdElement], flows: list[DfdFlow]
-) -> list[Threat]:
+def apply_manual_threats(manual: list[ManualThreat], elements: list[DfdElement], flows: list[DfdFlow]) -> list[Threat]:
     """Resolves each hand-attached threat against the current diagram by its
     name-based element key. One whose element is no longer present is left
     out (it stays stored and reappears if the element does)."""

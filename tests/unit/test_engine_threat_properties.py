@@ -90,7 +90,9 @@ def test_owner_stated_weakness_is_likely_never_almost_certain():
     elements, flows = _model(store={"is_encrypted": False})
     threats = generate_threats(elements, flows)
 
-    assessed = {t.rule_id: t for t in assess_threats(threats, elements=elements, flows=flows, findings=[], fact_nodes=[])}
+    assessed = {
+        t.rule_id: t for t in assess_threats(threats, elements=elements, flows=flows, findings=[], fact_nodes=[])
+    }
 
     stated = assessed["STORE-P-01"]
     assert stated.likelihood == "likely"
@@ -99,7 +101,9 @@ def test_owner_stated_weakness_is_likely_never_almost_certain():
 
 
 def test_validate_properties_accepts_known_keys_and_cleans_text():
-    cleaned = validate_properties("data_flow", {"protocol": "  HTTPS ", "is_encrypted": True, "out_of_scope_reason": "  "})
+    cleaned = validate_properties(
+        "data_flow", {"protocol": "  HTTPS ", "is_encrypted": True, "out_of_scope_reason": "  "}
+    )
 
     assert cleaned == {"protocol": "HTTPS", "is_encrypted": True}
 

@@ -21,7 +21,6 @@ interface DataSourceOut {
   token_hint?: string | null;
 }
 
-
 // Never the whole connection_details blob -- just enough for a user to recognize which source is which.
 function summarize(source: DataSourceOut): string {
   if (source.type === "github_repository") {
@@ -39,7 +38,8 @@ function renderAnalysis(result: SourceResult | undefined) {
     if (result.vulnerability_count > 0) parts.push(`${result.vulnerability_count} vulnerabilities`);
     return (
       <>
-        <Badge bg="success">{SOURCE_STATUS_LABELS.analysed}</Badge> <span className="small text-muted">{parts.join(", ")}</span>
+        <Badge bg="success">{SOURCE_STATUS_LABELS.analysed}</Badge>{" "}
+        <span className="small text-muted">{parts.join(", ")}</span>
         {(result.warnings ?? []).map((warning) => (
           <div key={warning} className="small text-warning-emphasis" data-testid="source-warning">
             <Badge bg="warning" text="dark">
@@ -208,11 +208,17 @@ export function DataSourcesPanel({ applicationId, onChanged, sourceResults }: Da
 
   return (
     <div className="p-3">
-      {error && <Alert variant="danger" className="mb-2">{error}</Alert>}
+      {error && (
+        <Alert variant="danger" className="mb-2">
+          {error}
+        </Alert>
+      )}
       {!sources ? (
         <p className="text-muted mb-3">Loading...</p>
       ) : sources.length === 0 ? (
-        <p className="text-muted">No data sources yet -- add one below, or leave this a blank model you draw by hand.</p>
+        <p className="text-muted">
+          No data sources yet -- add one below, or leave this a blank model you draw by hand.
+        </p>
       ) : (
         <Table size="sm" striped responsive className="mb-3">
           <thead>

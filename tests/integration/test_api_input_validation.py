@@ -12,9 +12,13 @@ PW = "correct-password-1"  # nosec: test fixture
 
 def _client(tmp_path, **kw):
     url = f"sqlite:///{tmp_path}/t.db"
-    SQLRepository(url).save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    SQLRepository(url).save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url), **kw)
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
     return c
 
 
@@ -30,7 +34,12 @@ def test_lone_surrogate_in_an_upload_is_422_not_500(tmp_path):
     r = c.post(f"/api/applications/{aid}/data-sources", content=body, headers={"content-type": "application/json"})
     assert r.status_code == 422 and "Unicode" in r.text
     ok = '{"type":"manifest_upload","connection_details":{"content":"kind: x \\ud83d\\ude00","filename":"f"}}'  # a valid pair (emoji)
-    assert c.post(f"/api/applications/{aid}/data-sources", content=ok, headers={"content-type": "application/json"}).status_code == 200
+    assert (
+        c.post(
+            f"/api/applications/{aid}/data-sources", content=ok, headers={"content-type": "application/json"}
+        ).status_code
+        == 200
+    )
 
 
 def test_unexpected_errors_return_json_without_internals(tmp_path, monkeypatch):

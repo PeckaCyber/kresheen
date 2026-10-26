@@ -18,9 +18,7 @@ def _snap(app: str, day: str, keys: list[str]) -> ThreatSnapshot:
 
 
 def test_first_snapshot_is_not_new_and_later_ones_diff_against_the_previous():
-    points = compute_trend(
-        [_snap("A", "2026-09-01", ["t1", "t2"]), _snap("A", "2026-09-02", ["t2", "t3", "t4"])]
-    )
+    points = compute_trend([_snap("A", "2026-09-01", ["t1", "t2"]), _snap("A", "2026-09-02", ["t2", "t3", "t4"])])
     assert [(p.day, p.open, p.new, p.resolved) for p in points] == [
         ("2026-09-01", 2, 0, 0),
         ("2026-09-02", 3, 2, 1),

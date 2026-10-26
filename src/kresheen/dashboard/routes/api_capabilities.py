@@ -60,7 +60,10 @@ def capabilities(repo: Repository = Depends(get_repo)) -> CapabilitiesOut:
     registry = get_registry()
     plugins = [PluginOut(**p) for p in registry.describe()]
     features = sorted({f for p in plugins for f in p.features})
-    providers = [AuthProviderOut(id=a.id, label=a.label, login_url=a.login_url, password_login=a.password_login) for a in registry.auth_providers()]
+    providers = [
+        AuthProviderOut(id=a.id, label=a.label, login_url=a.login_url, password_login=a.password_login)
+        for a in registry.auth_providers()
+    ]
     return CapabilitiesOut(
         plugins=plugins,
         features=features,

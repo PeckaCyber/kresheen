@@ -19,8 +19,15 @@ from kresheen.storage.sql_repo import SQLRepository
 def _setup(tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
-    repo.save_user(User(id="USER-t", email="o@example.com", password_hash=hash_password("pw-long-enough-1"),
-                        role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(
+            id="USER-t",
+            email="o@example.com",
+            password_hash=hash_password("pw-long-enough-1"),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
+    )
     return TestClient(create_app(db_url=db_url)), repo
 
 

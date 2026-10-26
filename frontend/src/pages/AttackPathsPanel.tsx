@@ -28,7 +28,12 @@ function PathRoute({ path }: { path: AttackPathOut }) {
       {path.hops.map((hop, index) => (
         <span key={index}>
           {" "}
-          &rarr; {hop.crosses_boundary && <Badge bg="secondary" className="me-1">crosses boundary</Badge>}
+          &rarr;{" "}
+          {hop.crosses_boundary && (
+            <Badge bg="secondary" className="me-1">
+              crosses boundary
+            </Badge>
+          )}
           {index === path.hops.length - 1 ? <strong>{hop.to_name}</strong> : hop.to_name}
           {hop.flow_label && <span className="text-muted"> ({hop.flow_label})</span>}
         </span>

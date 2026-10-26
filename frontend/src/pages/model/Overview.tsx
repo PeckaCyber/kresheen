@@ -145,7 +145,9 @@ function WhatToDoNext({
         {actionPlan === null ? (
           <p className="text-muted small mb-0">Loading...</p>
         ) : openActions.length === 0 ? (
-          <p className="text-muted small mb-0">No open actions: every threat is mitigated, accepted or not applicable.</p>
+          <p className="text-muted small mb-0">
+            No open actions: every threat is mitigated, accepted or not applicable.
+          </p>
         ) : (
           <div>
             <ul className="list-unstyled mb-2">
@@ -184,7 +186,11 @@ function RiskBreakdown({ summary }: { summary: ThreatsOut["summary"] | undefined
           <div>
             <div className="pc-segbar mb-3" role="img" aria-label="Open threats by risk">
               {SEVERITY_ORDER.filter((s) => (openByRisk[s] ?? 0) > 0).map((s) => (
-                <span key={s} style={{ flexGrow: openByRisk[s], background: severityColor(s) }} title={`${s}: ${openByRisk[s]}`} />
+                <span
+                  key={s}
+                  style={{ flexGrow: openByRisk[s], background: severityColor(s) }}
+                  title={`${s}: ${openByRisk[s]}`}
+                />
               ))}
             </div>
             <ul className="list-unstyled mb-0 small">
@@ -210,11 +216,7 @@ function AttackPathsCard({ paths }: { paths: AttackPathOut[] | null }) {
         <span>Attack paths</span>
       </div>
       <div className="pc-panel-body">
-        {paths === null ? (
-          <p className="text-muted small mb-0">Loading...</p>
-        ) : (
-          <AttackPathsPanel paths={paths} />
-        )}
+        {paths === null ? <p className="text-muted small mb-0">Loading...</p> : <AttackPathsPanel paths={paths} />}
       </div>
     </section>
   );
@@ -289,12 +291,19 @@ export function Overview({
         <div className="pc-panel-head">
           <span>What changed since the last run</span>
         </div>
-        <div className="pc-panel-body">{diff ? <RunDiffPanel diff={diff} /> : <p className="text-muted small mb-0">Loading...</p>}</div>
+        <div className="pc-panel-body">
+          {diff ? <RunDiffPanel diff={diff} /> : <p className="text-muted small mb-0">Loading...</p>}
+        </div>
       </section>
       <section className="pc-panel mb-3" id="model-completeness-section" aria-label="Model completeness">
         <div className="pc-panel-head d-flex justify-content-between align-items-center">
           <span>Model completeness</span>
-          <Button variant="link" size="sm" className="p-0 text-uppercase" onClick={() => setShowAllQuestions((v) => !v)}>
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 text-uppercase"
+            onClick={() => setShowAllQuestions((v) => !v)}
+          >
             {showAllQuestions ? "Hide" : "Show all questions"}
           </Button>
         </div>

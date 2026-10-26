@@ -18,12 +18,8 @@ describe("categoryDescription", () => {
   });
 
   it("returns description for STRIDE categories by camelCase key", () => {
-    expect(categoryDescription("STRIDE", "Spoofing")).toBe(
-      "Someone pretends to be a user or service they are not.",
-    );
-    expect(categoryDescription("STRIDE", "Tampering")).toBe(
-      "Data or code is modified without authorization.",
-    );
+    expect(categoryDescription("STRIDE", "Spoofing")).toBe("Someone pretends to be a user or service they are not.");
+    expect(categoryDescription("STRIDE", "Tampering")).toBe("Data or code is modified without authorization.");
     expect(categoryDescription("STRIDE", "Repudiation")).toBe(
       "An attacker denies performing an action and cannot be proven otherwise.",
     );

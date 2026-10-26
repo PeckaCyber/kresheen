@@ -219,7 +219,9 @@ def diff_boundaries(
     current, _ = load_dfd_model(application_id, current_run_id, repo)
     before = {(e.type, e.name): e.trust_boundary for e in previous}
     changes = [
-        BoundaryChangeEntry(name=e.name, type=e.type, from_boundary=before[(e.type, e.name)], to_boundary=e.trust_boundary)
+        BoundaryChangeEntry(
+            name=e.name, type=e.type, from_boundary=before[(e.type, e.name)], to_boundary=e.trust_boundary
+        )
         for e in current
         if (e.type, e.name) in before and before[(e.type, e.name)] != e.trust_boundary
     ]

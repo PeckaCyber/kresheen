@@ -158,7 +158,6 @@ interface SbomOut {
   manifest_files_found: string[];
 }
 
-
 const ASSET_TYPES = ["process", "data_store", "external_entity"] as const;
 type AssetTypeValue = (typeof ASSET_TYPES)[number];
 
@@ -260,7 +259,9 @@ function nodeLabel(node: DfdNode): ReactNode {
 
   const counts = [
     node.open_finding_count ? `${node.open_finding_count} finding${node.open_finding_count === 1 ? "" : "s"}` : "",
-    !isHighOrCritical && node.open_threat_count ? `${node.open_threat_count} threat${node.open_threat_count === 1 ? "" : "s"}` : "",
+    !isHighOrCritical && node.open_threat_count
+      ? `${node.open_threat_count} threat${node.open_threat_count === 1 ? "" : "s"}`
+      : "",
   ].filter(Boolean);
 
   // "Deployment/quay-app" reads as "quay-app" with the kind underneath; the full name stays in the tooltip.
@@ -294,7 +295,13 @@ function nodeBackground(node: DfdNode): string {
 function shapeStyle(type: string): Record<string, string | number> {
   if (type === "process") return { borderRadius: 999, padding: "10px 22px" };
   if (type === "data_store") {
-    return { borderRadius: 0, borderTop: "4px solid rgba(0,0,0,.55)", borderBottom: "4px solid rgba(0,0,0,.55)", borderLeft: "none", borderRight: "none" };
+    return {
+      borderRadius: 0,
+      borderTop: "4px solid rgba(0,0,0,.55)",
+      borderBottom: "4px solid rgba(0,0,0,.55)",
+      borderLeft: "none",
+      borderRight: "none",
+    };
   }
   return { borderRadius: 2, border: "5px double rgba(255,255,255,.9)" };
 }
@@ -331,9 +338,7 @@ function nodeStyle(node: DfdNode) {
   return {
     background: appearance.fill,
     color: appearance.text,
-    boxShadow: appearance.ring !== "var(--pc-border)"
-      ? `0 0 0 3px ${appearance.ring}`
-      : undefined,
+    boxShadow: appearance.ring !== "var(--pc-border)" ? `0 0 0 3px ${appearance.ring}` : undefined,
     opacity: outOfScope ? 0.45 : 1,
     padding: 10,
     fontSize: 13,
@@ -377,7 +382,10 @@ function layoutNodes(
     const members = groups.get(name) ?? [];
     const cols = Math.min(GROUP_COLUMNS, Math.max(members.length, 1));
     const rows = Math.ceil(members.length / cols);
-    return { width: cols * NODE_WIDTH + GROUP_PADDING * 2, height: rows * NODE_HEIGHT + GROUP_PADDING * 2 + GROUP_HEADER };
+    return {
+      width: cols * NODE_WIDTH + GROUP_PADDING * 2,
+      height: rows * NODE_HEIGHT + GROUP_PADDING * 2 + GROUP_HEADER,
+    };
   });
   const slots = placeInRows(sizes, BOUNDARIES_PER_ROW, BOUNDARY_GAP);
 
@@ -411,7 +419,11 @@ function layoutNodes(
           x: GROUP_PADDING + (index % cols) * NODE_WIDTH,
           y: GROUP_PADDING + GROUP_HEADER + Math.floor(index / cols) * NODE_HEIGHT,
         },
-        data: { label: nodeLabel(node), worst_severity: node.worst_severity, worst_threat_risk: node.worst_threat_risk },
+        data: {
+          label: nodeLabel(node),
+          worst_severity: node.worst_severity,
+          worst_threat_risk: node.worst_threat_risk,
+        },
         style: nodeStyle(node),
       });
     });
@@ -548,7 +560,14 @@ function DfdPane({
       >
         <Background color="var(--pc-grid)" />
         <Controls />
-        {showMinimap && <MiniMap position="top-right" style={{ width: 140, height: 90 }} maskColor="rgba(0,0,0,0.1)" nodeColor={miniMapNodeColor} />}
+        {showMinimap && (
+          <MiniMap
+            position="top-right"
+            style={{ width: 140, height: 90 }}
+            maskColor="rgba(0,0,0,0.1)"
+            nodeColor={miniMapNodeColor}
+          />
+        )}
       </ReactFlow>
     </div>
   );
@@ -804,7 +823,9 @@ export function ApplicationDetailPage() {
     if (!applicationId) return;
     return apiFetch<DiagramOut[]>(`/api/applications/${applicationId}/diagrams`).then((list) => {
       setDiagrams(list);
-      setActiveDiagramId((current) => (current && list.some((d) => d.id === current) ? current : (list[0]?.id ?? null)));
+      setActiveDiagramId((current) =>
+        current && list.some((d) => d.id === current) ? current : (list[0]?.id ?? null),
+      );
     });
   }
 
@@ -816,9 +837,7 @@ export function ApplicationDetailPage() {
       setHiddenLayout([]);
       return;
     }
-    return apiFetch<DiagramElementLayoutOut[]>(
-      `/api/applications/${applicationId}/diagrams/${activeDiagramId}/layout`,
-    )
+    return apiFetch<DiagramElementLayoutOut[]>(`/api/applications/${applicationId}/diagrams/${activeDiagramId}/layout`)
       .then((rows) => setHiddenLayout(rows.filter((row) => row.hidden)))
       .catch(() => setHiddenLayout([]));
   }
@@ -1272,7 +1291,9 @@ export function ApplicationDetailPage() {
     // Keep the same array when nothing changed: React Flow re-fires onSelectionChange whenever this callback's identity
     // changes (every render), so setting a fresh array each time re-rendered forever (React error #185, a blank page,
     // as soon as the Trust Boundary tool was armed).
-    setSelectedBoundaryNodeIds((prev) => (prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids));
+    setSelectedBoundaryNodeIds((prev) =>
+      prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids,
+    );
   };
 
   function handleToggleBoundaryTool() {
@@ -1509,7 +1530,9 @@ export function ApplicationDetailPage() {
                 {reRunning ? "Running..." : "Run again"}
               </Button>
               {lastCompleted && (
-                <Link to={`/applications/${applicationId}/runs/${lastCompleted.id}`}>Back to the last completed run</Link>
+                <Link to={`/applications/${applicationId}/runs/${lastCompleted.id}`}>
+                  Back to the last completed run
+                </Link>
               )}
             </div>
             {reRunError && <Alert variant="danger">{reRunError}</Alert>}
@@ -1522,7 +1545,9 @@ export function ApplicationDetailPage() {
             )}
           </>
         ) : (
-          <Alert variant="info">This run is {run.status === "queued" ? "waiting to start" : "in progress"}. Reload the page to check again.</Alert>
+          <Alert variant="info">
+            This run is {run.status === "queued" ? "waiting to start" : "in progress"}. Reload the page to check again.
+          </Alert>
         )}
       </div>
     );
@@ -1606,7 +1631,9 @@ export function ApplicationDetailPage() {
 
   return (
     <div className="pc-page">
-      {applicationId && <ModelHeader applicationId={applicationId} actions={headerActions} compact={activeTab === "diagram"} />}
+      {applicationId && (
+        <ModelHeader applicationId={applicationId} actions={headerActions} compact={activeTab === "diagram"} />
+      )}
       {reRunError && (
         <Alert variant="danger" className="mb-2" onClose={() => setReRunError(null)} dismissible>
           {reRunError}
@@ -1615,8 +1642,9 @@ export function ApplicationDetailPage() {
       {notAnalysed.length > 0 && (
         <Alert variant="warning" className="mb-2" data-testid="not-analysed-banner">
           <strong>
-            {notAnalysed.length} of {run?.source_results?.length ?? 0} input{(run?.source_results?.length ?? 0) === 1 ? "" : "s"}{" "}
-            {notAnalysed.length === 1 ? "was" : "were"} stored but not analysed.
+            {notAnalysed.length} of {run?.source_results?.length ?? 0} input
+            {(run?.source_results?.length ?? 0) === 1 ? "" : "s"} {notAnalysed.length === 1 ? "was" : "were"} stored but
+            not analysed.
           </strong>{" "}
           Threats below come only from what was analysed or drawn by hand, so a low count is not a clean result.
           <ul className="mb-0 mt-1">
@@ -1630,7 +1658,8 @@ export function ApplicationDetailPage() {
       )}
       {partlyAnalysed.length > 0 && (
         <Alert variant="warning" className="mb-2" data-testid="partly-analysed-banner">
-          <strong>Part of an input was not analysed, so this result is incomplete.</strong> A short list below, or "no vulnerabilities", does not mean nothing is there.
+          <strong>Part of an input was not analysed, so this result is incomplete.</strong> A short list below, or "no
+          vulnerabilities", does not mean nothing is there.
           <ul className="mb-0 mt-1">
             {partlyAnalysed.flatMap((result) =>
               (result.warnings ?? []).map((warning) => (
@@ -1679,423 +1708,442 @@ export function ApplicationDetailPage() {
       </div>
 
       {activeTab === "diagram" && (
-      <div className="pc-panel">
-            {diagrams.length > 0 && (
-              <div className="d-flex align-items-center flex-wrap gap-1 p-2 border-bottom bg-light-subtle">
-                {diagrams.length > MAX_DIAGRAM_TABS ? (
-                  <Form.Select
-                    size="sm"
-                    style={{ width: "auto", minWidth: 220 }}
-                    aria-label="Diagram"
-                    value={activeDiagramId ?? ""}
-                    onChange={(event) => setActiveDiagramId(event.target.value)}
-                  >
-                    {diagrams.map((diagram) => (
-                      <option key={diagram.id} value={diagram.id}>
-                        {diagram.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                ) : (
-                  diagrams.map((diagram) => (
-                    <Button
-                      key={diagram.id}
-                      size="sm"
-                      variant={diagram.id === activeDiagramId ? "primary" : "outline-secondary"}
-                      onClick={() => setActiveDiagramId(diagram.id)}
-                    >
+        <div className="pc-panel">
+          {diagrams.length > 0 && (
+            <div className="d-flex align-items-center flex-wrap gap-1 p-2 border-bottom bg-light-subtle">
+              {diagrams.length > MAX_DIAGRAM_TABS ? (
+                <Form.Select
+                  size="sm"
+                  style={{ width: "auto", minWidth: 220 }}
+                  aria-label="Diagram"
+                  value={activeDiagramId ?? ""}
+                  onChange={(event) => setActiveDiagramId(event.target.value)}
+                >
+                  {diagrams.map((diagram) => (
+                    <option key={diagram.id} value={diagram.id}>
                       {diagram.name}
-                    </Button>
-                  ))
-                )}
-                {editMode && !addingDiagram && (
+                    </option>
+                  ))}
+                </Form.Select>
+              ) : (
+                diagrams.map((diagram) => (
                   <Button
+                    key={diagram.id}
+                    size="sm"
+                    variant={diagram.id === activeDiagramId ? "primary" : "outline-secondary"}
+                    onClick={() => setActiveDiagramId(diagram.id)}
+                  >
+                    {diagram.name}
+                  </Button>
+                ))
+              )}
+              {editMode && !addingDiagram && (
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => {
+                    setAddingDiagram(true);
+                    setDiagramNameDraft("");
+                  }}
+                  title="Add another diagram -- a separate, independently-arranged view of this same model"
+                >
+                  + Diagram
+                </Button>
+              )}
+              {editMode && addingDiagram && (
+                <InputGroup size="sm" style={{ maxWidth: 220 }}>
+                  <Form.Control
+                    autoFocus
+                    placeholder="Diagram name"
+                    value={diagramNameDraft}
+                    onChange={(event) => setDiagramNameDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleCreateDiagram();
+                      if (event.key === "Escape") setAddingDiagram(false);
+                    }}
+                  />
+                  <Button
+                    variant="outline-primary"
+                    disabled={!diagramNameDraft.trim()}
+                    onClick={() => void handleCreateDiagram()}
+                  >
+                    Add
+                  </Button>
+                </InputGroup>
+              )}
+              {editMode && activeDiagramId && !renamingDiagram && !addingDiagram && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="text-muted"
+                  onClick={() => {
+                    setRenamingDiagram(true);
+                    setDiagramNameDraft(diagrams.find((d) => d.id === activeDiagramId)?.name ?? "");
+                  }}
+                >
+                  Rename
+                </Button>
+              )}
+              {editMode && renamingDiagram && (
+                <InputGroup size="sm" style={{ maxWidth: 220 }}>
+                  <Form.Control
+                    autoFocus
+                    value={diagramNameDraft}
+                    onChange={(event) => setDiagramNameDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleRenameDiagram();
+                      if (event.key === "Escape") setRenamingDiagram(false);
+                    }}
+                  />
+                  <Button
+                    variant="outline-primary"
+                    disabled={!diagramNameDraft.trim()}
+                    onClick={() => void handleRenameDiagram()}
+                  >
+                    Save
+                  </Button>
+                </InputGroup>
+              )}
+              {editMode && activeDiagramId && diagrams.length > 1 && !renamingDiagram && !addingDiagram && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="text-danger"
+                  onClick={() => void handleDeleteDiagram(activeDiagramId)}
+                >
+                  Delete diagram
+                </Button>
+              )}
+              {editMode && hiddenLayout.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="ms-auto"
+                  onClick={() => setShowHiddenPanel((prev) => !prev)}
+                >
+                  {hiddenLayout.length} hidden on this diagram {showHiddenPanel ? "▲" : "▼"}
+                </Button>
+              )}
+            </div>
+          )}
+          {justHidden && (
+            <Alert
+              variant="info"
+              className="mb-0 rounded-0 py-2 d-flex align-items-center gap-2"
+              dismissible
+              onClose={() => setJustHidden(null)}
+            >
+              <span>
+                Hid <strong>{justHidden.label}</strong> on this diagram only.
+              </span>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => void handleShowElement(justHidden.key, justHidden.label)}
+              >
+                Show it again
+              </Button>
+            </Alert>
+          )}
+          {editMode && showHiddenPanel && hiddenLayout.length > 0 && (
+            <div className="p-2 border-bottom bg-light-subtle d-flex flex-wrap gap-2">
+              {hiddenLayout.map((row) => (
+                <Badge key={row.id} bg="secondary" className="d-flex align-items-center gap-2">
+                  {row.element_key
+                    .replace(/^(process|data_store|external_entity):/, "")
+                    .replace(/^(flow|boundary):/, "$1 ")}
+                  <Button
+                    size="sm"
+                    variant="link"
+                    className="text-white p-0"
+                    onClick={() => void handleShowElement(row.element_key, row.element_key)}
+                  >
+                    Show
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div className="d-flex justify-content-between align-items-center p-2 border-bottom bg-body-tertiary flex-wrap gap-2">
+            <Form.Check
+              type="switch"
+              id="dfd-edit-mode"
+              label="Edit mode"
+              checked={editMode}
+              onChange={(event) => {
+                setEditMode(event.target.checked);
+                if (!event.target.checked) {
+                  setBoundaryToolActive(false);
+                  clearBoundarySelection();
+                  setPendingPlacement(null);
+                }
+              }}
+            />
+            <Form.Check
+              type="switch"
+              id="dfd-minimap"
+              label="Mini map"
+              checked={showMinimap}
+              onChange={(event) => setShowMinimap(event.target.checked)}
+            />
+            {configObjects.count > 0 && (
+              <Form.Check
+                type="switch"
+                id="dfd-show-config"
+                label={`Show configuration objects (${configObjects.count})`}
+                title="ConfigMaps, Secrets and volume claims. Hidden by default on a busy diagram; their threats and findings are unaffected."
+                checked={configObjects.shown}
+                onChange={() => setShowConfigObjects(!configObjects.shown)}
+              />
+            )}
+            <span className="small text-muted" aria-label="Diagram legend">
+              Rounded: process · Open-ended: data store · Double border: external entity · Ring: open high or critical
+              risk
+            </span>
+            {editMode && (
+              <div className="d-flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => void history.undo()}
+                  disabled={!history.canUndo}
+                  title={history.undoLabel ? `Undo: ${history.undoLabel} (Ctrl+Z)` : "Nothing to undo"}
+                >
+                  ↶ Undo
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => void history.redo()}
+                  disabled={!history.canRedo}
+                  title={history.redoLabel ? `Redo: ${history.redoLabel} (Ctrl+Shift+Z)` : "Nothing to redo"}
+                >
+                  ↷ Redo
+                </Button>
+                <Button
+                  size="sm"
+                  variant={boundaryToolActive ? "primary" : "outline-primary"}
+                  onClick={handleToggleBoundaryTool}
+                  title="Click, then drag a box around components to group them into a trust boundary"
+                >
+                  ⬚ Trust Boundary
+                </Button>
+                {ASSET_TYPES.map((type) => (
+                  <Button
+                    key={type}
                     size="sm"
                     variant="outline-secondary"
-                    onClick={() => {
-                      setAddingDiagram(true);
-                      setDiagramNameDraft("");
-                    }}
-                    title="Add another diagram -- a separate, independently-arranged view of this same model"
+                    draggable
+                    onDragStart={(event) => handlePaletteDragStart(event, type)}
+                    style={{ cursor: "grab" }}
+                    title={`Drag onto the diagram to place a new ${ASSET_TYPE_LABELS[type]}`}
                   >
-                    + Diagram
+                    {ASSET_TYPE_LABELS[type]}
                   </Button>
-                )}
-                {editMode && addingDiagram && (
-                  <InputGroup size="sm" style={{ maxWidth: 220 }}>
-                    <Form.Control
-                      autoFocus
-                      placeholder="Diagram name"
-                      value={diagramNameDraft}
-                      onChange={(event) => setDiagramNameDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") void handleCreateDiagram();
-                        if (event.key === "Escape") setAddingDiagram(false);
-                      }}
-                    />
-                    <Button variant="outline-primary" disabled={!diagramNameDraft.trim()} onClick={() => void handleCreateDiagram()}>
-                      Add
-                    </Button>
-                  </InputGroup>
-                )}
-                {editMode && activeDiagramId && !renamingDiagram && !addingDiagram && (
-                  <Button
-                    size="sm"
-                    variant="link"
-                    className="text-muted"
-                    onClick={() => {
-                      setRenamingDiagram(true);
-                      setDiagramNameDraft(diagrams.find((d) => d.id === activeDiagramId)?.name ?? "");
-                    }}
-                  >
-                    Rename
-                  </Button>
-                )}
-                {editMode && renamingDiagram && (
-                  <InputGroup size="sm" style={{ maxWidth: 220 }}>
-                    <Form.Control
-                      autoFocus
-                      value={diagramNameDraft}
-                      onChange={(event) => setDiagramNameDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") void handleRenameDiagram();
-                        if (event.key === "Escape") setRenamingDiagram(false);
-                      }}
-                    />
-                    <Button variant="outline-primary" disabled={!diagramNameDraft.trim()} onClick={() => void handleRenameDiagram()}>
-                      Save
-                    </Button>
-                  </InputGroup>
-                )}
-                {editMode && activeDiagramId && diagrams.length > 1 && !renamingDiagram && !addingDiagram && (
-                  <Button
-                    size="sm"
-                    variant="link"
-                    className="text-danger"
-                    onClick={() => void handleDeleteDiagram(activeDiagramId)}
-                  >
-                    Delete diagram
-                  </Button>
-                )}
-                {editMode && hiddenLayout.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="link"
-                    className="ms-auto"
-                    onClick={() => setShowHiddenPanel((prev) => !prev)}
-                  >
-                    {hiddenLayout.length} hidden on this diagram {showHiddenPanel ? "▲" : "▼"}
-                  </Button>
-                )}
-              </div>
-            )}
-            {justHidden && (
-              <Alert variant="info" className="mb-0 rounded-0 py-2 d-flex align-items-center gap-2" dismissible onClose={() => setJustHidden(null)}>
-                <span>
-                  Hid <strong>{justHidden.label}</strong> on this diagram only.
-                </span>
-                <Button size="sm" variant="outline-primary" onClick={() => void handleShowElement(justHidden.key, justHidden.label)}>
-                  Show it again
-                </Button>
-              </Alert>
-            )}
-            {editMode && showHiddenPanel && hiddenLayout.length > 0 && (
-              <div className="p-2 border-bottom bg-light-subtle d-flex flex-wrap gap-2">
-                {hiddenLayout.map((row) => (
-                  <Badge key={row.id} bg="secondary" className="d-flex align-items-center gap-2">
-                    {row.element_key.replace(/^(process|data_store|external_entity):/, "").replace(/^(flow|boundary):/, "$1 ")}
-                    <Button
-                      size="sm"
-                      variant="link"
-                      className="text-white p-0"
-                      onClick={() => void handleShowElement(row.element_key, row.element_key)}
-                    >
-                      Show
-                    </Button>
-                  </Badge>
                 ))}
               </div>
             )}
-            <div className="d-flex justify-content-between align-items-center p-2 border-bottom bg-body-tertiary flex-wrap gap-2">
-              <Form.Check
-                type="switch"
-                id="dfd-edit-mode"
-                label="Edit mode"
-                checked={editMode}
-                onChange={(event) => {
-                  setEditMode(event.target.checked);
-                  if (!event.target.checked) {
-                    setBoundaryToolActive(false);
-                    clearBoundarySelection();
-                    setPendingPlacement(null);
-                  }
+          </div>
+          {editError && (
+            <Alert variant="danger" className="m-2 mb-0" onClose={() => setEditError(null)} dismissible>
+              {editError}
+            </Alert>
+          )}
+          {editMode && nodes.length === 0 && isBlankModel && (
+            <Alert variant="info" className="m-2 mb-0">
+              This is a blank model. Drag a Process, Data Store or External Entity onto the canvas, then connect them.
+              Threats are generated for every element you draw.
+            </Alert>
+          )}
+          {editMode && !boundaryToolActive && selectedBoundaryNodeIds.length === 0 && (
+            <p className="text-muted small px-2 pt-2 mb-0">
+              Drag a component button onto the diagram to place it. Drag between two components to connect them. Click a
+              dashed (manually-added) connection to remove it. Drag a trust boundary box to reposition it. Ctrl+Z /
+              Ctrl+Shift+Z undoes and redoes edits.
+            </p>
+          )}
+          {boundaryToolActive && selectedBoundaryNodeIds.length === 0 && (
+            <p className="text-muted small px-2 pt-2 mb-0">
+              Drag a box around the components that belong in this boundary.
+            </p>
+          )}
+          {boundaryToolActive && selectedBoundaryNodeIds.length > 0 && (
+            <div className="p-2 border-bottom bg-light-subtle d-flex align-items-center gap-2">
+              <span className="small text-muted">
+                {selectedBoundaryNodeIds.length} component{selectedBoundaryNodeIds.length === 1 ? "" : "s"} selected --
+              </span>
+              <Form.Control
+                size="sm"
+                style={{ maxWidth: 220 }}
+                list="trust-boundary-suggestions"
+                autoFocus
+                placeholder="Boundary name"
+                value={boundaryNameDraft}
+                onChange={(event) => setBoundaryNameDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleApplyBoundaryName();
+                  if (event.key === "Escape") clearBoundarySelection();
                 }}
               />
-              <Form.Check
-                type="switch"
-                id="dfd-minimap"
-                label="Mini map"
-                checked={showMinimap}
-                onChange={(event) => setShowMinimap(event.target.checked)}
-              />
-              {configObjects.count > 0 && (
-                <Form.Check
-                  type="switch"
-                  id="dfd-show-config"
-                  label={`Show configuration objects (${configObjects.count})`}
-                  title="ConfigMaps, Secrets and volume claims. Hidden by default on a busy diagram; their threats and findings are unaffected."
-                  checked={configObjects.shown}
-                  onChange={() => setShowConfigObjects(!configObjects.shown)}
+              <Button size="sm" onClick={() => void handleApplyBoundaryName()} disabled={!boundaryNameDraft.trim()}>
+                Apply
+              </Button>
+              <Button size="sm" variant="outline-secondary" onClick={clearBoundarySelection}>
+                Cancel
+              </Button>
+            </div>
+          )}
+          <div className="pc-diagram-row" ref={diagramPaneRef} style={{ height: canvasHeight }}>
+            <div
+              ref={dfdContainerRef}
+              className="pc-diagram-canvas"
+              style={{ position: "relative" }}
+              onDragOver={handleCanvasDragOver}
+              onDrop={handleCanvasDrop}
+            >
+              <ReactFlowProvider>
+                <DfdPane
+                  nodes={nodes}
+                  edges={edges}
+                  editMode={editMode}
+                  boundaryToolActive={boundaryToolActive}
+                  showMinimap={showMinimap}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onNodeClick={handleNodeClick}
+                  onEdgeClick={handleEdgeClick}
+                  onConnect={handleConnect}
+                  onInit={setReactFlowInstance}
+                  onSelectionChange={handleSelectionChange}
+                  onNodeDragStart={handleNodeDragStart}
+                  onNodeDragStop={(event, node) => void handleNodeDragStop(event, node)}
+                  onPaneClick={closeInspector}
                 />
-              )}
-              <span className="small text-muted" aria-label="Diagram legend">
-                Rounded: process · Open-ended: data store · Double border: external entity · Ring: open high or critical risk
-              </span>
-              {editMode && (
-                <div className="d-flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
-                    onClick={() => void history.undo()}
-                    disabled={!history.canUndo}
-                    title={history.undoLabel ? `Undo: ${history.undoLabel} (Ctrl+Z)` : "Nothing to undo"}
-                  >
-                    ↶ Undo
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
-                    onClick={() => void history.redo()}
-                    disabled={!history.canRedo}
-                    title={history.redoLabel ? `Redo: ${history.redoLabel} (Ctrl+Shift+Z)` : "Nothing to redo"}
-                  >
-                    ↷ Redo
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={boundaryToolActive ? "primary" : "outline-primary"}
-                    onClick={handleToggleBoundaryTool}
-                    title="Click, then drag a box around components to group them into a trust boundary"
-                  >
-                    ⬚ Trust Boundary
-                  </Button>
-                  {ASSET_TYPES.map((type) => (
-                    <Button
-                      key={type}
-                      size="sm"
-                      variant="outline-secondary"
-                      draggable
-                      onDragStart={(event) => handlePaletteDragStart(event, type)}
-                      style={{ cursor: "grab" }}
-                      title={`Drag onto the diagram to place a new ${ASSET_TYPE_LABELS[type]}`}
-                    >
-                      {ASSET_TYPE_LABELS[type]}
+              </ReactFlowProvider>
+              {pendingPlacement && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: pendingPlacement.screenX,
+                    top: pendingPlacement.screenY,
+                    zIndex: 10,
+                    background: "var(--bs-body-bg)",
+                    border: "1px solid var(--bs-border-color)",
+                    borderRadius: 6,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    padding: 6,
+                  }}
+                >
+                  <InputGroup size="sm">
+                    <Form.Control
+                      autoFocus
+                      placeholder={`Name this ${ASSET_TYPE_LABELS[pendingPlacement.type]}`}
+                      style={{ width: 200 }}
+                      value={pendingPlacementName}
+                      onChange={(event) => setPendingPlacementName(event.target.value)}
+                      onBlur={() => {
+                        // A short delay so a click on the Add button isn't
+                        // lost to the input's blur firing first.
+                        window.setTimeout(() => {
+                          if (pendingPlacementName.trim()) void handleConfirmPlacement();
+                          else setPendingPlacement(null);
+                        }, 150);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") void handleConfirmPlacement();
+                        if (event.key === "Escape") setPendingPlacement(null);
+                      }}
+                    />
+                    <Button variant="primary" onClick={() => void handleConfirmPlacement()}>
+                      Add
                     </Button>
-                  ))}
+                  </InputGroup>
                 </div>
               )}
             </div>
-            {editError && (
-              <Alert variant="danger" className="m-2 mb-0" onClose={() => setEditError(null)} dismissible>
-                {editError}
-              </Alert>
-            )}
-            {editMode && nodes.length === 0 && isBlankModel && (
-              <Alert variant="info" className="m-2 mb-0">
-                This is a blank model. Drag a Process, Data Store or External Entity onto the canvas, then connect
-                them. Threats are generated for every element you draw.
-              </Alert>
-            )}
-            {editMode && !boundaryToolActive && selectedBoundaryNodeIds.length === 0 && (
-              <p className="text-muted small px-2 pt-2 mb-0">
-                Drag a component button onto the diagram to place it. Drag between two components to connect
-                them. Click a dashed (manually-added) connection to remove it. Drag a trust boundary box to
-                reposition it. Ctrl+Z / Ctrl+Shift+Z undoes and redoes edits.
-              </p>
-            )}
-            {boundaryToolActive && selectedBoundaryNodeIds.length === 0 && (
-              <p className="text-muted small px-2 pt-2 mb-0">
-                Drag a box around the components that belong in this boundary.
-              </p>
-            )}
-            {boundaryToolActive && selectedBoundaryNodeIds.length > 0 && (
-              <div className="p-2 border-bottom bg-light-subtle d-flex align-items-center gap-2">
-                <span className="small text-muted">
-                  {selectedBoundaryNodeIds.length} component{selectedBoundaryNodeIds.length === 1 ? "" : "s"}{" "}
-                  selected --
-                </span>
-                <Form.Control
-                  size="sm"
-                  style={{ maxWidth: 220 }}
-                  list="trust-boundary-suggestions"
-                  autoFocus
-                  placeholder="Boundary name"
-                  value={boundaryNameDraft}
-                  onChange={(event) => setBoundaryNameDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") void handleApplyBoundaryName();
-                    if (event.key === "Escape") clearBoundarySelection();
-                  }}
-                />
-                <Button size="sm" onClick={() => void handleApplyBoundaryName()} disabled={!boundaryNameDraft.trim()}>
-                  Apply
-                </Button>
-                <Button size="sm" variant="outline-secondary" onClick={clearBoundarySelection}>
-                  Cancel
-                </Button>
-              </div>
-            )}
-            <div className="pc-diagram-row" ref={diagramPaneRef} style={{ height: canvasHeight }}>
-              <div
-                ref={dfdContainerRef}
-                className="pc-diagram-canvas"
-                style={{ position: "relative" }}
-                onDragOver={handleCanvasDragOver}
-                onDrop={handleCanvasDrop}
-              >
-                <ReactFlowProvider>
-                  <DfdPane
-                    nodes={nodes}
-                    edges={edges}
-                    editMode={editMode}
-                    boundaryToolActive={boundaryToolActive}
-                    showMinimap={showMinimap}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onNodeClick={handleNodeClick}
-                    onEdgeClick={handleEdgeClick}
-                    onConnect={handleConnect}
-                    onInit={setReactFlowInstance}
-                    onSelectionChange={handleSelectionChange}
-                    onNodeDragStart={handleNodeDragStart}
-                    onNodeDragStop={(event, node) => void handleNodeDragStop(event, node)}
-                    onPaneClick={closeInspector}
-                  />
-                </ReactFlowProvider>
-                {pendingPlacement && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: pendingPlacement.screenX,
-                      top: pendingPlacement.screenY,
-                      zIndex: 10,
-                      background: "var(--bs-body-bg)",
-                      border: "1px solid var(--bs-border-color)",
-                      borderRadius: 6,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                      padding: 6,
-                    }}
-                  >
-                    <InputGroup size="sm">
-                      <Form.Control
-                        autoFocus
-                        placeholder={`Name this ${ASSET_TYPE_LABELS[pendingPlacement.type]}`}
-                        style={{ width: 200 }}
-                        value={pendingPlacementName}
-                        onChange={(event) => setPendingPlacementName(event.target.value)}
-                        onBlur={() => {
-                          // A short delay so a click on the Add button isn't
-                          // lost to the input's blur firing first.
-                          window.setTimeout(() => {
-                            if (pendingPlacementName.trim()) void handleConfirmPlacement();
-                            else setPendingPlacement(null);
-                          }, 150);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") void handleConfirmPlacement();
-                          if (event.key === "Escape") setPendingPlacement(null);
-                        }}
-                      />
-                      <Button variant="primary" onClick={() => void handleConfirmPlacement()}>
-                        Add
-                      </Button>
-                    </InputGroup>
-                  </div>
-                )}
-              </div>
-              {/* Non-modal inspector docked next to the canvas: no
+            {/* Non-modal inspector docked next to the canvas: no
                   backdrop, so the diagram stays visible and clickable. Below
                   1100px there's no room for a dock, so it falls back to the
                   Offcanvas rendered near the other dialogs below. */}
-              {!isNarrowViewport && selectedNode && applicationId && runId && (
-                <div className="pc-inspector-dock" data-testid="inspector-dock">
-                  <ElementInspector
-                    element={selectedNode}
-                    editMode={editMode}
-                    onClose={closeInspector}
-                    nameDraft={nameDraft}
-                    onNameDraftChange={setNameDraft}
-                    onRename={() => void handleRenameComponent()}
-                    boundaryDraft={boundaryDraft}
-                    onBoundaryDraftChange={setBoundaryDraft}
-                    onSaveBoundary={() => void handleSaveBoundary()}
-                    boundarySuggestionsListId="trust-boundary-suggestions"
-                    hiddenHere={isHiddenHere(`${selectedNode.type}:${selectedNode.name}`)}
-                    onToggleHidden={() => {
-                      const key = `${selectedNode.type}:${selectedNode.name}`;
-                      void (isHiddenHere(key)
-                        ? handleShowElement(key, selectedNode.name)
-                        : handleHideElement(key, selectedNode.name));
-                    }}
-                    onDeleteRequest={() => setComponentToDelete(selectedNode)}
-                    propertySpecs={propertySpecs[selectedNode.type] ?? []}
-                    onSaveProperties={(next) => handleSaveProperties("component", selectedNode.id, next)}
-                    findings={findings
-                      .filter((finding) => finding.asset_id === selectedNode.id)
-                      .map((finding) => ({ id: finding.id, title: finding.title }))}
-                    applicationId={applicationId}
-                    runId={runId}
-                    threats={threatsData?.threats ?? []}
-                    onThreatsChanged={reloadThreats}
-                    onAddThreat={() => setAddThreat({ open: true, elementId: selectedNode.id })}
-                    onEditThreat={setEditingThreat}
-                    blankModel={isBlankModel}
-                    onViewAllThreats={() => {
-                      setThreatPreset({ name: selectedNode.name, nonce: Date.now() });
-                      switchTab("threats");
-                      closeInspector();
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-      </div>
+            {!isNarrowViewport && selectedNode && applicationId && runId && (
+              <div className="pc-inspector-dock" data-testid="inspector-dock">
+                <ElementInspector
+                  element={selectedNode}
+                  editMode={editMode}
+                  onClose={closeInspector}
+                  nameDraft={nameDraft}
+                  onNameDraftChange={setNameDraft}
+                  onRename={() => void handleRenameComponent()}
+                  boundaryDraft={boundaryDraft}
+                  onBoundaryDraftChange={setBoundaryDraft}
+                  onSaveBoundary={() => void handleSaveBoundary()}
+                  boundarySuggestionsListId="trust-boundary-suggestions"
+                  hiddenHere={isHiddenHere(`${selectedNode.type}:${selectedNode.name}`)}
+                  onToggleHidden={() => {
+                    const key = `${selectedNode.type}:${selectedNode.name}`;
+                    void (isHiddenHere(key)
+                      ? handleShowElement(key, selectedNode.name)
+                      : handleHideElement(key, selectedNode.name));
+                  }}
+                  onDeleteRequest={() => setComponentToDelete(selectedNode)}
+                  propertySpecs={propertySpecs[selectedNode.type] ?? []}
+                  onSaveProperties={(next) => handleSaveProperties("component", selectedNode.id, next)}
+                  findings={findings
+                    .filter((finding) => finding.asset_id === selectedNode.id)
+                    .map((finding) => ({ id: finding.id, title: finding.title }))}
+                  applicationId={applicationId}
+                  runId={runId}
+                  threats={threatsData?.threats ?? []}
+                  onThreatsChanged={reloadThreats}
+                  onAddThreat={() => setAddThreat({ open: true, elementId: selectedNode.id })}
+                  onEditThreat={setEditingThreat}
+                  blankModel={isBlankModel}
+                  onViewAllThreats={() => {
+                    setThreatPreset({ name: selectedNode.name, nonce: Date.now() });
+                    switchTab("threats");
+                    closeInspector();
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <div className="pc-panel pc-panel-body" style={{ display: activeTab === "threats" ? undefined : "none" }}>
-            {threatsData && applicationId && runId ? (
-              <ThreatsPanel
-                applicationId={applicationId}
-                runId={runId}
-                threats={threatsData.threats}
-                onChanged={reloadThreats}
-                onAddThreat={() => setAddThreat({ open: true, elementId: null })}
-                onEditThreat={setEditingThreat}
-                blankModel={isBlankModel}
-                coverageGaps={threatsData.coverage_gaps}
-                docConflicts={threatsData.doc_conflicts}
-                unavailableMethodologies={threatsData.unavailable_methodologies}
-                presetElement={threatPreset}
-              />
-            ) : (
-              <p className="text-muted mb-0">Threats are unavailable.</p>
-            )}
+        {threatsData && applicationId && runId ? (
+          <ThreatsPanel
+            applicationId={applicationId}
+            runId={runId}
+            threats={threatsData.threats}
+            onChanged={reloadThreats}
+            onAddThreat={() => setAddThreat({ open: true, elementId: null })}
+            onEditThreat={setEditingThreat}
+            blankModel={isBlankModel}
+            coverageGaps={threatsData.coverage_gaps}
+            docConflicts={threatsData.doc_conflicts}
+            unavailableMethodologies={threatsData.unavailable_methodologies}
+            presetElement={threatPreset}
+          />
+        ) : (
+          <p className="text-muted mb-0">Threats are unavailable.</p>
+        )}
       </div>
 
       <div className="pc-panel pc-panel-body" style={{ display: activeTab === "actions" ? undefined : "none" }}>
-            {applicationId && runId ? (
-              <ActionPlanPanel
-                applicationId={applicationId}
-                runId={runId}
-                refreshKey={threatsData}
-                onLoaded={(plan) => {
-                  setActionPlan(plan);
-                  setOpenActionCount(plan.actions.filter((a) => a.status === "todo" || a.status === "in_progress").length);
-                }}
-              />
-            ) : (
-              <p className="text-muted mb-0">The action plan is unavailable.</p>
-            )}
+        {applicationId && runId ? (
+          <ActionPlanPanel
+            applicationId={applicationId}
+            runId={runId}
+            refreshKey={threatsData}
+            onLoaded={(plan) => {
+              setActionPlan(plan);
+              setOpenActionCount(plan.actions.filter((a) => a.status === "todo" || a.status === "in_progress").length);
+            }}
+          />
+        ) : (
+          <p className="text-muted mb-0">The action plan is unavailable.</p>
+        )}
       </div>
 
       <div style={{ display: activeTab === "findings" ? undefined : "none" }}>
@@ -2146,10 +2194,9 @@ export function ApplicationDetailPage() {
             <div className="pc-panel-body">
               {sbom.no_lockfile_detected ? (
                 <Alert variant="info" className="mb-0">
-                  No lockfile found in this repository -- dependency versions can&apos;t be resolved for
-                  vulnerability matching.{" "}
-                  {sbom.manifest_files_found.length > 0 &&
-                    `Found manifests: ${sbom.manifest_files_found.join(", ")}.`}
+                  No lockfile found in this repository -- dependency versions can&apos;t be resolved for vulnerability
+                  matching.{" "}
+                  {sbom.manifest_files_found.length > 0 && `Found manifests: ${sbom.manifest_files_found.join(", ")}.`}
                 </Alert>
               ) : sbom.component_count === 0 ? (
                 <p className="text-muted mb-0">No application dependencies were found for this run.</p>
@@ -2200,7 +2247,11 @@ export function ApplicationDetailPage() {
             <div className="pc-panel-head">
               <span>Data sources</span>
             </div>
-            <DataSourcesPanel applicationId={applicationId} onChanged={loadRunsAndStaleness} sourceResults={run?.source_results} />
+            <DataSourcesPanel
+              applicationId={applicationId}
+              onChanged={loadRunsAndStaleness}
+              sourceResults={run?.source_results}
+            />
           </section>
         )}
         {applicationId && (
@@ -2364,8 +2415,7 @@ export function ApplicationDetailPage() {
           <Modal.Title>Delete component</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Delete the manually-added component <strong>{componentToDelete?.name}</strong>? You can undo
-          this with Ctrl+Z.
+          Delete the manually-added component <strong>{componentToDelete?.name}</strong>? You can undo this with Ctrl+Z.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setComponentToDelete(null)}>

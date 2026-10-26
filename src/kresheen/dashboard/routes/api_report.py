@@ -37,7 +37,11 @@ from kresheen.reporting.sarif_export import build_sarif
 from kresheen.reporting.threat_dragon_export import build_threat_dragon_model
 from kresheen.storage.repository import Repository
 
-router = APIRouter(prefix="/api/applications", tags=["report"], dependencies=[Depends(get_current_session), Depends(authorize_application)])
+router = APIRouter(
+    prefix="/api/applications",
+    tags=["report"],
+    dependencies=[Depends(get_current_session), Depends(authorize_application)],
+)
 
 _CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"
 _DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -62,15 +66,11 @@ def _resolve_diagram_id(application_id: str, diagram_id: str | None, repo: Repos
     return diagram.id
 
 
-def _report(
-    application_id: str, run_id: str, repo: Repository, diagram_id: str | None = None
-) -> ThreatModelReport:
+def _report(application_id: str, run_id: str, repo: Repository, diagram_id: str | None = None) -> ThreatModelReport:
     _application_and_run(application_id, run_id, repo)
     resolved_diagram_id = _resolve_diagram_id(application_id, diagram_id, repo)
     try:
-        return build_report(
-            application_id, run_id, repo, diagram_id=resolved_diagram_id
-        )
+        return build_report(application_id, run_id, repo, diagram_id=resolved_diagram_id)
     except (LookupError, UnknownRunError):
         raise HTTPException(status_code=404, detail="Unknown run") from None
 
@@ -126,7 +126,11 @@ def report_docx(
 ) -> Response:
     report = _report(application_id, run_id, repo, diagram_id)
     return _respond(
-        render_docx(report), _DOCX, application_name=report.application_name, suffix="-threat-model.docx", attachment=True
+        render_docx(report),
+        _DOCX,
+        application_name=report.application_name,
+        suffix="-threat-model.docx",
+        attachment=True,
     )
 
 

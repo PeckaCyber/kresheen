@@ -27,14 +27,22 @@ def _app(tmp_path):
     repo = SQLRepository(db_url)
     for uid, role in (("USER-owner", "owner"), ("USER-member", "member")):
         repo.save_user(
-            User(id=uid, email=f"{role}@example.com", password_hash=hash_password(_PASSWORD), role=role, created_at=datetime.now(UTC))
+            User(
+                id=uid,
+                email=f"{role}@example.com",
+                password_hash=hash_password(_PASSWORD),
+                role=role,
+                created_at=datetime.now(UTC),
+            )
         )
     provider = FakeProvider(models=[ModelInfo("claude-x", "Claude X")])
     return TestClient(create_app(db_url=db_url, llm_provider=provider)), repo, provider
 
 
 def _login(client: TestClient, role: str) -> dict[str, str]:
-    csrf = client.post("/api/auth/login", json={"email": f"{role}@example.com", "password": _PASSWORD}).json()["csrf_token"]
+    csrf = client.post("/api/auth/login", json={"email": f"{role}@example.com", "password": _PASSWORD}).json()[
+        "csrf_token"
+    ]
     return {"X-CSRF-Token": csrf}
 
 
@@ -119,7 +127,9 @@ def test_key_events_are_audited_without_the_key(tmp_path):
     headers = _login(client, "owner")
     _enable(client, headers)
 
-    saved = client.put("/api/agent-config", json={"api_key": "sk-ant-secret", "default_model": "claude-x"}, headers=headers)
+    saved = client.put(
+        "/api/agent-config", json={"api_key": "sk-ant-secret", "default_model": "claude-x"}, headers=headers
+    )
     assert saved.json()["has_api_key"] is True
     removed = client.delete("/api/agent-config/key", headers=headers)
     assert removed.json() == {"default_model": None, "has_api_key": False, "workspace_id": None}
@@ -148,7 +158,9 @@ def test_workspace_id_is_saved_returned_and_used_for_model_lists(tmp_path):
     client, repo, provider = _app(tmp_path)
     headers = _login(client, "owner")
     _enable(client, headers)
-    tested = client.post("/api/agent-config/models", json={"api_key": "sk-ant-x", "workspace_id": "wrkspc_01ab"}, headers=headers)
+    tested = client.post(
+        "/api/agent-config/models", json={"api_key": "sk-ant-x", "workspace_id": "wrkspc_01ab"}, headers=headers
+    )
     assert tested.status_code == 200 and provider.model_list_workspaces[-1] == "wrkspc_01ab"
     saved = client.put(
         "/api/agent-config",

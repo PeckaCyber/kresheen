@@ -90,9 +90,6 @@ findings_table = Table(
 )
 
 
-
-
-
 users_table = Table(
     "users",
     metadata,
@@ -210,7 +207,8 @@ kb_entries_table = Table(
 )
 
 application_groups_table = Table(
-    "application_groups", metadata,
+    "application_groups",
+    metadata,
     Column("id", String, primary_key=True),
     Column("owner_user_id", String, index=True),
     Column("data", JSON),
@@ -227,7 +225,8 @@ trust_boundary_assignments_table = Table(
 
 # Legacy table, no longer read or written; it stays because the baseline migration creates it.
 trust_boundary_layouts_table = Table(
-    "trust_boundary_layouts", metadata,
+    "trust_boundary_layouts",
+    metadata,
     Column("id", String, primary_key=True),
     Column("application_id", String, index=True),
     Column("boundary_name", String, index=True),
@@ -508,7 +507,9 @@ class SQLRepository:
             if row is None:
                 return
             data = Session.model_validate(row[0]).model_copy(update={"last_seen_at": last_seen_at})
-            conn.execute(sessions_table.update().where(sessions_table.c.id == key).values(data=data.model_dump(mode="json")))
+            conn.execute(
+                sessions_table.update().where(sessions_table.c.id == key).values(data=data.model_dump(mode="json"))
+            )
 
     def delete_session(self, session_id: str) -> None:
         with self.engine.begin() as conn:
@@ -586,7 +587,12 @@ class SQLRepository:
             return int(conn.execute(select(func.count()).select_from(audit_events_table)).scalar_one())
 
     def trim_audit_events(
-        self, keep: int, *, security: bool | None = None, names: frozenset[str] = frozenset(), prefixes: tuple[str, ...] = ()
+        self,
+        keep: int,
+        *,
+        security: bool | None = None,
+        names: frozenset[str] = frozenset(),
+        prefixes: tuple[str, ...] = (),
     ) -> int:
         """Delete the oldest rows beyond the newest `keep`; returns how many went.
 
@@ -614,7 +620,11 @@ class SQLRepository:
         match = audit_events_table.c.data["action"].as_string() == action
         with self.engine.begin() as conn:
             cutoff = conn.execute(
-                select(audit_events_table.c.at).where(match).order_by(audit_events_table.c.at.desc()).offset(keep).limit(1)
+                select(audit_events_table.c.at)
+                .where(match)
+                .order_by(audit_events_table.c.at.desc())
+                .offset(keep)
+                .limit(1)
             ).scalar_one_or_none()
             if cutoff is None:
                 return 0
@@ -677,9 +687,7 @@ class SQLRepository:
         with self.engine.begin() as conn:
             conn.execute(asset_flows_table.delete().where(asset_flows_table.c.run_id == run_id))
             for flow in flows:
-                conn.execute(
-                    stmt, {"id": flow.id, "run_id": flow.run_id, "data": flow.model_dump(mode="json")}
-                )
+                conn.execute(stmt, {"id": flow.id, "run_id": flow.run_id, "data": flow.model_dump(mode="json")})
 
     def list_asset_flows_for_run(self, run_id: str) -> list[AssetFlow]:
         query = select(asset_flows_table.c.data).where(asset_flows_table.c.run_id == run_id)
@@ -750,9 +758,7 @@ class SQLRepository:
     def delete_trust_boundary_assignment(self, assignment_id: str) -> None:
         with self.engine.begin() as conn:
             conn.execute(
-                trust_boundary_assignments_table.delete().where(
-                    trust_boundary_assignments_table.c.id == assignment_id
-                )
+                trust_boundary_assignments_table.delete().where(trust_boundary_assignments_table.c.id == assignment_id)
             )
 
     def save_manual_flow(self, flow: ManualFlow) -> None:
@@ -797,9 +803,7 @@ class SQLRepository:
             )
 
     def list_threat_statuses(self, application_id: str) -> list[ThreatStatusRecord]:
-        query = select(threat_statuses_table.c.data).where(
-            threat_statuses_table.c.application_id == application_id
-        )
+        query = select(threat_statuses_table.c.data).where(threat_statuses_table.c.application_id == application_id)
         with self.engine.connect() as conn:
             rows = conn.execute(query).fetchall()
         return [ThreatStatusRecord.model_validate(row[0]) for row in rows]
@@ -907,9 +911,7 @@ class SQLRepository:
         with self.engine.begin() as conn:
             conn.execute(diagrams_table.delete().where(diagrams_table.c.id == diagram_id))
             conn.execute(
-                diagram_element_layouts_table.delete().where(
-                    diagram_element_layouts_table.c.diagram_id == diagram_id
-                )
+                diagram_element_layouts_table.delete().where(diagram_element_layouts_table.c.diagram_id == diagram_id)
             )
 
     def save_diagram_element_layout(self, layout: DiagramElementLayout) -> None:
@@ -931,9 +933,7 @@ class SQLRepository:
 
     def delete_diagram_element_layout(self, layout_id: str) -> None:
         with self.engine.begin() as conn:
-            conn.execute(
-                diagram_element_layouts_table.delete().where(diagram_element_layouts_table.c.id == layout_id)
-            )
+            conn.execute(diagram_element_layouts_table.delete().where(diagram_element_layouts_table.c.id == layout_id))
 
     # -- Applications / data sources / runs ----------------------------------
 
@@ -969,8 +969,9 @@ class SQLRepository:
         stmt = self._insert(application_groups_table)
         stmt = stmt.on_conflict_do_update(index_elements=["id"], set_={"data": stmt.excluded.data})
         with self.engine.begin() as conn:
-            conn.execute(stmt, {"id": group.id, "owner_user_id": group.owner_user_id,
-                "data": group.model_dump(mode="json")})
+            conn.execute(
+                stmt, {"id": group.id, "owner_user_id": group.owner_user_id, "data": group.model_dump(mode="json")}
+            )
 
     def get_group(self, group_id: str) -> ApplicationGroup | None:
         query = select(application_groups_table.c.data).where(application_groups_table.c.id == group_id)
@@ -996,7 +997,9 @@ class SQLRepository:
             run_ids = [
                 row[0]
                 for row in conn.execute(
-                    select(threat_model_runs_table.c.id).where(threat_model_runs_table.c.application_id == application_id)
+                    select(threat_model_runs_table.c.id).where(
+                        threat_model_runs_table.c.application_id == application_id
+                    )
                 ).fetchall()
             ]
             for chunk_start in range(0, len(run_ids), 500):
@@ -1008,29 +1011,19 @@ class SQLRepository:
             conn.execute(  # the application's hand-drawn components (run_id is NULL; the owner is in the JSON)
                 assets_table.delete().where(assets_table.c.data["application_id"].as_string() == application_id)
             )
-            conn.execute(threat_snapshots_table.delete().where(threat_snapshots_table.c.application_id == application_id))
+            conn.execute(
+                threat_snapshots_table.delete().where(threat_snapshots_table.c.application_id == application_id)
+            )
             conn.execute(applications_table.delete().where(applications_table.c.id == application_id))
+            conn.execute(data_sources_table.delete().where(data_sources_table.c.application_id == application_id))
             conn.execute(
-                data_sources_table.delete().where(data_sources_table.c.application_id == application_id)
+                threat_model_runs_table.delete().where(threat_model_runs_table.c.application_id == application_id)
             )
+            conn.execute(threat_statuses_table.delete().where(threat_statuses_table.c.application_id == application_id))
+            conn.execute(action_statuses_table.delete().where(action_statuses_table.c.application_id == application_id))
+            conn.execute(manual_threats_table.delete().where(manual_threats_table.c.application_id == application_id))
             conn.execute(
-                threat_model_runs_table.delete().where(
-                    threat_model_runs_table.c.application_id == application_id
-                )
-            )
-            conn.execute(
-                threat_statuses_table.delete().where(threat_statuses_table.c.application_id == application_id)
-            )
-            conn.execute(
-                action_statuses_table.delete().where(action_statuses_table.c.application_id == application_id)
-            )
-            conn.execute(
-                manual_threats_table.delete().where(manual_threats_table.c.application_id == application_id)
-            )
-            conn.execute(
-                element_properties_table.delete().where(
-                    element_properties_table.c.application_id == application_id
-                )
+                element_properties_table.delete().where(element_properties_table.c.application_id == application_id)
             )
             diagram_ids = [
                 row[0]
@@ -1074,9 +1067,7 @@ class SQLRepository:
             return [(row[0], row[1]) for row in conn.execute(query).fetchall()]
 
     def list_data_sources_for_application(self, application_id: str) -> list[DataSourceConfig]:
-        query = select(data_sources_table.c.data).where(
-            data_sources_table.c.application_id == application_id
-        )
+        query = select(data_sources_table.c.data).where(data_sources_table.c.application_id == application_id)
         with self.engine.connect() as conn:
             rows = conn.execute(query).fetchall()
         return [DataSourceConfig.model_validate(row[0]) for row in rows]
@@ -1114,9 +1105,7 @@ class SQLRepository:
         return [ThreatModelRun.model_validate(r[0]) for r in rows]
 
     def list_runs_for_application(self, application_id: str) -> list[ThreatModelRun]:
-        query = select(threat_model_runs_table.c.data).where(
-            threat_model_runs_table.c.application_id == application_id
-        )
+        query = select(threat_model_runs_table.c.data).where(threat_model_runs_table.c.application_id == application_id)
         with self.engine.connect() as conn:
             rows = conn.execute(query).fetchall()
         # started_at lives in the JSON blob, not a promoted/indexed column, so
@@ -1134,9 +1123,7 @@ class SQLRepository:
         stmt = self._insert(fact_nodes_table)
         with self.engine.begin() as conn:
             for node in nodes:
-                conn.execute(
-                    stmt, {"id": node.id, "run_id": node.run_id, "data": node.model_dump(mode="json")}
-                )
+                conn.execute(stmt, {"id": node.id, "run_id": node.run_id, "data": node.model_dump(mode="json")})
 
     def save_fact_edges(self, edges: list[FactEdge]) -> None:
         if not edges:
@@ -1144,9 +1131,7 @@ class SQLRepository:
         stmt = self._insert(fact_edges_table)
         with self.engine.begin() as conn:
             for edge in edges:
-                conn.execute(
-                    stmt, {"id": edge.id, "run_id": edge.run_id, "data": edge.model_dump(mode="json")}
-                )
+                conn.execute(stmt, {"id": edge.id, "run_id": edge.run_id, "data": edge.model_dump(mode="json")})
 
     def list_fact_nodes_for_run(self, run_id: str) -> list[FactNode]:
         query = select(fact_nodes_table.c.data).where(fact_nodes_table.c.run_id == run_id)
@@ -1260,7 +1245,11 @@ class SQLRepository:
         stmt = self._insert(instance_settings_table)
         stmt = stmt.on_conflict_do_update(
             index_elements=["key"],
-            set_={"value": stmt.excluded.value, "updated_at": stmt.excluded.updated_at, "updated_by": stmt.excluded.updated_by},
+            set_={
+                "value": stmt.excluded.value,
+                "updated_at": stmt.excluded.updated_at,
+                "updated_by": stmt.excluded.updated_by,
+            },
         )
         with self.engine.begin() as conn:
             conn.execute(stmt, {"key": key, "value": value, "updated_at": datetime.now(UTC), "updated_by": updated_by})

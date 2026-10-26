@@ -128,9 +128,7 @@ def list_predefined_rules() -> list[PredefinedRuleOut]:
 
 
 @router.get("", response_model=list[ThreatKBEntry])
-def list_entries(
-    source: str | None = None, repo: Repository = Depends(get_repo)
-) -> list[ThreatKBEntry]:
+def list_entries(source: str | None = None, repo: Repository = Depends(get_repo)) -> list[ThreatKBEntry]:
     entries = repo.list_kb_entries(source=source)
     # The curated feed is not part of the open-source core.
     entries = [e for e in entries if e.source != "kresheen_curated"]

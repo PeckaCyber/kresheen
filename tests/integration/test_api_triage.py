@@ -19,11 +19,33 @@ def test_accepting_or_dismissing_a_threat_needs_a_reason(tmp_path):
     key = _threats(client, base)["threats"][0]["key"]
 
     for status in ("accepted", "not_applicable"):
-        assert client.put(f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": status}).status_code == 422
-        assert client.put(f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": status, "note": "  "}).status_code == 422
-    assert client.put(f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": "accepted", "note": "Reviewed by security"}).status_code == 200
+        assert (
+            client.put(
+                f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": status}
+            ).status_code
+            == 422
+        )
+        assert (
+            client.put(
+                f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": status, "note": "  "}
+            ).status_code
+            == 422
+        )
+    assert (
+        client.put(
+            f"{base}/threats/status",
+            headers=headers,
+            json={"threat_key": key, "status": "accepted", "note": "Reviewed by security"},
+        ).status_code
+        == 200
+    )
     # Mitigated and open do not need one.
-    assert client.put(f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": "mitigated"}).status_code == 200
+    assert (
+        client.put(
+            f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": "mitigated"}
+        ).status_code
+        == 200
+    )
 
 
 def test_bulk_sets_status_on_many_threats_and_keeps_the_summary_consistent(tmp_path):
@@ -31,7 +53,11 @@ def test_bulk_sets_status_on_many_threats_and_keeps_the_summary_consistent(tmp_p
     before = _threats(client, base)
     keys = [t["key"] for t in before["threats"][:5]]
 
-    response = client.put(f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": keys, "status": "mitigated", "note": "Fixed in PR 12"})
+    response = client.put(
+        f"{base}/threats/status/bulk",
+        headers=headers,
+        json={"threat_keys": keys, "status": "mitigated", "note": "Fixed in PR 12"},
+    )
 
     assert response.status_code == 200 and response.json() == {"updated": 5}
     after = _threats(client, base)
@@ -45,19 +71,37 @@ def test_bulk_needs_a_reason_for_accepted_and_rejects_unknown_keys_without_chang
     client, headers, _app, _run, base = _setup(tmp_path)
     keys = [t["key"] for t in _threats(client, base)["threats"][:3]]
 
-    assert client.put(f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": keys, "status": "accepted"}).status_code == 422
-    mixed = client.put(f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": [*keys, "NOPE|x"], "status": "mitigated"})
+    assert (
+        client.put(
+            f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": keys, "status": "accepted"}
+        ).status_code
+        == 422
+    )
+    mixed = client.put(
+        f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": [*keys, "NOPE|x"], "status": "mitigated"}
+    )
     assert mixed.status_code == 404
     assert _threats(client, base)["summary"]["by_status"]["mitigated"] == 0  # all or nothing
-    assert client.put(f"{base}/threats/status/bulk", json={"threat_keys": keys, "status": "mitigated"}).status_code == 403
-    assert client.put(f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": [], "status": "mitigated"}).status_code == 422
+    assert (
+        client.put(f"{base}/threats/status/bulk", json={"threat_keys": keys, "status": "mitigated"}).status_code == 403
+    )
+    assert (
+        client.put(
+            f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": [], "status": "mitigated"}
+        ).status_code
+        == 422
+    )
 
 
 def test_bulk_keeps_existing_notes_and_dread_when_no_new_note_is_given(tmp_path):
     client, headers, _app, _run, base = _setup(tmp_path)
     key = _threats(client, base)["threats"][0]["key"]
     dread = {"damage": 5, "reproducibility": 5, "exploitability": 5, "affected_users": 5, "discoverability": 5}
-    client.put(f"{base}/threats/status", headers=headers, json={"threat_key": key, "status": "open", "note": "look at this", "dread": dread})
+    client.put(
+        f"{base}/threats/status",
+        headers=headers,
+        json={"threat_key": key, "status": "open", "note": "look at this", "dread": dread},
+    )
 
     client.put(f"{base}/threats/status/bulk", headers=headers, json={"threat_keys": [key], "status": "mitigated"})
 

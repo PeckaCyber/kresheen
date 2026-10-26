@@ -30,8 +30,8 @@ describe("ModelTour", () => {
     expect(screen.getByText("Overview")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Start here. It shows the few things worth doing next: questions that sharpen your threats, and the fixes that matter most."
-      )
+        "Start here. It shows the few things worth doing next: questions that sharpen your threats, and the fixes that matter most.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("1 of 4")).toBeInTheDocument();
   });
@@ -44,8 +44,8 @@ describe("ModelTour", () => {
     expect(screen.getByText("Diagram")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Your system as boxes and arrows. Click any box to see its threats and state what you know about it."
-      )
+        "Your system as boxes and arrows. Click any box to see its threats and state what you know about it.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("2 of 4")).toBeInTheDocument();
   });

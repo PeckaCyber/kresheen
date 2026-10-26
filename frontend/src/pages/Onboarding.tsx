@@ -74,7 +74,12 @@ export function Onboarding({
               <Card.Body className="d-flex flex-column">
                 <Card.Title className="h6">{entry.title}</Card.Title>
                 <Card.Text className="small text-muted flex-grow-1">{entry.body}</Card.Text>
-                <Button variant="outline-primary" size="sm" className="align-self-start" onClick={() => onPick(entry.preset)}>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="align-self-start"
+                  onClick={() => onPick(entry.preset)}
+                >
                   {entry.preset === "blank" ? "Start drawing" : "Choose"}
                   <span className="visually-hidden">: {entry.title}</span>
                 </Button>

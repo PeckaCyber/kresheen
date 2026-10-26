@@ -44,7 +44,9 @@ def test_each_call_makes_an_independent_ungrouped_copy_that_can_be_deleted(tmp_p
     assert first["application_id"] != second["application_id"]
     listed = client.get("/api/applications?group_id=ungrouped").json()
     assert {a["id"] for a in listed} >= {first["application_id"], second["application_id"]}
-    assert client.delete(f"/api/applications/{first['application_id']}", headers={"X-CSRF-Token": csrf}).status_code == 204
+    assert (
+        client.delete(f"/api/applications/{first['application_id']}", headers={"X-CSRF-Token": csrf}).status_code == 204
+    )
     assert client.get(f"/api/applications/{first['application_id']}").status_code == 404
 
 
@@ -80,7 +82,9 @@ def test_kubernetes_sample_ingests_its_manifests_and_shows_the_planted_weaknesse
     assert config_hits["SC-T02"]["risk"] == "critical"
     dfd = client.get(f"{base}/dfd").json()
     assert {n["trust_boundary"] for n in dfd["nodes"] if n["type"] == "process"} == {
-        "helpdesk", "helpdesk-data", "platform-ops"
+        "helpdesk",
+        "helpdesk-data",
+        "platform-ops",
     }
     assert len(dfd["edges"]) >= 4
     sources = client.get(f"/api/applications/{ids['application_id']}/data-sources").json()

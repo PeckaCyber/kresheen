@@ -12,7 +12,14 @@ function item(overrides: Partial<CompletenessItem>): CompletenessItem {
     message: "Does Portal require callers to authenticate?",
     why: "If it does, the likelihood of impersonation drops.",
     impact: "high",
-    fix: { property_key: "authenticates_callers", kind: "bool", options: [], suggested_value: null, suggestion_reason: "", alternative: null },
+    fix: {
+      property_key: "authenticates_callers",
+      kind: "bool",
+      options: [],
+      suggested_value: null,
+      suggestion_reason: "",
+      alternative: null,
+    },
     ...overrides,
   };
 }
@@ -56,16 +63,28 @@ describe("CompletenessPanel", () => {
     expect(url).toBe("/api/applications/A/runs/R/element-properties");
     expect((init as RequestInit).method).toBe("PATCH");
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({
-      element_kind: "component", element_id: "N-1", properties: { authenticates_callers: true },
+      element_kind: "component",
+      element_id: "N-1",
+      properties: { authenticates_callers: true },
     });
     expect(await screen.findByText(/Nothing left to state/)).toBeInTheDocument();
   });
 
   it("shows a suggestion drawn from the flow label, but never applies it on its own", async () => {
     const flow = item({
-      id: "encrypted_in_transit|flow:f", check: "encrypted_in_transit", element_kind: "flow", element_id: "f",
+      id: "encrypted_in_transit|flow:f",
+      check: "encrypted_in_transit",
+      element_kind: "flow",
+      element_id: "f",
       message: "Is User -> Portal encrypted in transit?",
-      fix: { property_key: "is_encrypted", kind: "bool", options: [], suggested_value: true, suggestion_reason: 'the label says "HTTPS"', alternative: null },
+      fix: {
+        property_key: "is_encrypted",
+        kind: "bool",
+        options: [],
+        suggested_value: true,
+        suggestion_reason: 'the label says "HTTPS"',
+        alternative: null,
+      },
     });
     fetchMock.mockResolvedValue(json(out([flow])));
     render(<CompletenessPanel applicationId="A" runId="R" />);
@@ -76,9 +95,19 @@ describe("CompletenessPanel", () => {
 
   it("offers a data classification and a way to say there is no sensitive data", async () => {
     const store = item({
-      id: "data_classification|component:2", check: "data_classification", element_id: "N-2", element_name: "DB",
+      id: "data_classification|component:2",
+      check: "data_classification",
+      element_id: "N-2",
+      element_name: "DB",
       message: "What kind of data does DB hold?",
-      fix: { property_key: "data_classification", kind: "text", options: ["PII", "PHI"], suggested_value: null, suggestion_reason: "", alternative: { key: "no_sensitive_data", value: true, label: "Holds no sensitive data" } },
+      fix: {
+        property_key: "data_classification",
+        kind: "text",
+        options: ["PII", "PHI"],
+        suggested_value: null,
+        suggestion_reason: "",
+        alternative: { key: "no_sensitive_data", value: true, label: "Holds no sensitive data" },
+      },
     });
     fetchMock
       .mockResolvedValueOnce(json(out([store])))
@@ -89,11 +118,20 @@ describe("CompletenessPanel", () => {
     fireEvent.click(await screen.findByText("Holds no sensitive data"));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string).properties).toEqual({ no_sensitive_data: true });
+    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string).properties).toEqual({
+      no_sensitive_data: true,
+    });
   });
 
   it("lists structural notes without controls, and says so when there is nothing to ask", async () => {
-    const note = item({ id: "no_boundaries|model", check: "no_boundaries", element_kind: "model", element_id: null, message: "No trust boundaries are drawn.", fix: null });
+    const note = item({
+      id: "no_boundaries|model",
+      check: "no_boundaries",
+      element_kind: "model",
+      element_id: null,
+      message: "No trust boundaries are drawn.",
+      fix: null,
+    });
     fetchMock.mockResolvedValue(json(out([note], null)));
     render(<CompletenessPanel applicationId="A" runId="R" />);
 

@@ -126,7 +126,8 @@ function routeFor(url: string): unknown {
   if (/\/runs\/RUN-1\/compliance/.test(url)) return COMPLIANCE;
   if (/\/runs\/RUN-1$/.test(url)) return RUN;
   if (/\/runs$/.test(url)) return [{ id: "RUN-1", status: "completed", started_at: "2026-09-20T10:00:00Z" }];
-  if (/\/staleness/.test(url)) return { stale: false, new_data_source_ids: [], changed_data_source_ids: [], removed_data_source_ids: [] };
+  if (/\/staleness/.test(url))
+    return { stale: false, new_data_source_ids: [], changed_data_source_ids: [], removed_data_source_ids: [] };
   if (/\/diagrams\/[^/]+\/layout/.test(url)) return [];
   if (/\/diagrams/.test(url)) return [{ id: "DIAG-1", name: "Main" }];
   if (/\/data-sources/.test(url)) return [];
@@ -197,7 +198,9 @@ describe("ApplicationDetailPage", () => {
           component_count: 3,
           vulnerability_count: 0,
           message: "",
-          warnings: ["Grype is not installed on the server, so dependencies were not checked for known vulnerabilities."],
+          warnings: [
+            "Grype is not installed on the server, so dependencies were not checked for known vulnerabilities.",
+          ],
         },
       ],
     };
@@ -293,7 +296,12 @@ describe("ApplicationDetailPage", () => {
       if (/\/runs\/RUN-2$/.test(url)) return FAILED;
       if (/\/runs\/RUN-2\/(dfd)/.test(url)) return { nodes: [], edges: [], boundaries: [] };
       if (/\/runs\/RUN-2\/(findings|sbom)/.test(url)) return /sbom/.test(url) ? null : [];
-      if (/\/runs\/RUN-2\/threats$/.test(url)) return { ...THREATS, threats: [], summary: { total: 0, by_status: {}, open_by_severity: {}, open_by_risk: {} } };
+      if (/\/runs\/RUN-2\/threats$/.test(url))
+        return {
+          ...THREATS,
+          threats: [],
+          summary: { total: 0, by_status: {}, open_by_severity: {}, open_by_risk: {} },
+        };
       if (/\/api\/applications\/APP-1\/runs$/.test(url))
         return [
           { id: "RUN-1", status: "completed", started_at: "2026-09-20T10:00:00Z" },
@@ -327,14 +335,18 @@ describe("ApplicationDetailPage", () => {
       open("/applications/APP-1/runs/RUN-2");
       fireEvent.click(await screen.findByRole("button", { name: "Run again" }));
       await waitFor(() =>
-        expect(fetchMock).toHaveBeenCalledWith("/api/applications/APP-1/runs", expect.objectContaining({ method: "POST" })),
+        expect(fetchMock).toHaveBeenCalledWith(
+          "/api/applications/APP-1/runs",
+          expect.objectContaining({ method: "POST" }),
+        ),
       );
     });
 
     it("omits the last-completed link when no run ever completed", async () => {
       fetchMock.mockImplementation((input: RequestInfo | URL) => {
         const url = typeof input === "string" ? input : input.toString();
-        if (/\/api\/applications\/APP-1\/runs$/.test(url)) return Promise.resolve(json([{ id: "RUN-2", status: "failed", started_at: "2026-09-21T10:00:00Z" }]));
+        if (/\/api\/applications\/APP-1\/runs$/.test(url))
+          return Promise.resolve(json([{ id: "RUN-2", status: "failed", started_at: "2026-09-21T10:00:00Z" }]));
         return Promise.resolve(json(routeFailed(url)));
       });
       open("/applications/APP-1/runs/RUN-2");

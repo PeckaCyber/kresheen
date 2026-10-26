@@ -52,9 +52,7 @@ def evaluate_gate(diff: RunDiffOut, options: GateOptions, *, run_url: str | None
         if options.fail_on_boundary_crossing:
             for flow in diff.new_flows:
                 if flow.crosses_boundary:
-                    violations.append(
-                        f"New flow crosses a trust boundary: {flow.source_name} -> {flow.target_name}"
-                    )
+                    violations.append(f"New flow crosses a trust boundary: {flow.source_name} -> {flow.target_name}")
     if diff.previous_run_id is not None and options.fail_on_boundary_crossing:
         for change in diff.boundary_changes:
             violations.append(
@@ -105,7 +103,11 @@ def render_markdown(diff: RunDiffOut, result: GateResult, options: GateOptions, 
         lines += [f"Gate rules: {', '.join(rules)}.", ""]
     crossing = [f for f in diff.new_flows if f.crosses_boundary]
     if crossing and not options.fail_on_boundary_crossing:
-        lines += ["### New trust-boundary crossings", *_bullets([_md(f"{f.source_name} -> {f.target_name}") for f in crossing]), ""]
+        lines += [
+            "### New trust-boundary crossings",
+            *_bullets([_md(f"{f.source_name} -> {f.target_name}") for f in crossing]),
+            "",
+        ]
     if diff.new_components:
         lines += ["### New components", *_bullets([_md(f"{c.name} ({c.type})") for c in diff.new_components]), ""]
     if run_url:

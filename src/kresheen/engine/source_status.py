@@ -40,8 +40,13 @@ def classify_source(data_source_id: str, source_type: str, nodes: list[FactNode]
         status, message = "empty", _EMPTY_MESSAGE
     warnings = [w for node in nodes if node.node_type == "scan_note" for w in node.attributes.get("warnings", [])]
     return SourceResult(
-        data_source_id=data_source_id, type=source_type, status=status,
-        component_count=components, vulnerability_count=vulnerabilities, message=message, warnings=warnings,
+        data_source_id=data_source_id,
+        type=source_type,
+        status=status,
+        component_count=components,
+        vulnerability_count=vulnerabilities,
+        message=message,
+        warnings=warnings,
     )
 
 

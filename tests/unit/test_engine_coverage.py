@@ -6,7 +6,9 @@ from kresheen.engine.threats.coverage import check_coverage
 
 
 def _gaps(manifest: str):
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": manifest})
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": manifest}
+    )
     return check_coverage(nodes, edges)
 
 

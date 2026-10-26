@@ -36,13 +36,13 @@ const SECTIONS: Section[] = [
         body: (
           <>
             <p>
-              Kresheen builds a threat model of a system: a data flow diagram (components, the connections between
-              them and the trust boundaries they cross), the threats that follow from that design, any vulnerabilities
-              found in what you provided, and a ranked plan for fixing them.
+              Kresheen builds a threat model of a system: a data flow diagram (components, the connections between them
+              and the trust boundaries they cross), the threats that follow from that design, any vulnerabilities found
+              in what you provided, and a ranked plan for fixing them.
             </p>
             <p>
-              The threats come from built-in rules, so the same input always gives the same threats. You can
-              add facts the tool could not read from your files, and the results become specific to your system.
+              The threats come from built-in rules, so the same input always gives the same threats. You can add facts
+              the tool could not read from your files, and the results become specific to your system.
             </p>
             <Note>
               Start with <Link to="/help/first-model">Create your first threat model</Link>, or open{" "}
@@ -59,7 +59,8 @@ const SECTIONS: Section[] = [
           <>
             <Steps>
               <li>
-                Open <strong>Threat models</strong>, pick a group (or Ungrouped) and choose <strong>New threat model</strong>.
+                Open <strong>Threat models</strong>, pick a group (or Ungrouped) and choose{" "}
+                <strong>New threat model</strong>.
               </li>
               <li>
                 Choose how to start:
@@ -77,7 +78,9 @@ const SECTIONS: Section[] = [
                   </li>
                 </ul>
               </li>
-              <li>The model runs as soon as it is created. It builds the components and flows, then generates threats.</li>
+              <li>
+                The model runs as soon as it is created. It builds the components and flows, then generates threats.
+              </li>
               <li>
                 Work across the run page's tabs: check the <strong>Diagram</strong>, answer the questions on{" "}
                 <strong>Overview</strong>, then follow the <strong>Action plan</strong> tab. See{" "}
@@ -129,11 +132,11 @@ const SECTIONS: Section[] = [
               </li>
             </ul>
             <p>
-              <strong>Threat trend</strong> charts open threats across your models over time, over the 7d, 30d, 90d or All
-              range you pick at the top. A snapshot is recorded whenever Home is opened, or a run or threat status
-              changes, so the history starts from the first time you open it and fills in from there. Further panels show
-              open threats by risk, triage progress by group, every model with its worst risk, and review status. Owners
-              also see recent activity.
+              <strong>Threat trend</strong> charts open threats across your models over time, over the 7d, 30d, 90d or
+              All range you pick at the top. A snapshot is recorded whenever Home is opened, or a run or threat status
+              changes, so the history starts from the first time you open it and fills in from there. Further panels
+              show open threats by risk, triage progress by group, every model with its worst risk, and review status.
+              Owners also see recent activity.
             </p>
           </>
         ),
@@ -145,17 +148,15 @@ const SECTIONS: Section[] = [
         body: (
           <>
             <p>
-              The run page's <strong>Diagram</strong> tab holds the canvas. It stays sized to fill the window, so a
-              busy model still has room to work in.
+              The run page's <strong>Diagram</strong> tab holds the canvas. It stays sized to fill the window, so a busy
+              model still has room to work in.
             </p>
             <Steps>
               <li>
-                Turn on <strong>Edit mode</strong> (it is always off when you open a model). Add processes, data
-                stores, external entities and trust boundaries, and drag between components to connect them.
+                Turn on <strong>Edit mode</strong> (it is always off when you open a model). Add processes, data stores,
+                external entities and trust boundaries, and drag between components to connect them.
               </li>
-              <li>
-                Undo and redo with the toolbar or Ctrl-Z / Ctrl-Y. Deleting a hand-drawn component can be undone.
-              </li>
+              <li>Undo and redo with the toolbar or Ctrl-Z / Ctrl-Y. Deleting a hand-drawn component can be undone.</li>
               <li>
                 Click any component to open its side panel: rename it, set its trust boundary, and state facts about it.
                 You do not need Edit mode for stating facts.
@@ -170,8 +171,8 @@ const SECTIONS: Section[] = [
               Threats, findings and reports are not affected by hiding.
             </p>
             <Note>
-              <strong>Delete component</strong> removes a hand-drawn component from the whole model, not just the current
-              diagram. Use the Show button to only hide it here.
+              <strong>Delete component</strong> removes a hand-drawn component from the whole model, not just the
+              current diagram. Use the Show button to only hide it here.
             </Note>
           </>
         ),
@@ -184,27 +185,26 @@ const SECTIONS: Section[] = [
           <>
             <p>
               The run page is a header (the model's name, a stat strip of 6 numbers) and tabs: Overview, Diagram,
-              Threats, Action plan, Findings and Model settings. Each tile in the stat strip jumps to the
-              tab that explains it.
+              Threats, Action plan, Findings and Model settings. Each tile in the stat strip jumps to the tab that
+              explains it.
             </p>
             <h3 className="h6">Overview</h3>
             <p>
               The default tab: <strong>What to do next</strong> (the top few completeness questions, answerable inline,
-              and the top few actions from the action plan), a risk breakdown, attack paths, what changed since the
-              last run, and the full <strong>Model completeness</strong> check behind a "Show all questions"
-              disclosure.
+              and the top few actions from the action plan), a risk breakdown, attack paths, what changed since the last
+              run, and the full <strong>Model completeness</strong> check behind a "Show all questions" disclosure.
             </p>
             <h3 className="h6 mt-4">Model completeness</h3>
             <p>
-              Lists facts the model does not state yet: what data a store holds, whether a service authenticates callers,
-              whether traffic crossing a trust boundary is encrypted. Each has a one-click answer. Unstated facts get the
-              generic result, so answering them makes the threats and plan specific to your system.
+              Lists facts the model does not state yet: what data a store holds, whether a service authenticates
+              callers, whether traffic crossing a trust boundary is encrypted. Each has a one-click answer. Unstated
+              facts get the generic result, so answering them makes the threats and plan specific to your system.
             </p>
             <h3 className="h6 mt-4">Action plan (tab)</h3>
             <p>
               Groups your open threats by the fix that addresses them and ranks the fixes: misconfigurations found in
-              your configuration first, then fixes specific to your design, then generic hardening. Mark each fix to do, in progress, done, or
-              won&apos;t do (with a reason). You can download it as a checklist.
+              your configuration first, then fixes specific to your design, then generic hardening. Mark each fix to do,
+              in progress, done, or won&apos;t do (with a reason). You can download it as a checklist.
             </p>
             <h3 className="h6 mt-4">Threats (tab)</h3>
             <p>
@@ -216,8 +216,9 @@ const SECTIONS: Section[] = [
             </p>
             <h3 className="h6 mt-4">Findings and Model settings</h3>
             <p>
-              <strong>Findings</strong> lists scanner results, with the software bill of materials as a second card
-              when one was produced. <strong>Model settings</strong> holds data sources and model info (owner, reviewer, methodologies).
+              <strong>Findings</strong> lists scanner results, with the software bill of materials as a second card when
+              one was produced. <strong>Model settings</strong> holds data sources and model info (owner, reviewer,
+              methodologies).
             </p>
           </>
         ),
@@ -238,8 +239,8 @@ const SECTIONS: Section[] = [
               </li>
               <li>
                 Click a component on the diagram to see only its threats in the side panel. Rows are compact; expand one
-                for its description, status and details. <strong>View all threats for this element</strong> opens the full
-                list already filtered to that component.
+                for its description, status and details. <strong>View all threats for this element</strong> opens the
+                full list already filtered to that component.
               </li>
               <li>
                 <strong>Mark as reviewed</strong> at the top of the page records who last signed the model off; it
@@ -286,33 +287,37 @@ const SECTIONS: Section[] = [
           <>
             <p>These are read and analysed:</p>
             <ul>
-              <li>A Terraform plan (JSON, AWS-style resources) or Kubernetes YAML files. Secret values are redacted before anything is stored.</li>
               <li>
-                A GitHub repository. Plain Kubernetes manifests in it yield components, and a vulnerability scan (Grype) runs
-                if available. An optional GitHub token for a private repository is stored with the data source: use a
-                read-only token limited to that repository.
+                A Terraform plan (JSON, AWS-style resources) or Kubernetes YAML files. Secret values are redacted before
+                anything is stored.
               </li>
               <li>
-                A diagram: Threat Dragon JSON, draw.io, a Mermaid flowchart or a Threagile model. Threats already listed in
-                the file are not imported; they are worked out from the model.
+                A GitHub repository. Plain Kubernetes manifests in it yield components, and a vulnerability scan (Grype)
+                runs if available. An optional GitHub token for a private repository is stored with the data source: use
+                a read-only token limited to that repository.
+              </li>
+              <li>
+                A diagram: Threat Dragon JSON, draw.io, a Mermaid flowchart or a Threagile model. Threats already listed
+                in the file are not imported; they are worked out from the model.
               </li>
             </ul>
             <Note>
-              Additional documentation files, images, Helm charts, Terraform <code>.tf</code> files and diagram formats not
-              listed above are stored with the model but <strong>not read</strong>. The run page says so in an amber banner, and the Data Sources section shows the
-              status of each input. A model with no threats from such an input has not been checked; it is not a clean
-              result. Describe the system, add components by hand, or upload a manifest instead.
+              Additional documentation files, images, Helm charts, Terraform <code>.tf</code> files and diagram formats
+              not listed above are stored with the model but <strong>not read</strong>. The run page says so in an amber
+              banner, and the Data Sources section shows the status of each input. A model with no threats from such an
+              input has not been checked; it is not a clean result. Describe the system, add components by hand, or
+              upload a manifest instead.
             </Note>
             <Note>
               Some inputs are read only in part. A GitHub repository is also checked for known vulnerabilities in its
-              dependencies; if that scan could not run (the scanner is missing, timed out or failed), or a diagram is larger
-              than the limit (500 components, 2000 flows) and only the first part was read, the run page, the Data Sources
-              section and the report say so under <strong>Incomplete</strong>. In that case a short list, or &quot;no
-              vulnerabilities&quot;, means those parts were not checked, not that nothing is there.
+              dependencies; if that scan could not run (the scanner is missing, timed out or failed), or a diagram is
+              larger than the limit (500 components, 2000 flows) and only the first part was read, the run page, the
+              Data Sources section and the report say so under <strong>Incomplete</strong>. In that case a short list,
+              or &quot;no vulnerabilities&quot;, means those parts were not checked, not that nothing is there.
             </Note>
             <p>
-              You can add or remove data sources on an existing model and re-run it. <strong>What changed since the last
-              run</strong> shows the difference.
+              You can add or remove data sources on an existing model and re-run it.{" "}
+              <strong>What changed since the last run</strong> shows the difference.
             </p>
             <p>
               If a data source cannot be read, the run fails and the run page names that source. Remove or replace it on
@@ -333,13 +338,13 @@ const SECTIONS: Section[] = [
         body: (
           <>
             <p>
-              Each section is collapsed; click a heading to expand it. Settings holds everything you visit
-              occasionally rather than every day:
+              Each section is collapsed; click a heading to expand it. Settings holds everything you visit occasionally
+              rather than every day:
             </p>
             <ul>
               <li>
-                <strong>Appearance</strong>: light, dark, or match your system. Also available from the theme toggle
-                in the sidebar's user menu.
+                <strong>Appearance</strong>: light, dark, or match your system. Also available from the theme toggle in
+                the sidebar's user menu.
               </li>
               <li>
                 <strong>Account</strong>: change your own sign-in password (at least 12 characters). Your other sessions
@@ -350,8 +355,9 @@ const SECTIONS: Section[] = [
               </li>
               <li>
                 <strong>API tokens</strong>: tokens for the CI gate (<code>kresheen ci</code>). A token is shown once
-                when created. It can only list models and start and read runs (not change models, users, connectors
-                or tokens), it expires after 90 days unless you choose another expiry (or never) when you create it, and it is revoked when you change your password.
+                when created. It can only list models and start and read runs (not change models, users, connectors or
+                tokens), it expires after 90 days unless you choose another expiry (or never) when you create it, and it
+                is revoked when you change your password.
               </li>
               <li>
                 <strong>Audit log</strong> (owners only): who changed what. See{" "}
@@ -378,7 +384,8 @@ const SECTIONS: Section[] = [
                 <strong>AI assist</strong> card.
               </li>
               <li>
-                Each person who wants it adds their own Anthropic API key in the same card and picks a model. An organisation-level key that is not tied to one workspace also needs its workspace ID.
+                Each person who wants it adds their own Anthropic API key in the same card and picks a model. An
+                organisation-level key that is not tied to one workspace also needs its workspace ID.
               </li>
               <li>
                 An administrator can force it off for the whole server with the <code>KRESHEEN_AI_DISABLED</code>{" "}
@@ -388,14 +395,14 @@ const SECTIONS: Section[] = [
             <p>There are two actions:</p>
             <ul>
               <li>
-                <strong>Describe your system (AI, experimental)</strong>, in the guided setup: paste a description or upload a text or Markdown file, and AI
-                suggests answers for the guided setup form. Suggested answers are marked, and nothing is created until
-                you review the form and submit it.
+                <strong>Describe your system (AI, experimental)</strong>, in the guided setup: paste a description or
+                upload a text or Markdown file, and AI suggests answers for the guided setup form. Suggested answers are
+                marked, and nothing is created until you review the form and submit it.
               </li>
               <li>
-                <strong>Explain (AI, experimental)</strong>, on a threat: a plain-language explanation of a threat, shown on screen and not
-                saved. Very long property values on the component are shortened, or left out, before sending, and the
-                explanation says so.
+                <strong>Explain (AI, experimental)</strong>, on a threat: a plain-language explanation of a threat,
+                shown on screen and not saved. Very long property values on the component are shortened, or left out,
+                before sending, and the explanation says so.
               </li>
             </ul>
             <p>
@@ -432,8 +439,8 @@ const SECTIONS: Section[] = [
             </p>
             <p>
               The audit log page shows how many entries are held against the limit, for example{" "}
-              <code>30 / 2000 entries</code>. Once the limit is reached the oldest entries are dropped. You can also delete entries older than a number
-              of days automatically with <code>KRESHEEN_AUDIT_RETENTION_DAYS</code>.
+              <code>30 / 2000 entries</code>. Once the limit is reached the oldest entries are dropped. You can also
+              delete entries older than a number of days automatically with <code>KRESHEEN_AUDIT_RETENTION_DAYS</code>.
             </p>
           </>
         ),
@@ -445,8 +452,8 @@ const SECTIONS: Section[] = [
         body: (
           <>
             <p>
-              Threat models are organized into groups (teams). A group is a shared workspace: every signed-in user can see
-              and edit its threat models. The person who created a group, and owners, can rename or delete it.
+              Threat models are organized into groups (teams). A group is a shared workspace: every signed-in user can
+              see and edit its threat models. The person who created a group, and owners, can rename or delete it.
             </p>
           </>
         ),
@@ -465,15 +472,15 @@ const SECTIONS: Section[] = [
             <p>
               The <strong>Threat library</strong> lists the built-in rules that generate threats on every matching
               element of a diagram: STRIDE threats per element, written for this project, and a few misconfiguration
-              checks for Kubernetes and AWS. Kresheen Pro (coming soon) extends the threat knowledge base, including the full set of
-              misconfiguration checks, and the methodology coverage. You can filter by methodology and by the kind of
-              element. The rules carry MITRE ATT&amp;CK and CWE ids where they apply; the library itself is not pre-loaded
-              with MITRE or CWE entries.
+              checks for Kubernetes and AWS. Kresheen Pro (coming soon) extends the threat knowledge base, including the
+              full set of misconfiguration checks, and the methodology coverage. You can filter by methodology and by
+              the kind of element. The rules carry MITRE ATT&amp;CK and CWE ids where they apply; the library itself is
+              not pre-loaded with MITRE or CWE entries.
             </p>
             <p>
-              Use <strong>Add custom threat</strong> for risks specific to your organization. If you choose what it applies
-              to, it generates threats on every matching element like a built-in rule. Otherwise it is for reference, and
-              you can attach it to a specific component or flow from a model&apos;s Threats tab.
+              Use <strong>Add custom threat</strong> for risks specific to your organization. If you choose what it
+              applies to, it generates threats on every matching element like a built-in rule. Otherwise it is for
+              reference, and you can attach it to a specific component or flow from a model&apos;s Threats tab.
             </p>
           </>
         ),

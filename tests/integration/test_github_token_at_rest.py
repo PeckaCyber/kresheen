@@ -23,9 +23,13 @@ TARBALL_URL = "https://api.github.com/repos/acme/widget/tarball"
 def _setup(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     client = TestClient(create_app(db_url=url))
-    client.headers["X-CSRF-Token"] = client.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    client.headers["X-CSRF-Token"] = client.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
     app_id = client.post("/api/applications", json={"name": "A"}).json()["id"]
     return client, repo, app_id
 
@@ -144,8 +148,11 @@ def test_deleting_the_source_or_application_deletes_the_secret(tmp_path):
 def test_legacy_plaintext_row_is_never_returned_and_is_moved_when_the_key_is_available(tmp_path, monkeypatch):
     client, repo, app_id = _setup(tmp_path)
     legacy = DataSourceConfig(
-        id="DS-legacy", application_id=app_id, type="github_repository",
-        connection_details={"repo_url": "acme/widget", "github_token": TOKEN}, created_at=datetime.now(UTC),
+        id="DS-legacy",
+        application_id=app_id,
+        type="github_repository",
+        connection_details={"repo_url": "acme/widget", "github_token": TOKEN},
+        created_at=datetime.now(UTC),
     )
     from kresheen.engine.provenance import input_digest
 
@@ -169,10 +176,15 @@ def test_legacy_plaintext_row_is_never_returned_and_is_moved_when_the_key_is_ava
 
 def test_legacy_plaintext_row_still_runs_and_is_moved_by_the_run(tmp_path):
     client, repo, app_id = _setup(tmp_path)
-    repo.save_data_source(DataSourceConfig(
-        id="DS-legacy", application_id=app_id, type="github_repository",
-        connection_details={"repo_url": "acme/widget", "github_token": TOKEN}, created_at=datetime.now(UTC),
-    ))
+    repo.save_data_source(
+        DataSourceConfig(
+            id="DS-legacy",
+            application_id=app_id,
+            type="github_repository",
+            connection_details={"repo_url": "acme/widget", "github_token": TOKEN},
+            created_at=datetime.now(UTC),
+        )
+    )
     with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
         rsps.add(responses.GET, TARBALL_URL, body=build_tarball_bytes({"README.md": "x"}), status=200)
         run = client.post(f"/api/applications/{app_id}/runs", json={}).json()

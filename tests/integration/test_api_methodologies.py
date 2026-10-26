@@ -14,13 +14,24 @@ class DemoMethodology(Plugin):
 
     def methodologies(self):
         rule = ThreatRule(
-            id="DEMO-M-01", element_type="process", category="Alpha", title="Demo threat on {name}", description="d",
-            severity="medium", mitigations=("m",), methodology="Demo",
+            id="DEMO-M-01",
+            element_type="process",
+            category="Alpha",
+            title="Demo threat on {name}",
+            description="d",
+            severity="medium",
+            mitigations=("m",),
+            methodology="Demo",
         )
         return [
             MethodologySpec(
-                "Demo", "A demo methodology.", ("Alpha", "Beta"), {"Alpha": "First."},
-                {"Alpha": frozenset({"Confidentiality"})}, (rule,), (PropertySpec("demo_flag", "Demo flag", "bool"),),
+                "Demo",
+                "A demo methodology.",
+                ("Alpha", "Beta"),
+                {"Alpha": "First."},
+                {"Alpha": frozenset({"Confidentiality"})},
+                (rule,),
+                (PropertySpec("demo_flag", "Demo flag", "bool"),),
             )
         ]
 
@@ -51,7 +62,9 @@ def test_core_alone_offers_exactly_stride(tmp_path):
     rules = client.get("/api/threat-kb/rules").json()
     assert {r["methodology"] for r in rules} == {"STRIDE"}
     app_url, _run, headers = _application(client, csrf)
-    refused = client.patch(f"{app_url}/metadata", json={"name": "App", "methodologies": ["STRIDE", "Nonexistent"]}, headers=headers)
+    refused = client.patch(
+        f"{app_url}/metadata", json={"name": "App", "methodologies": ["STRIDE", "Nonexistent"]}, headers=headers
+    )
     assert refused.status_code == 422 and "Nonexistent" in refused.json()["detail"]
     assert client.get(app_url).json()["methodologies"] == ["STRIDE"]
 
@@ -61,7 +74,9 @@ def test_a_plugin_methodology_is_exposed_listed_selectable_and_generated(tmp_pat
     caps = client.get("/api/capabilities").json()["methodologies"]
     assert [m["name"] for m in caps] == ["STRIDE", "Demo"]
     assert caps[1] == {
-        "name": "Demo", "description": "A demo methodology.", "categories": ["Alpha", "Beta"],
+        "name": "Demo",
+        "description": "A demo methodology.",
+        "categories": ["Alpha", "Beta"],
         "category_descriptions": {"Alpha": "First."},
     }
 
@@ -74,7 +89,9 @@ def test_a_plugin_methodology_is_exposed_listed_selectable_and_generated(tmp_pat
     app_url, run, headers = _application(client, csrf)
     assert not any(t["methodology"] == "Demo" for t in _threats(client, app_url, run))
 
-    saved = client.patch(f"{app_url}/metadata", json={"name": "App", "methodologies": ["STRIDE", "Demo"]}, headers=headers)
+    saved = client.patch(
+        f"{app_url}/metadata", json={"name": "App", "methodologies": ["STRIDE", "Demo"]}, headers=headers
+    )
     assert saved.status_code == 200 and saved.json()["methodologies"] == ["STRIDE", "Demo"]
     demo = [t for t in _threats(client, app_url, run) if t["methodology"] == "Demo"]
     assert [t["rule_id"] for t in demo] == ["DEMO-M-01"] and demo[0]["cia_impacts"] == ["Confidentiality"]
@@ -109,7 +126,11 @@ def test_a_stale_selection_does_not_crash_and_generates_for_the_available_ones_o
     assert [m["name"] for m in client.get("/api/capabilities").json()["methodologies"]] == ["STRIDE"]
 
     # Saving the unchanged selection (a rename) is allowed; adding another unavailable one is not.
-    renamed = client.patch(f"{app_url}/metadata", json={"name": "Renamed", "methodologies": ["STRIDE", "Demo"]}, headers=headers)
+    renamed = client.patch(
+        f"{app_url}/metadata", json={"name": "Renamed", "methodologies": ["STRIDE", "Demo"]}, headers=headers
+    )
     assert renamed.status_code == 200
-    added = client.patch(f"{app_url}/metadata", json={"name": "Renamed", "methodologies": ["STRIDE", "Demo", "Other"]}, headers=headers)
+    added = client.patch(
+        f"{app_url}/metadata", json={"name": "Renamed", "methodologies": ["STRIDE", "Demo", "Other"]}, headers=headers
+    )
     assert added.status_code == 422

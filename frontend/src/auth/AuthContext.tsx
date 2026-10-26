@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setCsrfToken(session.csrf_token);
     setRole(session.role);
-        setEmail(session.email || null);
+    setEmail(session.email || null);
     setSignedOutByTimeout(false);
     setAuthenticated(true);
   }, []);
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     setCsrfToken(null);
     setRole(null);
-        setEmail(null);
+    setEmail(null);
     setSignedOutByTimeout(false);
     setAuthenticated(false);
     // A plugin may ask for a page to visit after sign-out, such as an identity provider's.

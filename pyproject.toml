@@ -67,8 +67,12 @@ only-include = ["src/kresheen", "tests", "README.md", "LICENSE", "NOTICE", "CHAN
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
+
+[tool.ruff.format]
+# Black-compatible style (PEP 8); CI runs `ruff format --check`.
+docstring-code-format = false
 
 [tool.ruff.lint.per-file-ignores]
 # FastAPI's Depends() is meant to be called in argument defaults -- that's

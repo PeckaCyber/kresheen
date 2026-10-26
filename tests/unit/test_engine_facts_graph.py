@@ -6,15 +6,24 @@ from kresheen.models.facts import FactEdge, FactNode
 
 def _node(node_id: str) -> FactNode:
     return FactNode(
-        id=node_id, run_id="RUN-1", application_id="APP-1", node_type="process", name=node_id,
-        source_ref="test", discovered_at=datetime.now(UTC),
+        id=node_id,
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type="process",
+        name=node_id,
+        source_ref="test",
+        discovered_at=datetime.now(UTC),
     )
 
 
 def _edge(source: str, target: str) -> FactEdge:
     return FactEdge(
-        id=f"{source}->{target}", run_id="RUN-1", application_id="APP-1",
-        source_node_id=source, target_node_id=target, edge_type="data_flow",
+        id=f"{source}->{target}",
+        run_id="RUN-1",
+        application_id="APP-1",
+        source_node_id=source,
+        target_node_id=target,
+        edge_type="data_flow",
     )
 
 

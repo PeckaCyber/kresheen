@@ -4,15 +4,27 @@ import { IntakeWizard, type IntakeOptions } from "./IntakeWizard";
 
 const opt = (id: string, label: string, help = "") => ({ id, label, help });
 const OPTIONS: IntakeOptions = {
-  system_types: [opt("web_app", "A web application", "Browsers talk to a web front end."), opt("api_backend", "An API or mobile backend")],
+  system_types: [
+    opt("web_app", "A web application", "Browsers talk to a web front end."),
+    opt("api_backend", "An API or mobile backend"),
+  ],
   users: [opt("customers", "Customers with accounts"), opt("staff", "Your own staff")],
   authentication: [opt("password", "Username and password"), opt("none", "No login")],
   data: [opt("personal", "Personal data", "PII"), opt("payment", "Payment card data")],
   third_parties: [opt("payments", "A payment provider")],
   templates: [
     {
-      id: "web_shop", title: "Web shop with card payments", description: "A storefront taking card payments.",
-      answers: { system_type: "web_app", users: ["customers"], authentication: "password", data: ["personal", "payment"], third_parties: ["payments"], has_admin: true },
+      id: "web_shop",
+      title: "Web shop with card payments",
+      description: "A storefront taking card payments.",
+      answers: {
+        system_type: "web_app",
+        users: ["customers"],
+        authentication: "password",
+        data: ["personal", "payment"],
+        third_parties: ["payments"],
+        has_admin: true,
+      },
     },
   ],
 };
@@ -28,7 +40,8 @@ describe("IntakeWizard", () => {
       const handler = overrides[url];
       if (handler) return handler();
       if (url === "/api/intake/options") return json(OPTIONS);
-      if (url === "/api/capabilities") return json({ plugins: [], features: [], auth_providers: [], ai: { enabled: false, experimental: true } });
+      if (url === "/api/capabilities")
+        return json({ plugins: [], features: [], auth_providers: [], ai: { enabled: false, experimental: true } });
       return json({ detail: "Not found" }, 404);
     });
   }
@@ -48,7 +61,9 @@ describe("IntakeWizard", () => {
   it("lists what is still unanswered and keeps Create disabled until it is answered", async () => {
     await open();
 
-    expect(screen.getByRole("status")).toHaveTextContent(/Still to answer: a name, what kind of system it is, who uses it, how users log in, what sensitive data it handles/);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /Still to answer: a name, what kind of system it is, who uses it, how users log in, what sensitive data it handles/,
+    );
     expect(screen.getByRole("button", { name: "Create threat model" })).toBeDisabled();
   });
 
@@ -95,8 +110,15 @@ describe("IntakeWizard", () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith("APP-1", "RUN-1"));
     const post = fetchMock.mock.calls.find(([url]) => url === "/api/intake")!;
     expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({
-      name: "Portal", description: "", system_type: "api_backend", users: ["staff"], authentication: "none",
-      data: [], third_parties: [], has_admin: false, group_id: "GRP-1",
+      name: "Portal",
+      description: "",
+      system_type: "api_backend",
+      users: ["staff"],
+      authentication: "none",
+      data: [],
+      third_parties: [],
+      has_admin: false,
+      group_id: "GRP-1",
     });
   });
 
@@ -115,7 +137,14 @@ describe("IntakeWizard", () => {
       json({ plugins: [], features: [], auth_providers: [], ai: { enabled, experimental: true } });
     const config = (has_api_key: boolean, default_model: string | null) => () => json({ has_api_key, default_model });
     const DRAFT = {
-      answers: { name: "Patient portal", system_type: "web_app", users: ["customers"], authentication: "password", data: ["personal"], has_admin: true },
+      answers: {
+        name: "Patient portal",
+        system_type: "web_app",
+        users: ["customers"],
+        authentication: "password",
+        data: ["personal"],
+        has_admin: true,
+      },
       filled: ["name", "system_type", "users", "authentication", "data", "has_admin"],
       warnings: [] as { pattern: string; excerpt: string }[],
     };
@@ -162,13 +191,19 @@ describe("IntakeWizard", () => {
     });
 
     it("prefills the filled answers, tags them, and leaves the others alone", async () => {
-      await draftWith({ ...DRAFT, answers: { system_type: "web_app", has_admin: true }, filled: ["system_type", "has_admin"] });
+      await draftWith({
+        ...DRAFT,
+        answers: { system_type: "web_app", has_admin: true },
+        filled: ["system_type", "has_admin"],
+      });
       await waitFor(() => expect(screen.getByLabelText("A web application")).toBeChecked());
       expect(screen.getByLabelText(/It has an admin interface/)).toBeChecked();
       expect(screen.getAllByTestId("ai-tag")).toHaveLength(2);
       expect(screen.getByLabelText(/^Name/)).toHaveValue("");
       expect(screen.getByLabelText("Your own staff")).not.toBeChecked();
-      expect(screen.getByText(/Still to answer: a name, who uses it, how users log in, what sensitive data it handles/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Still to answer: a name, who uses it, how users log in, what sensitive data it handles/),
+      ).toBeInTheDocument();
       const post = fetchMock.mock.calls.find(([url]) => url === "/api/intake/draft")!;
       expect(JSON.parse((post[1] as RequestInit).body as string)).toEqual({ text: "A patient portal." });
     });
@@ -203,14 +238,15 @@ describe("IntakeWizard", () => {
       expect(warning.querySelector("img")).toBeNull();
     });
 
-    it.each([[413, "The text is too long."], [429, "Too many AI requests."], [502, "The AI answer could not be used."]])(
-      "shows the server's message for %i",
-      async (status, detail) => {
-        await draftWith({ detail }, status);
-        expect(await screen.findByText(detail)).toBeInTheDocument();
-        expect(screen.queryAllByTestId("ai-tag")).toHaveLength(0);
-      },
-    );
+    it.each([
+      [413, "The text is too long."],
+      [429, "Too many AI requests."],
+      [502, "The AI answer could not be used."],
+    ])("shows the server's message for %i", async (status, detail) => {
+      await draftWith({ detail }, status);
+      expect(await screen.findByText(detail)).toBeInTheDocument();
+      expect(screen.queryAllByTestId("ai-tag")).toHaveLength(0);
+    });
 
     it("rejects a file that is not .txt or .md without sending anything", async () => {
       route({ "/api/capabilities": caps(true), "/api/agent-config": config(true, "claude-x") });
@@ -226,7 +262,10 @@ describe("IntakeWizard", () => {
 
 describe("IntakeWizard layout", () => {
   it("keeps the form a flex column so the dialog body can scroll and Create stays reachable", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => json(OPTIONS)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async () => json(OPTIONS)),
+    );
     render(<IntakeWizard show onHide={() => {}} groupId={null} onCreated={() => {}} />);
     await screen.findByText("What kind of system is it?");
 
@@ -234,7 +273,11 @@ describe("IntakeWizard layout", () => {
     // classes the body cannot shrink and scroll, and the footer (with Create) is clipped off-screen.
     const form = document.querySelector(".modal-content > form") as HTMLElement;
     expect(form).not.toBeNull();
-    expect(form.classList.contains("d-flex") && form.classList.contains("flex-column") && form.classList.contains("overflow-hidden")).toBe(true);
+    expect(
+      form.classList.contains("d-flex") &&
+        form.classList.contains("flex-column") &&
+        form.classList.contains("overflow-hidden"),
+    ).toBe(true);
     expect(form.querySelector(".modal-footer")).not.toBeNull();
   });
 });

@@ -16,7 +16,9 @@ def _login(tmp_path, monkeypatch=None, limit=None):
         monkeypatch.setenv("KRESHEEN_MAX_REQUEST_BYTES", str(limit))
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url))
     csrf = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
     c.headers["X-CSRF-Token"] = csrf
@@ -30,8 +32,10 @@ def _app(c):
 def test_oversized_body_is_refused_with_413_before_it_is_stored(tmp_path, monkeypatch):
     c, repo = _login(tmp_path, monkeypatch, limit=10_000)
     aid = _app(c)
-    r = c.post(f"/api/applications/{aid}/data-sources",
-               json={"type": "documentation", "connection_details": {"content": "x" * 50_000, "filename": "f"}})
+    r = c.post(
+        f"/api/applications/{aid}/data-sources",
+        json={"type": "documentation", "connection_details": {"content": "x" * 50_000, "filename": "f"}},
+    )
     assert r.status_code == 413 and "too large" in r.json()["detail"].lower()
     assert repo.list_data_sources_for_application(aid) == []
 
@@ -39,8 +43,10 @@ def test_oversized_body_is_refused_with_413_before_it_is_stored(tmp_path, monkey
 def test_body_under_the_limit_is_accepted(tmp_path, monkeypatch):
     c, _ = _login(tmp_path, monkeypatch, limit=10_000)
     aid = _app(c)
-    r = c.post(f"/api/applications/{aid}/data-sources",
-               json={"type": "documentation", "connection_details": {"content": "x" * 1_000, "filename": "f"}})
+    r = c.post(
+        f"/api/applications/{aid}/data-sources",
+        json={"type": "documentation", "connection_details": {"content": "x" * 1_000, "filename": "f"}},
+    )
     assert r.status_code == 200
 
 
@@ -50,7 +56,9 @@ def test_chunked_body_without_content_length_is_cut_off(tmp_path, monkeypatch):
 
     def chunks():
         for _ in range(20):
-            yield b'{"type":"documentation","connection_details":{"content":"' + b"x" * 2_000 if _ == 0 else b"x" * 2_000
+            yield (
+                b'{"type":"documentation","connection_details":{"content":"' + b"x" * 2_000 if _ == 0 else b"x" * 2_000
+            )
         yield b'"}}'
 
     r = c.post(f"/api/applications/{aid}/data-sources", content=chunks(), headers={"content-type": "application/json"})
@@ -60,8 +68,10 @@ def test_chunked_body_without_content_length_is_cut_off(tmp_path, monkeypatch):
 def test_data_source_gets_a_digest_and_staleness_uses_it_without_loading_content(tmp_path, monkeypatch):
     c, repo = _login(tmp_path)
     aid = _app(c)
-    ds = c.post(f"/api/applications/{aid}/data-sources",
-                json={"type": "documentation", "connection_details": {"content": "hello", "filename": "f"}}).json()
+    ds = c.post(
+        f"/api/applications/{aid}/data-sources",
+        json={"type": "documentation", "connection_details": {"content": "hello", "filename": "f"}},
+    ).json()
     assert ds["digest"]
     stored = repo.get_data_source(ds["id"])
     assert stored is not None and stored.digest == input_digest(stored)
@@ -81,8 +91,10 @@ def test_data_source_gets_a_digest_and_staleness_uses_it_without_loading_content
 def test_legacy_source_without_digest_still_works(tmp_path):
     c, repo = _login(tmp_path)
     aid = _app(c)
-    ds = c.post(f"/api/applications/{aid}/data-sources",
-                json={"type": "documentation", "connection_details": {"content": "hello", "filename": "f"}}).json()
+    ds = c.post(
+        f"/api/applications/{aid}/data-sources",
+        json={"type": "documentation", "connection_details": {"content": "hello", "filename": "f"}},
+    ).json()
     c.post(f"/api/applications/{aid}/runs", json={})
     stored = repo.get_data_source(ds["id"])
     stored.digest = None

@@ -30,7 +30,9 @@ from xml.etree import (
 import requests
 import yaml
 
-ATTACK_URL = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json"
+ATTACK_URL = (
+    "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json"
+)
 ATLAS_DIST = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/v6/"
 CWE_URL = "https://cwe.mitre.org/data/xml/cwec_latest.xml.zip"
 OUT = Path(__file__).with_name("mitre_reference_ids.json")
@@ -58,9 +60,7 @@ def attack_table(bundle: dict) -> dict:
 
 
 def atlas_table(document: dict) -> dict:
-    techniques = {
-        tech["id"]: {"name": tech["name"], "status": "active"} for tech in document["techniques"].values()
-    }
+    techniques = {tech["id"]: {"name": tech["name"], "status": "active"} for tech in document["techniques"].values()}
     return {"version": document["collection"]["version"], "techniques": dict(sorted(techniques.items()))}
 
 
@@ -83,7 +83,9 @@ def main() -> None:
     with zipfile.ZipFile(io.BytesIO(_fetch(CWE_URL))) as archive:
         cwe = cwe_table(archive.read(next(n for n in archive.namelist() if n.endswith(".xml"))))
     OUT.write_text(json.dumps({"attack": attack, "atlas": atlas, "cwe": cwe}, indent=1) + "\n")
-    print(f"ATT&CK {attack['version']}: {len(attack['techniques'])} ids; ATLAS {atlas['version']}: {len(atlas['techniques'])} ids; CWE {cwe['version']}: {len(cwe['entries'])} ids -> {OUT}")
+    print(
+        f"ATT&CK {attack['version']}: {len(attack['techniques'])} ids; ATLAS {atlas['version']}: {len(atlas['techniques'])} ids; CWE {cwe['version']}: {len(cwe['entries'])} ids -> {OUT}"
+    )
 
 
 if __name__ == "__main__":

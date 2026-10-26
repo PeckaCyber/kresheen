@@ -60,37 +60,39 @@ export function Login() {
           Sign in with {provider.label}
         </a>
       ))}
-      {providers.length > 0 && !passwordTucked && <div className="text-muted small text-center mb-3">or use a password</div>}
+      {providers.length > 0 && !passwordTucked && (
+        <div className="text-muted small text-center mb-3">or use a password</div>
+      )}
       {passwordHidden && (
         <Button variant="link" size="sm" className="d-block mx-auto" onClick={() => setShowPassword(true)}>
           Owner password sign-in
         </Button>
       )}
       {!passwordHidden && (
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="email">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoFocus
-            required
-          />
-        </Form.Group>
-        <Form.Group className="mb-3" controlId="password">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </Form.Group>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Signing in..." : "Sign in"}
-        </Button>
-      </Form>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3" controlId="email">
+            <Form.Label>Email</Form.Label>
+            <Form.Control
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoFocus
+              required
+            />
+          </Form.Group>
+          <Form.Group className="mb-3" controlId="password">
+            <Form.Label>Password</Form.Label>
+            <Form.Control
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </Form.Group>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Signing in..." : "Sign in"}
+          </Button>
+        </Form>
       )}
     </Container>
   );

@@ -95,7 +95,10 @@ class LoginThrottle:
             q = self._live(acct, now)
             if len(q) >= self.max_per_account:
                 waits.append(self.window - (now - q[0]))
-            for key, free, cap in ((pair, self.free_failures, self.delay_max), (ipk, self.max_per_ip, self.ip_delay_max)):
+            for key, free, cap in (
+                (pair, self.free_failures, self.delay_max),
+                (ipk, self.max_per_ip, self.ip_delay_max),
+            ):
                 if key is None:
                     continue
                 q = self._live(key, now)

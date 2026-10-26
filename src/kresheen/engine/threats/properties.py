@@ -28,7 +28,9 @@ class PropertySpec:
 
 
 _OUT_OF_SCOPE = (
-    PropertySpec("out_of_scope", "Out of scope", "bool", "Excluded from this threat model; its generated threats are hidden."),
+    PropertySpec(
+        "out_of_scope", "Out of scope", "bool", "Excluded from this threat model; its generated threats are hidden."
+    ),
     PropertySpec("out_of_scope_reason", "Reason out of scope", "text", "Why it is excluded (shown on the diagram)."),
 )
 
@@ -37,8 +39,15 @@ _DIE = (
     # threats -- it rates a component's posture, it doesn't enumerate ways
     # to attack it. See ApplicationDetail.tsx's "Resilience (DIE)" badge,
     # computed client-side from whichever of these three are set.
-    PropertySpec("die_distributed", "Distributed", "bool", "Runs as multiple, independently-failable replicas rather than a single instance."),
-    PropertySpec("die_immutable", "Immutable", "bool", "Rebuilt and replaced on change, never patched or mutated in place."),
+    PropertySpec(
+        "die_distributed",
+        "Distributed",
+        "bool",
+        "Runs as multiple, independently-failable replicas rather than a single instance.",
+    ),
+    PropertySpec(
+        "die_immutable", "Immutable", "bool", "Rebuilt and replaced on change, never patched or mutated in place."
+    ),
     PropertySpec("die_ephemeral", "Ephemeral", "bool", "Short-lived; easily and routinely destroyed and recreated."),
 )
 
@@ -48,11 +57,22 @@ _DATA_CLASSIFICATION = (
     # bool/text kinds. Any non-empty value raises every threat on this
     # element (or, for a flow, this flow) by one impact level, capped at
     # critical -- see engine/threats/risk.py::_bump_for_sensitivity.
-    PropertySpec("data_classification", "Data classification", "text", "e.g. PII, PCI, credentials -- any non-empty value raises this element's threats by one impact level."),
+    PropertySpec(
+        "data_classification",
+        "Data classification",
+        "text",
+        "e.g. PII, PCI, credentials -- any non-empty value raises this element's threats by one impact level.",
+    ),
     # Settles the model-completeness question (engine/completeness.py) without asserting a class:
     # no threat rule reads it, and it must not raise impact the way a classification does.
-    PropertySpec("no_sensitive_data", "Holds no sensitive data", "bool", "Say so once, so the completeness check stops asking. Does not change any threat."),
+    PropertySpec(
+        "no_sensitive_data",
+        "Holds no sensitive data",
+        "bool",
+        "Say so once, so the completeness check stops asking. Does not change any threat.",
+    ),
 )
+
 
 def _plugin_specs(element_type: str) -> tuple[PropertySpec, ...]:
     """Properties the available plugin methodologies' rules read (see `MethodologySpec.properties`)."""
@@ -71,8 +91,15 @@ def property_specs() -> dict[str, tuple[PropertySpec, ...]]:
     add (shown after the resilience properties)."""
     return {
         "process": (
-            PropertySpec("authenticates_callers", "Authenticates callers", "bool", "Every caller must prove who it is."),
-            PropertySpec("runs_privileged", "Runs with elevated privileges", "bool", "Root, administrator, or a privileged container."),
+            PropertySpec(
+                "authenticates_callers", "Authenticates callers", "bool", "Every caller must prove who it is."
+            ),
+            PropertySpec(
+                "runs_privileged",
+                "Runs with elevated privileges",
+                "bool",
+                "Root, administrator, or a privileged container.",
+            ),
             PropertySpec("is_web_application", "Is a web application", "bool", "Handles browser or HTTP input."),
             *_DIE,
             *_plugin_specs("process"),

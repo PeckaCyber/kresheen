@@ -35,13 +35,19 @@ def _app(tmp_path, *plugins: Plugin):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
     for uid, role in (("U-owner", "owner"), ("U-creator", "member"), ("U-member", "member")):
-        repo.save_user(User(id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC)))
+        repo.save_user(
+            User(
+                id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC)
+            )
+        )
     return create_app(db_url=url, plugins=PluginRegistry(list(plugins)))
 
 
 def _sign_in(app, uid: str) -> TestClient:
     c = TestClient(app)
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": f"{uid}@x.test", "password": _PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": f"{uid}@x.test", "password": _PW}).json()[
+        "csrf_token"
+    ]
     return c
 
 
@@ -59,7 +65,9 @@ def test_core_alone_gives_every_signed_in_user_editor_on_every_group(tmp_path):
     assert group in [g["id"] for g in member.get("/api/groups").json()["groups"]]
     assert member.get(f"/api/applications/{application}").status_code == 200
     assert member.post(f"/api/applications/{application}/runs", json={}).status_code == 200
-    assert member.put(f"/api/groups/{group}", json={"name": "Renamed"}).status_code == 403  # editors do not manage groups
+    assert (
+        member.put(f"/api/groups/{group}", json={"name": "Renamed"}).status_code == 403
+    )  # editors do not manage groups
     assert _sign_in(app, "U-owner").get(f"/api/groups/{group}").json()["my_role"] == "admin"
     assert _sign_in(app, "U-creator").get(f"/api/groups/{group}").json()["my_role"] == "admin"
 
@@ -137,6 +145,8 @@ def test_a_failing_or_malformed_plugin_fails_closed(tmp_path, decision, caplog):
 
 
 def test_the_first_plugin_with_an_opinion_wins(tmp_path):
-    app = _app(tmp_path, _Roles(lambda uid: None), _Roles(lambda uid: GroupRole("viewer")), _Roles(lambda uid: GroupRole(None)))
+    app = _app(
+        tmp_path, _Roles(lambda uid: None), _Roles(lambda uid: GroupRole("viewer")), _Roles(lambda uid: GroupRole(None))
+    )
     group, _ = _group_and_app(_sign_in(app, "U-creator"))
     assert _sign_in(app, "U-member").get(f"/api/groups/{group}").json()["my_role"] == "viewer"

@@ -153,14 +153,10 @@ def test_github_repository_ingestor_flags_notable_files_recursively():
             "frontend/package.json": "{}",
         }
     )
-    responses.add(
-        responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200)
     ingestor = GithubRepositoryIngestor()
 
-    with patch(
-        "kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None
-    ):
+    with patch("kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None):
         nodes, edges = ingestor.run(
             run_id="RUN-1", application_id="APP-1", connection_details={"repo_url": "https://github.com/acme/widget"}
         )
@@ -186,14 +182,10 @@ def test_github_repository_ingestor_flags_notable_files_recursively():
 @responses.activate
 def test_github_repository_ingestor_sends_bearer_token_when_given():
     tarball = build_tarball_bytes({})
-    responses.add(
-        responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200)
     ingestor = GithubRepositoryIngestor()
 
-    with patch(
-        "kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None
-    ):
+    with patch("kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None):
         ingestor.run(
             run_id="RUN-1",
             application_id="APP-1",
@@ -206,14 +198,10 @@ def test_github_repository_ingestor_sends_bearer_token_when_given():
 @responses.activate
 def test_github_repository_ingestor_uses_ref_when_given():
     tarball = build_tarball_bytes({})
-    responses.add(
-        responses.GET, "https://api.github.com/repos/acme/widget/tarball/v2.0.0", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball/v2.0.0", body=tarball, status=200)
     ingestor = GithubRepositoryIngestor()
 
-    with patch(
-        "kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None
-    ):
+    with patch("kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None):
         ingestor.run(
             run_id="RUN-1",
             application_id="APP-1",
@@ -226,9 +214,7 @@ def test_github_repository_ingestor_uses_ref_when_given():
 @responses.activate
 def test_github_repository_ingestor_runs_grype_against_the_extracted_tree():
     tarball = build_tarball_bytes({"package.json": "{}", "package-lock.json": "{}", "README.md": "hello"})
-    responses.add(
-        responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200)
     fixture_document = json.loads(_GRYPE_FIXTURE.read_text())
     native_document = json.loads(_GRYPE_NATIVE_FIXTURE.read_text())
 
@@ -289,12 +275,15 @@ def test_github_repository_ingestor_detects_missing_lockfile_end_to_end():
     scenario: a manifest exists but no lockfile, and Grype's dir scan only
     turns up GitHub Actions usage (no real npm components)."""
     tarball = build_tarball_bytes({"package.json": "{}", ".github/workflows/ci.yml": "on: push"})
-    responses.add(
-        responses.GET, "https://api.github.com/repos/juice-shop/juice-shop/tarball", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/juice-shop/juice-shop/tarball", body=tarball, status=200)
     grype_document = {
         "components": [
-            {"bom-ref": "action-ref", "type": "library", "name": "actions/checkout", "purl": "pkg:github/actions/checkout@v4"},
+            {
+                "bom-ref": "action-ref",
+                "type": "library",
+                "name": "actions/checkout",
+                "purl": "pkg:github/actions/checkout@v4",
+            },
         ],
         "vulnerabilities": [],
     }
@@ -316,9 +305,7 @@ def test_github_repository_ingestor_detects_missing_lockfile_end_to_end():
 @responses.activate
 def test_github_repository_ingestor_degrades_gracefully_when_grype_is_not_installed():
     tarball = build_tarball_bytes({"package.json": "{}", "package-lock.json": "{}"})
-    responses.add(
-        responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200
-    )
+    responses.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200)
 
     with patch(
         "kresheen.engine.ingest.github_repository_ingestor.subprocess.run",
@@ -352,9 +339,7 @@ def test_github_repository_ingestor_against_a_real_small_public_repo():
     the real-grype-binary path already has its own dedicated test below."""
     ingestor = GithubRepositoryIngestor()
 
-    with patch(
-        "kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None
-    ):
+    with patch("kresheen.engine.ingest.github_repository_ingestor._run_grype_scan", return_value=None):
         nodes, edges = ingestor.run(
             run_id="RUN-1",
             application_id="APP-1",
@@ -636,7 +621,13 @@ def test_facts_from_cyclonedx_known_exploited_true_when_native_match_lists_it():
 
     document = {
         "components": [
-            {"bom-ref": "npm-ref", "type": "library", "name": "log4j-core", "version": "2.14.1", "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"},
+            {
+                "bom-ref": "npm-ref",
+                "type": "library",
+                "name": "log4j-core",
+                "version": "2.14.1",
+                "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            },
         ],
         "vulnerabilities": [
             {"id": "CVE-2021-44228", "ratings": [{"severity": "critical"}], "affects": [{"ref": "npm-ref"}]},
@@ -686,8 +677,20 @@ def test_facts_from_cyclonedx_excludes_github_actions_and_file_pseudo_components
 
     document = {
         "components": [
-            {"bom-ref": "npm-ref", "type": "library", "name": "lodash", "version": "4.17.15", "purl": "pkg:npm/lodash@4.17.15"},
-            {"bom-ref": "action-ref", "type": "library", "name": "actions/checkout", "version": "v4", "purl": "pkg:github/actions/checkout@v4"},
+            {
+                "bom-ref": "npm-ref",
+                "type": "library",
+                "name": "lodash",
+                "version": "4.17.15",
+                "purl": "pkg:npm/lodash@4.17.15",
+            },
+            {
+                "bom-ref": "action-ref",
+                "type": "library",
+                "name": "actions/checkout",
+                "version": "v4",
+                "purl": "pkg:github/actions/checkout@v4",
+            },
             {"bom-ref": "file-ref", "type": "file", "name": "/tmp/some-scan-dir"},
         ],
         "vulnerabilities": [
@@ -722,7 +725,12 @@ def test_facts_from_cyclonedx_flags_no_lockfile_detected():
     # real application dependencies.
     document = {
         "components": [
-            {"bom-ref": "action-ref", "type": "library", "name": "actions/checkout", "purl": "pkg:github/actions/checkout@v4"},
+            {
+                "bom-ref": "action-ref",
+                "type": "library",
+                "name": "actions/checkout",
+                "purl": "pkg:github/actions/checkout@v4",
+            },
         ],
         "vulnerabilities": [],
     }
@@ -859,8 +867,12 @@ def test_documentation_ingestor_produces_one_reference_node_with_a_content_previ
 def test_repository_manifest_with_a_wrongly_typed_field_is_skipped_and_counted(tmp_path):
     from kresheen.engine.ingest.github_repository_ingestor import _collect_k8s_records
 
-    (tmp_path / "good.yaml").write_text("apiVersion: v1\nkind: Service\nmetadata: {name: web}\nspec: {ports: [{port: 80}]}\n")
-    (tmp_path / "bad.yaml").write_text("apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: api}\nspec: {template: {spec: {containers: 5}}}\n")
+    (tmp_path / "good.yaml").write_text(
+        "apiVersion: v1\nkind: Service\nmetadata: {name: web}\nspec: {ports: [{port: 80}]}\n"
+    )
+    (tmp_path / "bad.yaml").write_text(
+        "apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: api}\nspec: {template: {spec: {containers: 5}}}\n"
+    )
 
     records, stats = _collect_k8s_records(tmp_path)
 

@@ -18,8 +18,13 @@ from kresheen.plugins import Plugin, PluginRegistry, set_registry
 
 def _answers(**overrides) -> IntakeAnswers:
     fields = {
-        "name": "Shop", "system_type": "web_app", "users": ["customers"], "authentication": "password",
-        "data": ["personal"], "third_parties": [], "has_admin": False,
+        "name": "Shop",
+        "system_type": "web_app",
+        "users": ["customers"],
+        "authentication": "password",
+        "data": ["personal"],
+        "third_parties": [],
+        "has_admin": False,
     }
     fields.update(overrides)
     return IntakeAnswers(**fields)
@@ -47,12 +52,20 @@ def test_every_system_type_builds_a_connected_model_with_unique_names(system_typ
 def test_every_generated_fact_is_valid_for_its_element_type():
     """The persistence helper writes properties directly, bypassing the API's validation."""
     for system_type, auth, data, admin in itertools.product(
-        typing.get_args(SystemType), ("none", "password", "sso", "api_keys"), ([], ["personal", "health", "payment", "credentials"]), (False, True)
+        typing.get_args(SystemType),
+        ("none", "password", "sso", "api_keys"),
+        ([], ["personal", "health", "payment", "credentials"]),
+        (False, True),
     ):
         model = build_intake_model(
-            _answers(system_type=system_type, authentication=auth, data=data, has_admin=admin,
-                     users=["public", "customers", "staff", "partners"],
-                     third_parties=["payments", "email", "identity_provider", "llm_api", "analytics"])
+            _answers(
+                system_type=system_type,
+                authentication=auth,
+                data=data,
+                has_admin=admin,
+                users=["public", "customers", "staff", "partners"],
+                third_parties=["payments", "email", "identity_provider", "llm_api", "analytics"],
+            )
         )
         for c in model.components:
             validate_properties(c.type.value, c.properties)

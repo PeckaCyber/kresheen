@@ -38,9 +38,9 @@ def _hint_for_flow(flow: DfdFlow) -> tuple[bool | None, str]:
         if not text:
             continue
         if _SECURE_HINT.search(text):
-            return True, f"the {source} says \"{text}\""
+            return True, f'the {source} says "{text}"'
         if _INSECURE_HINT.search(text):
-            return False, f"the {source} says \"{text}\""
+            return False, f'the {source} says "{text}"'
     return None, ""
 
 
@@ -63,7 +63,10 @@ def assess_completeness(
     for element in live:
         if element.type == "data_store":
             total += 1
-            if _stated(element.properties, "data_classification") or element.properties.get("no_sensitive_data") is True:
+            if (
+                _stated(element.properties, "data_classification")
+                or element.properties.get("no_sensitive_data") is True
+            ):
                 answered += 1
             else:
                 items.append(
@@ -80,7 +83,9 @@ def assess_completeness(
                             property_key="data_classification",
                             kind="text",
                             options=_CLASSIFICATIONS,
-                            alternative=Alternative(key="no_sensitive_data", value=True, label="Holds no sensitive data"),
+                            alternative=Alternative(
+                                key="no_sensitive_data", value=True, label="Holds no sensitive data"
+                            ),
                         ),
                     )
                 )
@@ -139,7 +144,9 @@ def assess_completeness(
                 message=f"Is {source.name} -> {target.name} encrypted in transit?",
                 why="It crosses a trust boundary. Unencrypted, it is exposed to interception and tampering; the engine assumes that until told otherwise.",
                 impact="high",
-                fix=FixSpec(property_key="is_encrypted", kind="bool", suggested_value=suggested, suggestion_reason=reason),
+                fix=FixSpec(
+                    property_key="is_encrypted", kind="bool", suggested_value=suggested, suggestion_reason=reason
+                ),
             )
         )
 

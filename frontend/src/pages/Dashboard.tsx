@@ -44,10 +44,7 @@ export function DashboardPage() {
 
   return (
     <div className="pc-page">
-      <PageHeader
-        title="Overview"
-        subtitle="Everything you can see, at a glance. Click any panel for the detail."
-      />
+      <PageHeader title="Overview" subtitle="Everything you can see, at a glance. Click any panel for the detail." />
       {error && <Alert variant="danger">{error}</Alert>}
       {!data && !error && <p>Loading...</p>}
       {data && (

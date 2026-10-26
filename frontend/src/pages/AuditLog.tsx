@@ -39,10 +39,7 @@ export function AuditLogPage() {
   }, []);
 
   const summaryBadge = summary && (
-    <span
-      className="text-muted small"
-      title="The oldest entries are dropped once the log is full"
-    >
+    <span className="text-muted small" title="The oldest entries are dropped once the log is full">
       {summary.count.toLocaleString()} / {summary.max_entries.toLocaleString()} entries
     </span>
   );

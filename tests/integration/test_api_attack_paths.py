@@ -31,15 +31,21 @@ def test_attack_paths_traces_external_entity_to_a_crown_jewel_data_store(tmp_pat
     run = _post(client, csrf, f"/api/applications/{application['id']}/runs", {}).json()
 
     entity = _post(
-        client, csrf, f"/api/applications/{application['id']}/manual-assets",
+        client,
+        csrf,
+        f"/api/applications/{application['id']}/manual-assets",
         {"name": "Customer", "type": "external_entity"},
     ).json()
     db = _post(
-        client, csrf, f"/api/applications/{application['id']}/manual-assets",
+        client,
+        csrf,
+        f"/api/applications/{application['id']}/manual-assets",
         {"name": "Orders DB", "type": "data_store"},
     ).json()
     _post(
-        client, csrf, f"/api/applications/{application['id']}/manual-flows",
+        client,
+        csrf,
+        f"/api/applications/{application['id']}/manual-flows",
         {"source_ref": f"asset:{entity['id']}", "target_ref": f"asset:{db['id']}", "label": "checkout"},
     )
     props = client.put(

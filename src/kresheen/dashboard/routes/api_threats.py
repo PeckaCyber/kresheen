@@ -70,8 +70,11 @@ from kresheen.models.user import User
 from kresheen.storage.repository import Repository
 
 router = APIRouter(
-    prefix="/api/applications", tags=["threats"], dependencies=[Depends(get_current_session), Depends(authorize_application)]
+    prefix="/api/applications",
+    tags=["threats"],
+    dependencies=[Depends(get_current_session), Depends(authorize_application)],
 )
+
 
 class SetThreatStatusRequest(BaseModel):
     threat_key: str
@@ -173,9 +176,7 @@ def set_threat_status(
     _get_application_or_404(application_id, repo)
     # Only accept keys the current model actually generates, so a bad request
     # can't fill the table with rows that point at nothing.
-    threat = next(
-        (t for t in _generate_for_run(application_id, run_id, repo) if t.key == body.threat_key), None
-    )
+    threat = next((t for t in _generate_for_run(application_id, run_id, repo) if t.key == body.threat_key), None)
     if threat is None:
         raise HTTPException(status_code=404, detail="Unknown threat for this run")
 
@@ -267,9 +268,7 @@ def create_manual_threat(
         created_at=datetime.now(UTC),
     )
     repo.save_manual_threat(manual)
-    created = next(
-        t for t in _generate_for_run(application_id, run_id, repo) if t.manual_threat_id == manual.id
-    )
+    created = next(t for t in _generate_for_run(application_id, run_id, repo) if t.manual_threat_id == manual.id)
     return ThreatOut(**created.model_dump())
 
 
@@ -434,9 +433,7 @@ def update_manual_threat(
     status_code=204,
     dependencies=[Depends(require_csrf)],
 )
-def delete_manual_threat(
-    application_id: str, manual_threat_id: str, repo: Repository = Depends(get_repo)
-) -> None:
+def delete_manual_threat(application_id: str, manual_threat_id: str, repo: Repository = Depends(get_repo)) -> None:
     _get_application_or_404(application_id, repo)
     manual = repo.get_manual_threat(manual_threat_id)
     if manual is None or manual.application_id != application_id:

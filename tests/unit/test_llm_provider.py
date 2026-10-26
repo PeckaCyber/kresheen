@@ -138,8 +138,13 @@ def test_timeout_and_connection_errors_are_distinct(sdk_client):
 
 @pytest.mark.parametrize(
     "message",
-    [_message("not json"), _message("[1, 2]"), _message(stop_reason="refusal"), _message(stop_reason="max_tokens"),
-     SimpleNamespace(content=[], stop_reason="end_turn", usage=None, model="m")],
+    [
+        _message("not json"),
+        _message("[1, 2]"),
+        _message(stop_reason="refusal"),
+        _message(stop_reason="max_tokens"),
+        SimpleNamespace(content=[], stop_reason="end_turn", usage=None, model="m"),
+    ],
 )
 def test_unusable_responses_are_bad_request(sdk_client, message):
     client, _ = sdk_client
@@ -153,7 +158,10 @@ def test_list_models_maps_and_wraps_errors(sdk_client):
     import anthropic
 
     client, _ = sdk_client
-    client.models.list.return_value = [SimpleNamespace(id="a", display_name="A"), SimpleNamespace(id="b", display_name="B")]
+    client.models.list.return_value = [
+        SimpleNamespace(id="a", display_name="A"),
+        SimpleNamespace(id="b", display_name="B"),
+    ]
     assert AnthropicProvider().list_models("sk-ant-test") == [ModelInfo("a", "A"), ModelInfo("b", "B")]
 
     client.models.list.side_effect = _status_error(anthropic.AuthenticationError, 401)
@@ -237,8 +245,13 @@ def test_one_attempt_with_the_documented_timeout_and_no_sdk_retry(sdk_client):
     client, ctor = sdk_client
     client.messages.create.return_value = _message()
     AnthropicProvider().complete_structured(
-        api_key="sk-ant-test", model="claude-test", system="sys", user="data",
-        response_model=Answer, max_output_tokens=100, timeout_s=REQUEST_TIMEOUT_S,
+        api_key="sk-ant-test",
+        model="claude-test",
+        system="sys",
+        user="data",
+        response_model=Answer,
+        max_output_tokens=100,
+        timeout_s=REQUEST_TIMEOUT_S,
     )
     assert ctor.call_args.kwargs["max_retries"] == 0
     assert ctor.call_args.kwargs["timeout"] == 60.0

@@ -21,7 +21,11 @@ def _app(tmp_path, *plugins: Plugin):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
     for uid, role in (("U-owner", "owner"), ("U-member", "member")):
-        repo.save_user(User(id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC)))
+        repo.save_user(
+            User(
+                id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC)
+            )
+        )
     return create_app(db_url=url, plugins=PluginRegistry(list(plugins)))
 
 
@@ -70,7 +74,10 @@ def test_core_alone_allows_every_password_login_and_logout_has_no_redirect(tmp_p
 def test_a_plugin_can_refuse_a_password_login_only_after_the_password_is_verified(tmp_path):
     policy = _Policy(False)
     c = TestClient(_app(tmp_path, policy))
-    assert c.post("/api/auth/login", json={"email": "U-member@x.test", "password": "wrong-password-123"}).status_code == 401
+    assert (
+        c.post("/api/auth/login", json={"email": "U-member@x.test", "password": "wrong-password-123"}).status_code
+        == 401
+    )
     assert policy.asked == []  # not consulted for a wrong password, so the 403 reveals nothing
     assert _login(c, "U-member").status_code == 403
     assert c.get("/api/auth/me").status_code == 401

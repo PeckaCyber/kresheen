@@ -1,4 +1,5 @@
 """Security regression tests (route surface). Each test names the finding it pins."""
+
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
@@ -38,11 +39,19 @@ def test_security_headers_on_api_and_spa(tmp_path):
     c = TestClient(create_app(db_url=f"sqlite:///{tmp_path}/t.db", frontend_dist=dist))
     for path in ("/", "/api/capabilities", "/api/nope"):
         h = c.get(path).headers
-        assert "script-src 'self'" in h["content-security-policy"] and "frame-ancestors 'none'" in h["content-security-policy"]
+        assert (
+            "script-src 'self'" in h["content-security-policy"]
+            and "frame-ancestors 'none'" in h["content-security-policy"]
+        )
         assert h["x-content-type-options"] == "nosniff" and h["referrer-policy"] == "no-referrer"
         assert "permissions-policy" in h and h["x-frame-options"] == "DENY"
         assert "strict-transport-security" not in h  # plain http: no HSTS
-    assert "max-age=" in TestClient(create_app(db_url=f"sqlite:///{tmp_path}/t2.db"), base_url="https://testserver").get("/api/capabilities").headers["strict-transport-security"]
+    assert (
+        "max-age="
+        in TestClient(create_app(db_url=f"sqlite:///{tmp_path}/t2.db"), base_url="https://testserver")
+        .get("/api/capabilities")
+        .headers["strict-transport-security"]
+    )
 
 
 def test_report_downloads_keep_their_own_stricter_csp(tmp_path):
@@ -70,7 +79,9 @@ def _login_cookie(tmp_path, name, monkeypatch, mode, scheme="http"):
     else:
         monkeypatch.delenv("KRESHEEN_COOKIE_SECURE", raising=False)
     url = f"sqlite:///{folder}/t.db"
-    SQLRepository(url).save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    SQLRepository(url).save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url), base_url=f"{scheme}://testserver")
     return c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).headers["set-cookie"].lower()
 
@@ -91,8 +102,12 @@ def _login(client, email, pw=PW):
 def _two_users(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
-    repo.save_user(User(id="U2", email="m@x.test", password_hash=hash_password(PW), role="member", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
+    repo.save_user(
+        User(id="U2", email="m@x.test", password_hash=hash_password(PW), role="member", created_at=datetime.now(UTC))
+    )
     return url, repo
 
 
@@ -103,12 +118,22 @@ def test_api_token_is_limited_to_the_ci_routes(tmp_path):
     secret = c.post("/api/tokens", json={"name": "ci"}).json()["secret"]
     app_id = c.post("/api/applications", json={"name": "a"}).json()["id"]
     bearer = TestClient(create_app(db_url=url), headers={"Authorization": f"Bearer {secret}"})
-    allowed = [("get", "/api/applications"), ("get", f"/api/applications/{app_id}"), ("get", f"/api/applications/{app_id}/runs")]
+    allowed = [
+        ("get", "/api/applications"),
+        ("get", f"/api/applications/{app_id}"),
+        ("get", f"/api/applications/{app_id}/runs"),
+    ]
     assert all(getattr(bearer, m)(p).status_code == 200 for m, p in allowed)
     assert bearer.post(f"/api/applications/{app_id}/runs", json={}).status_code == 200
-    denied = [("get", "/api/users"), ("get", "/api/audit-log"), ("get", "/api/groups"),
-              ("delete", f"/api/applications/{app_id}"), ("patch", f"/api/applications/{app_id}/group"),
-              ("post", "/api/applications"), ("post", f"/api/applications/{app_id}/data-sources")]
+    denied = [
+        ("get", "/api/users"),
+        ("get", "/api/audit-log"),
+        ("get", "/api/groups"),
+        ("delete", f"/api/applications/{app_id}"),
+        ("patch", f"/api/applications/{app_id}/group"),
+        ("post", "/api/applications"),
+        ("post", f"/api/applications/{app_id}/data-sources"),
+    ]
     for m, p in denied:
         assert getattr(bearer, m)(p).status_code == 403, (m, p)
 
@@ -122,7 +147,12 @@ def test_password_change_revokes_api_tokens_and_expiry_is_honoured(tmp_path):
     assert short["expires_at"]
     ok = TestClient(create_app(db_url=url), headers={"Authorization": f"Bearer {secret}"})
     assert ok.get("/api/applications").status_code == 200
-    assert c.post("/api/auth/change-password", json={"current_password": PW, "new_password": "A-brand-new-Passw0rd"}).status_code == 200
+    assert (
+        c.post(
+            "/api/auth/change-password", json={"current_password": PW, "new_password": "A-brand-new-Passw0rd"}
+        ).status_code
+        == 200
+    )
     assert ok.get("/api/applications").status_code == 401
     # expiry: an already-expired token is refused
     c2 = TestClient(create_app(db_url=url))
@@ -130,11 +160,17 @@ def test_password_change_revokes_api_tokens_and_expiry_is_honoured(tmp_path):
     t = c2.post("/api/tokens", json={"name": "old"}).json()
     stored = repo.list_api_tokens_for_user("U2")[0]
     repo.save_api_token(stored.model_copy(update={"expires_at": datetime.now(UTC).replace(year=2020)}))
-    assert TestClient(create_app(db_url=url), headers={"Authorization": f"Bearer {t['secret']}"}).get("/api/applications").status_code == 401
+    assert (
+        TestClient(create_app(db_url=url), headers={"Authorization": f"Bearer {t['secret']}"})
+        .get("/api/applications")
+        .status_code
+        == 401
+    )
 
 
 def test_session_ids_are_not_stored_in_plaintext(tmp_path):
     import sqlite3
+
     url, _ = _two_users(tmp_path)
     c = TestClient(create_app(db_url=url))
     _login(c, "o@x.test")
@@ -150,9 +186,16 @@ def test_github_owner_repo_and_ref_cannot_steer_the_request():
     import pytest as _pytest
 
     from kresheen.engine.ingest.github_repository_ingestor import validate_github_details as v
+
     v({"repo_url": "https://github.com/octo/repo", "ref": "feature/x-1.2"})
-    for bad in ({"repo_url": "octo/repo", "ref": "../../orgs/x"}, {"repo_url": "octo/repo", "ref": "x?y=1"}, {"repo_url": "octo/repo", "ref": "x#f"},
-                {"repo_url": "octo/repo", "ref": "-flag"}, {"repo_url": "https://github.com/../..", "ref": None}, {"repo_url": "octo\\evil.test/repo"}):
+    for bad in (
+        {"repo_url": "octo/repo", "ref": "../../orgs/x"},
+        {"repo_url": "octo/repo", "ref": "x?y=1"},
+        {"repo_url": "octo/repo", "ref": "x#f"},
+        {"repo_url": "octo/repo", "ref": "-flag"},
+        {"repo_url": "https://github.com/../..", "ref": None},
+        {"repo_url": "octo\\evil.test/repo"},
+    ):
         with _pytest.raises(ValueError):
             v(bad)
 

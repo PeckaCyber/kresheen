@@ -13,9 +13,13 @@ PW = "correct-password-1"  # nosec: test fixture
 def _client(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url))
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
     return c
 
 
@@ -30,7 +34,10 @@ def test_pdf_renders_a_model_with_hundreds_of_threats(tmp_path):
     c = _client(tmp_path)
     aid = c.post("/api/applications", json={"name": "big"}).json()["id"]
     for i in range(50):
-        assert c.post(f"/api/applications/{aid}/manual-assets", json={"name": f"svc-{i}", "type": "process"}).status_code == 200
+        assert (
+            c.post(f"/api/applications/{aid}/manual-assets", json={"name": f"svc-{i}", "type": "process"}).status_code
+            == 200
+        )
     run = c.post(f"/api/applications/{aid}/runs", json={}).json()
     threats = c.get(f"/api/applications/{aid}/runs/{run['id']}/threats").json()["summary"]["total"]
     assert threats > 250

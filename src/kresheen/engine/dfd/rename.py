@@ -49,9 +49,7 @@ def _display_name(element_key: str) -> str:
     return element_key.partition(":")[2]
 
 
-def rename_component_overlays(
-    repo: Repository, application_id: str, *, element_type: str, old: str, new: str
-) -> None:
+def rename_component_overlays(repo: Repository, application_id: str, *, element_type: str, old: str, new: str) -> None:
     """Moves every name-keyed overlay from `old` to `new` for this Application."""
     now = datetime.now(UTC)
 
@@ -60,9 +58,7 @@ def rename_component_overlays(
     if moving is not None:
         for stale in (a for a in assignments if a.component_name == new):
             repo.delete_trust_boundary_assignment(stale.id)
-        repo.save_trust_boundary_assignment(
-            moving.model_copy(update={"component_name": new, "updated_at": now})
-        )
+        repo.save_trust_boundary_assignment(moving.model_copy(update={"component_name": new, "updated_at": now}))
 
     for flow in repo.list_manual_flows(application_id):
         updates = {}
@@ -109,7 +105,5 @@ def rename_component_overlays(
                 continue
             repo.delete_diagram_element_layout(layout.id)
             repo.save_diagram_element_layout(
-                layout.model_copy(
-                    update={"id": diagram_element_layout_id(diagram.id, renamed), "element_key": renamed}
-                )
+                layout.model_copy(update={"id": diagram_element_layout_id(diagram.id, renamed), "element_key": renamed})
             )

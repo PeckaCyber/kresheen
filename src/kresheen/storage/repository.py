@@ -83,7 +83,12 @@ class Repository(Protocol):
     def count_audit_events(self) -> int: ...
 
     def trim_audit_events(
-        self, keep: int, *, security: bool | None = None, names: frozenset[str] = frozenset(), prefixes: tuple[str, ...] = ()
+        self,
+        keep: int,
+        *,
+        security: bool | None = None,
+        names: frozenset[str] = frozenset(),
+        prefixes: tuple[str, ...] = (),
     ) -> int: ...
     def trim_audit_events_for_action(self, action: str, keep: int) -> int: ...
 

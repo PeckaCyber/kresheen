@@ -115,7 +115,14 @@ def test_credentials_redacted_in_content_and_excerpts():
         "and postgres://admin:s3cretpw@db/app\n-----BEGIN RSA PRIVATE KEY-----\nMIIE\n-----END RSA PRIVATE KEY-----"
     )
     prepared = prepare_content(secret_text)
-    for leaked in ("ABCDEFGHIJKLMNOP1234", "AKIAABCDEFGHIJKLMNOP", "hunter2", "abcdefghijklmnopqrstuvwxyz0123", "s3cretpw", "MIIE"):
+    for leaked in (
+        "ABCDEFGHIJKLMNOP1234",
+        "AKIAABCDEFGHIJKLMNOP",
+        "hunter2",
+        "abcdefghijklmnopqrstuvwxyz0123",
+        "s3cretpw",
+        "MIIE",
+    ):
         assert leaked not in prepared
     signals = scan_content(secret_text)
     assert signals
@@ -146,7 +153,9 @@ def test_oversize_input_raises_and_never_calls_provider():
     run_llm_task(INTAKE_DRAFT_TASK, "x" * limits.INTAKE_DRAFT_MAX_INPUT_CHARS, FakeProvider({}), model="m", api_key="k")
 
 
-@pytest.mark.parametrize("bad", [{"text": "x" * 4001}, {"text": ""}, {}, {"text": "ok", "extra": 1}, ["not", "a", "dict"]])
+@pytest.mark.parametrize(
+    "bad", [{"text": "x" * 4001}, {"text": ""}, {}, {"text": "ok", "extra": 1}, ["not", "a", "dict"]]
+)
 def test_invalid_model_output_raises(bad):
     with pytest.raises(InvalidModelOutput):
         run_llm_task(THREAT_EXPLAIN_TASK, "threat", FakeProvider(bad), model="m", api_key="k")
@@ -162,7 +171,9 @@ def test_intake_draft_rejects_values_outside_options(bad):
 
 
 def test_filled_is_computed_server_side():
-    draft = IntakeDraft.model_validate({"name": "Shop", "data": [], "has_admin": False, "filled": ["system_type", "users"]})
+    draft = IntakeDraft.model_validate(
+        {"name": "Shop", "data": [], "has_admin": False, "filled": ["system_type", "users"]}
+    )
     assert draft.filled == ["name", "data", "has_admin"]
     assert IntakeDraft.model_validate({}).filled == []
     assert "filled" not in IntakeDraft.model_json_schema()["properties"]

@@ -22,14 +22,27 @@ def _client_repo_csrf(tmp_path) -> tuple[TestClient, SQLRepository, str]:
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-test", email=_TEST_EMAIL, password_hash=hash_password(_TEST_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-test",
+            email=_TEST_EMAIL,
+            password_hash=hash_password(_TEST_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     client = TestClient(create_app(db_url=db_url))
     login = client.post("/api/auth/login", json={"email": _TEST_EMAIL, "password": _TEST_PASSWORD})
     return client, repo, login.json()["csrf_token"]
 
 
-def _seed_run(repo: SQLRepository, application_id: str, *, counts: dict[str, int], input_digests: dict[str, str] | None = None, stamped: bool | None = None) -> None:
+def _seed_run(
+    repo: SQLRepository,
+    application_id: str,
+    *,
+    counts: dict[str, int],
+    input_digests: dict[str, str] | None = None,
+    stamped: bool | None = None,
+) -> None:
     """Directly attaches a completed run with the given per-severity finding
     counts to an application, and points `latest_run_id` at it -- mirrors
     what `api_applications.py::create_run` does after a real engine run."""
@@ -39,8 +52,14 @@ def _seed_run(repo: SQLRepository, application_id: str, *, counts: dict[str, int
     if stamped is None:
         stamped = bool(input_digests)
     run = ThreatModelRun(
-        id=new_run_id(), application_id=application_id, triggered_by_user_id="USER-test", status="completed",
-        started_at=now, completed_at=now, finding_counts_by_severity=counts, input_digests=input_digests or {},
+        id=new_run_id(),
+        application_id=application_id,
+        triggered_by_user_id="USER-test",
+        status="completed",
+        started_at=now,
+        completed_at=now,
+        finding_counts_by_severity=counts,
+        input_digests=input_digests or {},
         engine_version="test" if stamped else None,
     )
     repo.save_run(run)

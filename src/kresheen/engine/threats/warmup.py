@@ -17,9 +17,7 @@ from kresheen.storage.repository import Repository
 logger = logging.getLogger(__name__)
 
 
-def warm_threats_cache(
-    repo: Repository, *, pause: float = 0.05, extra: Callable | None = None
-) -> int:
+def warm_threats_cache(repo: Repository, *, pause: float = 0.05, extra: Callable | None = None) -> int:
     """Returns how many models were warmed. `extra(application, run, threats_out)` warms anything else a list page
     caches per model (the dashboard's completeness score and action plan)."""
     warmed = 0

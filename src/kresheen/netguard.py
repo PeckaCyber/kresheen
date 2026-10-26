@@ -128,8 +128,12 @@ class _PinnedAdapter(HTTPAdapter):
 
     def init_poolmanager(self, *args: Any, **kwargs: Any) -> None:
         super().init_poolmanager(*args, **kwargs)
-        http_pool = type("PinnedHTTPPool", (HTTPConnectionPool,), {"ConnectionCls": _pinned(HTTPConnection, self._address)})
-        https_pool = type("PinnedHTTPSPool", (HTTPSConnectionPool,), {"ConnectionCls": _pinned(HTTPSConnection, self._address)})
+        http_pool = type(
+            "PinnedHTTPPool", (HTTPConnectionPool,), {"ConnectionCls": _pinned(HTTPConnection, self._address)}
+        )
+        https_pool = type(
+            "PinnedHTTPSPool", (HTTPSConnectionPool,), {"ConnectionCls": _pinned(HTTPSConnection, self._address)}
+        )
         self.poolmanager.pool_classes_by_scheme = {"http": http_pool, "https": https_pool}
 
 

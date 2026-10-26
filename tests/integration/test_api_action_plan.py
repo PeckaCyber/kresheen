@@ -44,12 +44,24 @@ def test_declining_a_fix_needs_a_reason_and_unknown_actions_404(tmp_path):
     headers = {"X-CSRF-Token": csrf}
     action_id = client.get(_plan_url(application, run)).json()["actions"][0]["id"]
 
-    assert client.put(f"{_plan_url(application, run)}/{action_id}/status", json={"status": "wont_do"}, headers=headers).status_code == 422
+    assert (
+        client.put(
+            f"{_plan_url(application, run)}/{action_id}/status", json={"status": "wont_do"}, headers=headers
+        ).status_code
+        == 422
+    )
     ok = client.put(
-        f"{_plan_url(application, run)}/{action_id}/status", json={"status": "wont_do", "note": "not our data"}, headers=headers
+        f"{_plan_url(application, run)}/{action_id}/status",
+        json={"status": "wont_do", "note": "not our data"},
+        headers=headers,
     )
     assert ok.status_code == 200
-    assert client.put(f"{_plan_url(application, run)}/ACT-nope/status", json={"status": "done"}, headers=headers).status_code == 404
+    assert (
+        client.put(
+            f"{_plan_url(application, run)}/ACT-nope/status", json={"status": "done"}, headers=headers
+        ).status_code
+        == 404
+    )
 
 
 def test_back_to_todo_clears_the_record_and_mutations_need_csrf(tmp_path):
@@ -101,4 +113,4 @@ def test_reports_and_csv_include_the_action_plan(tmp_path):
 def test_action_plan_csv_neutralises_formula_text(tmp_path):
     from kresheen.reporting.csv_export import safe_cell
 
-    assert safe_cell("=HYPERLINK(\"x\")").startswith("'")
+    assert safe_cell('=HYPERLINK("x")').startswith("'")

@@ -21,9 +21,7 @@ SEVERITIES = ("critical", "high", "medium", "low")
 STATUSES = ("open", "mitigated", "accepted", "not_applicable")
 
 
-def build_threats_out(
-    application_id: str, run_id: str, repo: Repository, *, use_cache: bool = True
-) -> ThreatsOut:
+def build_threats_out(application_id: str, run_id: str, repo: Repository, *, use_cache: bool = True) -> ThreatsOut:
     """Raises UnknownRunError (engine/threats/service.py) for a run that isn't
     this application's.
 
@@ -39,9 +37,7 @@ def build_threats_out(
     )
 
 
-def _build_threats_out(
-    application_id: str, run_id: str, repo: Repository
-) -> ThreatsOut:
+def _build_threats_out(application_id: str, run_id: str, repo: Repository) -> ThreatsOut:
     generated = generate_run_threats(application_id, run_id, repo)
     statuses = {record.threat_key: record for record in repo.list_threat_statuses(application_id)}
 

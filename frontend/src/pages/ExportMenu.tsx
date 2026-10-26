@@ -23,7 +23,10 @@ export function ExportMenu({
     if (!diagramRef?.current || capturing) return;
     setCapturing(true);
     try {
-      const dataUrl = await toPng(diagramRef.current, { backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff", pixelRatio: 2 });
+      const dataUrl = await toPng(diagramRef.current, {
+        backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+        pixelRatio: 2,
+      });
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = "diagram.png";

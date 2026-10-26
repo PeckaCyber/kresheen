@@ -12,6 +12,7 @@ For version `X.Y.Z` (tag `vX.Y.Z`):
 | Python package | `kresheen` on PyPI |
 | Helm chart | `oci://ghcr.io/peckacyber/charts/kresheen`, chart version `X.Y.Z` |
 | SBOM (SPDX JSON) | An asset of the GitHub release, and a signed attestation on the image |
+| Desktop installers (Windows, macOS, Linux) | Assets of the GitHub release, with `kresheen-X.Y.Z-desktop-SHA256SUMS` and its signature bundle |
 | Release notes | The GitHub release: a provenance block, then the section copied from [CHANGELOG.md](../CHANGELOG.md) |
 
 The chart runs the image with the same version by default.
@@ -31,6 +32,20 @@ cosign verify ghcr.io/peckacyber/kresheen:X.Y.Z \
 ```
 
 For a production install, pin the image by digest (`image.digest` in the Helm chart, or `@sha256:...` in Compose) and verify that digest.
+
+## Verify the desktop installers
+
+The installers are not code-signed with Apple or Microsoft certificates yet. Their checksums file is signed with cosign the same way as the image. Download the installer, `kresheen-X.Y.Z-desktop-SHA256SUMS` and `kresheen-X.Y.Z-desktop-SHA256SUMS.sigstore.json` into one folder, then:
+
+```bash
+cosign verify-blob kresheen-X.Y.Z-desktop-SHA256SUMS \
+  --bundle kresheen-X.Y.Z-desktop-SHA256SUMS.sigstore.json \
+  --certificate-identity-regexp '^https://github\.com/PeckaCyber/kresheen/\.github/workflows/release\.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+sha256sum --check --ignore-missing kresheen-X.Y.Z-desktop-SHA256SUMS
+```
+
+On macOS use `shasum -a 256 --check --ignore-missing`; on Windows compare the output of `Get-FileHash <file>` with the line in the checksums file. Each installer also has GitHub build provenance: `gh attestation verify <file> --repo PeckaCyber/kresheen`.
 
 ## Verify the build provenance
 

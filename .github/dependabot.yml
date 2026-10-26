@@ -15,8 +15,8 @@ updates:
         applies-to: version-updates
         update-types: [minor, patch]
 
-  # pip-audit for the CI audit job, installed from a hashed list (`.in` is the input; regenerate the `.txt` with
-  # `uv pip compile --generate-hashes --universal --python-version 3.13`).
+  # Tools installed from hashed lists: pip-audit for the CI audit job, PyInstaller for the desktop build (`.in` is the
+  # input; regenerate the `.txt` with `uv pip compile --generate-hashes --universal --python-version 3.13`).
   - package-ecosystem: pip
     directory: /.github/requirements
     schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
@@ -24,7 +24,7 @@ updates:
     cooldown: {default-days: 7}
     labels: [dependencies, python]
     groups:
-      pip-audit:
+      ci-tools:
         applies-to: version-updates
         patterns: ["*"]
 
@@ -76,6 +76,22 @@ updates:
     labels: [dependencies, docker]
     groups:
       fuzz-images:
+        applies-to: version-updates
+        patterns: ["*"]
+
+  # The Linux desktop build image (packaging/desktop/linux/Dockerfile.build): Rocky Linux 8 and uv, pinned by digest.
+  # Rocky 8 stays on purpose (glibc 2.28 decides which distributions the packages run on): no major updates.
+  - package-ecosystem: docker
+    directory: /packaging/desktop/linux
+    schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
+    open-pull-requests-limit: 2
+    cooldown: {default-days: 7}
+    labels: [dependencies, docker]
+    ignore:
+      - dependency-name: rockylinux/rockylinux
+        update-types: [version-update:semver-major]
+    groups:
+      desktop-build-images:
         applies-to: version-updates
         patterns: ["*"]
 

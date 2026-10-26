@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -70,6 +71,7 @@ def create_app(
     frontend_dist: Path | str | None = None,
     plugins: PluginRegistry | None = None,
     llm_provider: LlmProvider | None = None,
+    setup_token: str | None = None,
 ) -> FastAPI:
     # The interactive docs and the schema are off unless KRESHEEN_API_DOCS=1 (a route map is a free recon aid).
     check_worker_count()  # several workers weaken the in-memory login throttle: refuse unless the operator opts in
@@ -116,6 +118,9 @@ def create_app(
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     app.state.login_throttle = LoginThrottle()
+    # First-run setup of a desktop install (routes/api_auth.py): set only by `kresheen desktop`, cleared once used.
+    app.state.setup_token = setup_token
+    app.state.setup_lock = threading.Lock()
     app.state.run_gate = RunGate()
     try:  # a run left non-terminal by a crash or kill would otherwise show "in progress" forever
         reconcile_stale_runs(app.state.repo)

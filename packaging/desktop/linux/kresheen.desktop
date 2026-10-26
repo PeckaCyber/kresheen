@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Kresheen
+Comment=Threat modeling on this computer (opens in the browser)
+Exec=/opt/kresheen/kresheen desktop
+Terminal=true
+Categories=Development;Security;

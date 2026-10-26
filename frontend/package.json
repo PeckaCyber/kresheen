@@ -10,9 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "lint": "tsc -b --noEmit",
+    "lint": "oxlint --max-warnings 39",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b --noEmit"
   },
   "engines": {
     "node": ">=24.0.0"
@@ -36,6 +37,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "jsdom": "30.1.3",
+    "oxlint": "1.89.0",
     "prettier": "3.9.10",
     "typescript": "7.0.2",
     "vite": "8.3.4",

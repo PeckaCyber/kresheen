@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthenticated(false);
     });
     return () => setUnauthorizedHandler(null);
-  }, []);
+  }, [setAuthenticated]);
 
   useEffect(() => {
     // GET /api/auth/me on load: is there already a valid session cookie
@@ -64,19 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthenticated(false);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [setAuthenticated]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const session = await apiFetch<SessionInfo>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-    setCsrfToken(session.csrf_token);
-    setRole(session.role);
-    setEmail(session.email || null);
-    setSignedOutByTimeout(false);
-    setAuthenticated(true);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const session = await apiFetch<SessionInfo>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      setCsrfToken(session.csrf_token);
+      setRole(session.role);
+      setEmail(session.email || null);
+      setSignedOutByTimeout(false);
+      setAuthenticated(true);
+    },
+    [setAuthenticated],
+  );
 
   const logout = useCallback(async () => {
     const result = await apiFetch<{ redirect?: string | null }>("/api/auth/logout", { method: "POST" }).catch(
@@ -89,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthenticated(false);
     // A plugin may ask for a page to visit after sign-out, such as an identity provider's.
     if (result?.redirect) window.location.assign(result.redirect);
-  }, []);
+  }, [setAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, loading, signedOutByTimeout, role, email, login, logout }}>

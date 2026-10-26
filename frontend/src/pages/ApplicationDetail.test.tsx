@@ -118,21 +118,21 @@ function routeFor(url: string): unknown {
   if (/\/runs\/RUN-1\/dfd/.test(url)) return DFD;
   if (/\/runs\/RUN-1\/findings/.test(url)) return [];
   if (/\/runs\/RUN-1\/sbom/.test(url)) return null;
-  if (/\/runs\/RUN-1\/threats$/.test(url)) return THREATS;
+  if (url.endsWith("/runs/RUN-1/threats")) return THREATS;
   if (/\/runs\/RUN-1\/diff/.test(url)) return { current_run_id: "RUN-1", previous_run_id: null };
   if (/\/runs\/RUN-1\/attack-paths/.test(url)) return { paths: [] };
   if (/\/runs\/RUN-1\/action-plan/.test(url)) return ACTION_PLAN;
   if (/\/runs\/RUN-1\/completeness/.test(url)) return COMPLETENESS;
   if (/\/runs\/RUN-1\/compliance/.test(url)) return COMPLIANCE;
-  if (/\/runs\/RUN-1$/.test(url)) return RUN;
-  if (/\/runs$/.test(url)) return [{ id: "RUN-1", status: "completed", started_at: "2026-09-20T10:00:00Z" }];
+  if (url.endsWith("/runs/RUN-1")) return RUN;
+  if (url.endsWith("/runs")) return [{ id: "RUN-1", status: "completed", started_at: "2026-09-20T10:00:00Z" }];
   if (/\/staleness/.test(url))
     return { stale: false, new_data_source_ids: [], changed_data_source_ids: [], removed_data_source_ids: [] };
   if (/\/diagrams\/[^/]+\/layout/.test(url)) return [];
   if (/\/diagrams/.test(url)) return [{ id: "DIAG-1", name: "Main" }];
   if (/\/data-sources/.test(url)) return [];
   if (/\/api\/groups/.test(url)) return GROUPS;
-  if (/\/api\/applications\/APP-1$/.test(url)) return APP;
+  if (url.endsWith("/api/applications/APP-1")) return APP;
   if (/\/api\/threat-kb\/property-specs/.test(url)) return {};
   return {};
 }
@@ -163,7 +163,7 @@ describe("ApplicationDetailPage", () => {
   it("shows a plain not-found page with a way back when the API answers 404", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
-      return Promise.resolve(/\/runs\/RUN-1$/.test(url) ? json({ detail: "Not found" }, 404) : json(routeFor(url)));
+      return Promise.resolve(url.endsWith("/runs/RUN-1") ? json({ detail: "Not found" }, 404) : json(routeFor(url)));
     });
     open();
     const page = await screen.findByTestId("model-not-found");
@@ -175,7 +175,7 @@ describe("ApplicationDetailPage", () => {
   it("keeps the generic message for other load errors", async () => {
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
-      return Promise.resolve(/\/runs\/RUN-1$/.test(url) ? json({ detail: "boom" }, 500) : json(routeFor(url)));
+      return Promise.resolve(url.endsWith("/runs/RUN-1") ? json({ detail: "boom" }, 500) : json(routeFor(url)));
     });
     open();
     expect(await screen.findByText("Failed to load this threat model run.")).toBeInTheDocument();
@@ -206,7 +206,7 @@ describe("ApplicationDetailPage", () => {
     };
     fetchMock.mockImplementation((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
-      return Promise.resolve(json(/\/runs\/RUN-1$/.test(url) ? partial : routeFor(url)));
+      return Promise.resolve(json(url.endsWith("/runs/RUN-1") ? partial : routeFor(url)));
     });
     open();
     const banner = await screen.findByTestId("partly-analysed-banner");
@@ -293,16 +293,16 @@ describe("ApplicationDetailPage", () => {
     };
 
     function routeFailed(url: string): unknown {
-      if (/\/runs\/RUN-2$/.test(url)) return FAILED;
+      if (url.endsWith("/runs/RUN-2")) return FAILED;
       if (/\/runs\/RUN-2\/(dfd)/.test(url)) return { nodes: [], edges: [], boundaries: [] };
       if (/\/runs\/RUN-2\/(findings|sbom)/.test(url)) return /sbom/.test(url) ? null : [];
-      if (/\/runs\/RUN-2\/threats$/.test(url))
+      if (url.endsWith("/runs/RUN-2/threats"))
         return {
           ...THREATS,
           threats: [],
           summary: { total: 0, by_status: {}, open_by_severity: {}, open_by_risk: {} },
         };
-      if (/\/api\/applications\/APP-1\/runs$/.test(url))
+      if (url.endsWith("/api/applications/APP-1/runs"))
         return [
           { id: "RUN-1", status: "completed", started_at: "2026-09-20T10:00:00Z" },
           { id: "RUN-2", status: "failed", started_at: "2026-09-21T10:00:00Z" },
@@ -345,7 +345,7 @@ describe("ApplicationDetailPage", () => {
     it("omits the last-completed link when no run ever completed", async () => {
       fetchMock.mockImplementation((input: RequestInfo | URL) => {
         const url = typeof input === "string" ? input : input.toString();
-        if (/\/api\/applications\/APP-1\/runs$/.test(url))
+        if (url.endsWith("/api/applications/APP-1/runs"))
           return Promise.resolve(json([{ id: "RUN-2", status: "failed", started_at: "2026-09-21T10:00:00Z" }]));
         return Promise.resolve(json(routeFailed(url)));
       });

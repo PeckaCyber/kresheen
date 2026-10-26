@@ -51,6 +51,7 @@ jobs:
         run: |
           npm ci
           npm run format:check
+          npm run lint
           npx tsc -b
           npx vitest run
           npm run build

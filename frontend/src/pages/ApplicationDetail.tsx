@@ -906,7 +906,7 @@ export function ApplicationDetailPage() {
         };
       }),
     );
-  }, [threatsData]);
+  }, [threatsData, setNodes]);
 
   // Threats are derived from the DFD, so they need refetching after any edit
   // that changes it (loadRun) as well as after a status change (this).

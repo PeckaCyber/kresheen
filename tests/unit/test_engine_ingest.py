@@ -507,6 +507,49 @@ def test_extract_tarball_safely_rejects_hard_link_to_missing_member(tmp_path):
         _extract_tarball_safely(str(tarball_path), str(extract_dir))
 
 
+def _symlink(name: str, target: str) -> tarfile.TarInfo:
+    link = tarfile.TarInfo(name=name)
+    link.type = tarfile.SYMTYPE
+    link.linkname = target
+    return link
+
+
+@pytest.mark.parametrize(
+    "members",
+    [
+        # Found by fuzz/fuzz_tarball.py (ClusterFuzzLite): tarfile could not replace the directory `a` with the link,
+        # fell back to extracting the link's target by name, found the link itself and recursed until RecursionError.
+        [_symlink("a/", "")],
+        [_symlink("a", "a")],
+        [tarfile.TarInfo(name="c/f"), _symlink("a", "c"), _symlink("c", "a")],
+    ],
+    ids=["empty-target", "self", "cycle"],
+)
+def test_extract_tarball_safely_rejects_link_over_a_directory(tmp_path, members):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    tarball_path = _link_tarball(tmp_path, *members)
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    with pytest.raises(ValueError, match="link over a directory"):
+        _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+    assert list(extract_dir.iterdir()) == []
+
+
+def test_extract_tarball_safely_keeps_symlink_to_a_directory(tmp_path):
+    from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
+
+    tarball_path = _link_tarball(tmp_path, _symlink("a/link", "b"))
+    extract_dir = tmp_path / "extract"
+    extract_dir.mkdir()
+
+    _extract_tarball_safely(str(tarball_path), str(extract_dir))
+
+    assert (extract_dir / "a" / "link" / "file.txt").read_bytes() == b"inside"
+
+
 def test_extract_tarball_safely_refuses_without_data_filter(tmp_path, monkeypatch):
     from kresheen.engine.ingest.github_repository_ingestor import _extract_tarball_safely
 

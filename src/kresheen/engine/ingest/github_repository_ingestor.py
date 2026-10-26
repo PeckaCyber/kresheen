@@ -227,6 +227,7 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
     with tarfile.open(tarball_path, mode="r:gz") as tar:
         members: list[tarfile.TarInfo] = []
         seen_names: set[str] = set()
+        seen_dirs: set[str] = set()
         total_size = 0
         for member in tar:  # lazily: stop at the cap instead of loading every entry first
             members.append(member)
@@ -264,7 +265,16 @@ def _extract_tarball_safely(tarball_path: str, extract_dir: str) -> None:
                 # stop extraction with a KeyError, so refuse it as the malformed archive it is.
                 if member.islnk() and os.path.normpath(link_name) not in seen_names:
                     raise ValueError(f"Refusing to extract hard link to a missing file: {member.name} -> {link_name}")
-            seen_names.add(os.path.normpath(member.name))
+                # A link cannot replace a directory an earlier member created; tarfile then extracts the link's
+                # target by name instead, and a link whose target leads back to itself recurses until Python's stack
+                # runs out (found by fuzz/fuzz_tarball.py, CPython 3.12 and 3.13).
+                if os.path.normpath(member.name) in seen_dirs:
+                    raise ValueError(f"Refusing to extract link over a directory: {member.name} -> {link_name}")
+            normalized = os.path.normpath(member.name)
+            seen_names.add(normalized)
+            seen_dirs.update(str(parent) for parent in PurePosixPath(normalized).parents)
+            if member.isdir():
+                seen_dirs.add(normalized)
 
         tar.extractall(path=extract_dir, members=members, filter="data")
 

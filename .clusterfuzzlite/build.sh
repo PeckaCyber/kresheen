@@ -36,6 +36,8 @@ seeds = {
     "repo": [("repo-abc/package.json", tarfile.REGTYPE, b"{}"), ("repo-abc/main.tf", tarfile.REGTYPE, b"x")],
     "links": [("repo-abc/a", tarfile.REGTYPE, b"a"), ("repo-abc/s", tarfile.SYMTYPE, b"a"),
               ("repo-abc/h", tarfile.LNKTYPE, b"repo-abc/a"), ("repo-abc/d", tarfile.DIRTYPE, b"")],
+    # A link over a directory made tarfile recurse until RecursionError (fuzz-nightly, 2026-10-26).
+    "link-over-dir": [("repo-abc/a", tarfile.REGTYPE, b"a"), ("repo-abc/", tarfile.SYMTYPE, b"")],
 }
 with zipfile.ZipFile(os.path.join(os.environ["OUT"], "fuzz_tarball_seed_corpus.zip"), "w") as corpus:
     for name, members in seeds.items():

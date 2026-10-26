@@ -63,7 +63,11 @@ def test_markdown_neutralises_mentions_and_markup_in_names():
 
 
 def test_component_moving_trust_boundary_fails_and_can_be_disabled():
-    diff = _diff(boundary_changes=[BoundaryChangeOut(name="Orders DB", type="data_store", from_boundary="internal", to_boundary=None)])
+    diff = _diff(
+        boundary_changes=[
+            BoundaryChangeOut(name="Orders DB", type="data_store", from_boundary="internal", to_boundary=None)
+        ]
+    )
     result = evaluate_gate(diff, GateOptions())
     assert not result.passed
     assert result.violations == ["Component moved trust boundary: Orders DB (internal -> unassigned)"]
@@ -75,12 +79,16 @@ def test_diff_boundaries_reports_only_components_present_in_both_runs(monkeypatc
     from kresheen.engine.threats.generate import DfdElement
 
     runs = {
-        "R1": [DfdElement(id="1", name="API", type="process", trust_boundary="dmz"),
-               DfdElement(id="2", name="DB", type="data_store", trust_boundary="internal"),
-               DfdElement(id="3", name="Gone", type="process", trust_boundary="a")],
-        "R2": [DfdElement(id="9", name="API", type="process", trust_boundary="dmz"),
-               DfdElement(id="8", name="DB", type="data_store", trust_boundary="public"),
-               DfdElement(id="7", name="New", type="process", trust_boundary="b")],
+        "R1": [
+            DfdElement(id="1", name="API", type="process", trust_boundary="dmz"),
+            DfdElement(id="2", name="DB", type="data_store", trust_boundary="internal"),
+            DfdElement(id="3", name="Gone", type="process", trust_boundary="a"),
+        ],
+        "R2": [
+            DfdElement(id="9", name="API", type="process", trust_boundary="dmz"),
+            DfdElement(id="8", name="DB", type="data_store", trust_boundary="public"),
+            DfdElement(id="7", name="New", type="process", trust_boundary="b"),
+        ],
     }
     monkeypatch.setattr("kresheen.engine.threats.service.load_dfd_model", lambda app, run, repo: (runs[run], []))
 

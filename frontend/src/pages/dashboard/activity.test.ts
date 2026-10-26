@@ -71,7 +71,11 @@ describe("describeActivity: users and bulk status", () => {
     expect(describeActivity({ ...base, action: "POST /api/users", target: "" }, {})).toBe("a@example.com added a user");
     expect(
       describeActivity(
-        { ...base, action: "PUT /api/applications/{application_id}/runs/{run_id}/threats/status/bulk", target: "application_id=APP-1" },
+        {
+          ...base,
+          action: "PUT /api/applications/{application_id}/runs/{run_id}/threats/status/bulk",
+          target: "application_id=APP-1",
+        },
         { "APP-1": "Shop" },
       ),
     ).toBe("a@example.com changed several threat statuses in Shop");

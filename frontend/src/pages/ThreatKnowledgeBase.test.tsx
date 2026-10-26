@@ -25,12 +25,34 @@ const RULES = [
 
 const ENTRIES = [
   {
-    id: "KB-1", source: "custom", external_id: null, name: "Badge cloning", description: "d", tags: [], url: null,
-    methodology: "STRIDE", category: null, severity: "high", mitigations: [], applies_to: "data_store", boundary_hint: "pci",
+    id: "KB-1",
+    source: "custom",
+    external_id: null,
+    name: "Badge cloning",
+    description: "d",
+    tags: [],
+    url: null,
+    methodology: "STRIDE",
+    category: null,
+    severity: "high",
+    mitigations: [],
+    applies_to: "data_store",
+    boundary_hint: "pci",
   },
   {
-    id: "KB-2", source: "cwe", external_id: "CWE-79", name: "XSS", description: "d", tags: [], url: null,
-    methodology: "STRIDE", category: null, severity: "medium", mitigations: [], applies_to: null, boundary_hint: null,
+    id: "KB-2",
+    source: "cwe",
+    external_id: "CWE-79",
+    name: "XSS",
+    description: "d",
+    tags: [],
+    url: null,
+    methodology: "STRIDE",
+    category: null,
+    severity: "medium",
+    mitigations: [],
+    applies_to: null,
+    boundary_hint: null,
   },
 ];
 
@@ -179,7 +201,7 @@ describe("ThreatKnowledgeBasePage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add custom threat" }));
     const modal = screen.getByRole("dialog");
 
-    within(modal).getByLabelText("Name");  // Ensure we can find the modal
+    within(modal).getByLabelText("Name"); // Ensure we can find the modal
     fireEvent.change(within(modal).getByLabelText("Name"), { target: { value: "Rogue admin" } });
     fireEvent.change(within(modal).getByLabelText("Description"), { target: { value: "d" } });
     fireEvent.change(within(modal).getByLabelText("Category (optional)"), { target: { value: "Tampering" } });

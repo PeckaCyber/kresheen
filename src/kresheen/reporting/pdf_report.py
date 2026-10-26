@@ -142,7 +142,12 @@ def _render_pdf(report: ThreatModelReport) -> bytes:
     if report.reviewer:
         meta.append(["Reviewer", report.reviewer])
     if report.reviewed_at:
-        meta.append(["Marked reviewed", report.reviewed_at.strftime("%Y-%m-%d") + (f" by {report.reviewed_by}" if report.reviewed_by else "")])
+        meta.append(
+            [
+                "Marked reviewed",
+                report.reviewed_at.strftime("%Y-%m-%d") + (f" by {report.reviewed_by}" if report.reviewed_by else ""),
+            ]
+        )
     if report.contributors:
         meta.append(["Contributors", ", ".join(report.contributors)])
     story.append(_table(["Field", "Value"], meta))
@@ -203,7 +208,11 @@ def _render_pdf(report: ThreatModelReport) -> bytes:
                         a.max_risk,
                         a.basis,
                         f"{a.threat_count} threat(s) on {', '.join(a.elements)}"
-                        + (f" and {a.element_count - len(a.elements)} more" if a.element_count > len(a.elements) else ""),
+                        + (
+                            f" and {a.element_count - len(a.elements)} more"
+                            if a.element_count > len(a.elements)
+                            else ""
+                        ),
                         a.status.replace("_", " "),
                     ]
                     for rank, a in enumerate(report.open_actions[:PLAN_REPORT_LIMIT], start=1)
@@ -211,7 +220,12 @@ def _render_pdf(report: ThreatModelReport) -> bytes:
             )
         )
         if len(report.open_actions) > PLAN_REPORT_LIMIT:
-            story.append(_p(f"{len(report.open_actions) - PLAN_REPORT_LIMIT} more actions are in the action plan CSV export.", "Small"))
+            story.append(
+                _p(
+                    f"{len(report.open_actions) - PLAN_REPORT_LIMIT} more actions are in the action plan CSV export.",
+                    "Small",
+                )
+            )
     else:
         story.append(_p("No open actions: every threat is mitigated, accepted or not applicable."))
     if report.closed_action_count:
@@ -276,12 +290,22 @@ def _render_pdf(report: ThreatModelReport) -> bytes:
         for a in report.partly_analysed:
             story.append(_p(f"{a.element}: {a.statement}", "SmallItalic"))
     if report.assumptions:
-        story.append(_table(["Element", "Type", "Owner states"], [[a.element, _pretty(a.element_type), a.statement] for a in report.assumptions]))
+        story.append(
+            _table(
+                ["Element", "Type", "Owner states"],
+                [[a.element, _pretty(a.element_type), a.statement] for a in report.assumptions],
+            )
+        )
     else:
         story.append(_p("No properties were stated by the owner."))
     if report.out_of_scope:
         story.append(Spacer(1, 6))
-        story.append(_table(["Out of scope", "Type", "Reason"], [[a.element, _pretty(a.element_type), a.statement] for a in report.out_of_scope]))
+        story.append(
+            _table(
+                ["Out of scope", "Type", "Reason"],
+                [[a.element, _pretty(a.element_type), a.statement] for a in report.out_of_scope],
+            )
+        )
     if report.manual_threat_count:
         story.append(Spacer(1, 6))
         story.append(_p(f"{report.manual_threat_count} threat(s) were added by hand (marked Manual below)."))
@@ -365,7 +389,9 @@ def _render_pdf(report: ThreatModelReport) -> bytes:
         story.append(_p(text))
         rows = sbom_vulnerability_rows(report.sbom)
         if rows:
-            story.append(_table(["Vulnerability", "Severity", "Package"], [[r["id"], r["severity"], r["package"]] for r in rows]))
+            story.append(
+                _table(["Vulnerability", "Severity", "Package"], [[r["id"], r["severity"], r["package"]] for r in rows])
+            )
 
     doc.build(story)
     return buffer.getvalue()

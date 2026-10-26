@@ -1,7 +1,13 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Alert, Button, Form, Modal } from "react-bootstrap";
 import { apiFetch, ApiError } from "../api/client";
-import { CUSTOM_METHODOLOGY, threatMethodologiesWith, methodologyCategories, categoryLabel, type Methodology } from "../methodology";
+import {
+  CUSTOM_METHODOLOGY,
+  threatMethodologiesWith,
+  methodologyCategories,
+  categoryLabel,
+  type Methodology,
+} from "../methodology";
 
 interface KbEntry {
   id: string;
@@ -85,7 +91,7 @@ export function AddThreatModal(props: {
 
       const initialElementId = props.initialElementId;
       let selectedElementId = "";
-      if (initialElementId && props.elements.some(e => e.id === initialElementId)) {
+      if (initialElementId && props.elements.some((e) => e.id === initialElementId)) {
         selectedElementId = initialElementId;
       } else if (props.elements.length > 0) {
         selectedElementId = props.elements[0].id;
@@ -101,14 +107,14 @@ export function AddThreatModal(props: {
 
   const handleKbEntryChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const kbId = e.target.value;
-    setFormData(prev => ({ ...prev, kbEntryId: kbId }));
+    setFormData((prev) => ({ ...prev, kbEntryId: kbId }));
 
     if (kbId) {
-      const entry = kbEntries.find(e => e.id === kbId);
+      const entry = kbEntries.find((e) => e.id === kbId);
       if (entry) {
-        const element = props.elements.find(e => e.id === formData.elementId);
+        const element = props.elements.find((e) => e.id === formData.elementId);
         const title = entry.name.replace(/\{name\}/g, element?.label || "");
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           title,
           description: entry.description,
@@ -119,17 +125,17 @@ export function AddThreatModal(props: {
         }));
       }
     } else {
-      setFormData(prev => ({ ...prev, kbEntryId: "" }));
+      setFormData((prev) => ({ ...prev, kbEntryId: "" }));
     }
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleMethodologyChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, methodology: e.target.value as Methodology, category: "" }));
+    setFormData((prev) => ({ ...prev, methodology: e.target.value as Methodology, category: "" }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -164,7 +170,7 @@ export function AddThreatModal(props: {
         return;
       }
 
-      const element = props.elements.find(e => e.id === formData.elementId);
+      const element = props.elements.find((e) => e.id === formData.elementId);
       if (!element) throw new Error("Invalid element selected");
 
       const body = {
@@ -178,8 +184,8 @@ export function AddThreatModal(props: {
         category: formData.category || null,
         mitigations: formData.mitigations
           .split("\n")
-          .map(line => line.trim())
-          .filter(line => line.length > 0),
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0),
       };
 
       await apiFetch<void>(`/api/applications/${props.applicationId}/runs/${props.runId}/manual-threats`, {
@@ -196,14 +202,14 @@ export function AddThreatModal(props: {
     }
   };
 
-  const kbEntryOptions = kbEntries.map(entry => (
+  const kbEntryOptions = kbEntries.map((entry) => (
     <option key={entry.id} value={entry.id}>
       {entry.name}
     </option>
   ));
 
-  const componentElements = props.elements.filter(e => e.kind === "component");
-  const flowElements = props.elements.filter(e => e.kind === "flow");
+  const componentElements = props.elements.filter((e) => e.kind === "component");
+  const flowElements = props.elements.filter((e) => e.kind === "flow");
 
   return (
     <Modal show={props.show} onHide={props.onHide} size="lg">
@@ -215,47 +221,40 @@ export function AddThreatModal(props: {
           {error && <Alert variant="danger">{error}</Alert>}
           {props.editing && (
             <p className="text-muted small">
-              On <strong>{props.editing.element_name}</strong>. To move a threat to another element, delete it and
-              add it again.
+              On <strong>{props.editing.element_name}</strong>. To move a threat to another element, delete it and add
+              it again.
             </p>
           )}
           {!props.editing && (
-          <Form.Group className="mb-3" controlId="element">
-            <Form.Label>Element</Form.Label>
-            <Form.Select
-              value={formData.elementId}
-              onChange={handleElementChange}
-              required
-            >
-              <optgroup label="Components">
-                {componentElements.map(e => (
-                  <option key={e.id} value={e.id}>
-                    {e.label}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Data flows">
-                {flowElements.map(e => (
-                  <option key={e.id} value={e.id}>
-                    {e.label}
-                  </option>
-                ))}
-              </optgroup>
-            </Form.Select>
-          </Form.Group>
+            <Form.Group className="mb-3" controlId="element">
+              <Form.Label>Element</Form.Label>
+              <Form.Select value={formData.elementId} onChange={handleElementChange} required>
+                <optgroup label="Components">
+                  {componentElements.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.label}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Data flows">
+                  {flowElements.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.label}
+                    </option>
+                  ))}
+                </optgroup>
+              </Form.Select>
+            </Form.Group>
           )}
 
           {!props.editing && (
-          <Form.Group className="mb-3" controlId="kbEntry">
-            <Form.Label>Start from a knowledge base entry (optional)</Form.Label>
-            <Form.Select
-              value={formData.kbEntryId}
-              onChange={handleKbEntryChange}
-            >
-              <option value="">None, write my own</option>
-              {kbEntryOptions}
-            </Form.Select>
-          </Form.Group>
+            <Form.Group className="mb-3" controlId="kbEntry">
+              <Form.Label>Start from a knowledge base entry (optional)</Form.Label>
+              <Form.Select value={formData.kbEntryId} onChange={handleKbEntryChange}>
+                <option value="">None, write my own</option>
+                {kbEntryOptions}
+              </Form.Select>
+            </Form.Group>
           )}
 
           <Form.Group className="mb-3" controlId="title">
@@ -284,11 +283,7 @@ export function AddThreatModal(props: {
 
           <Form.Group className="mb-3" controlId="severity">
             <Form.Label>Severity</Form.Label>
-            <Form.Select
-              name="severity"
-              value={formData.severity}
-              onChange={handleInputChange}
-            >
+            <Form.Select name="severity" value={formData.severity} onChange={handleInputChange}>
               <option value="critical">Critical</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
@@ -298,11 +293,7 @@ export function AddThreatModal(props: {
 
           <Form.Group className="mb-3" controlId="methodology">
             <Form.Label>Methodology</Form.Label>
-            <Form.Select
-              name="methodology"
-              value={formData.methodology}
-              onChange={handleMethodologyChange}
-            >
+            <Form.Select name="methodology" value={formData.methodology} onChange={handleMethodologyChange}>
               {threatMethodologiesWith([formData.methodology]).map((methodology) => (
                 <option key={methodology} value={methodology}>
                   {methodology}
@@ -312,7 +303,9 @@ export function AddThreatModal(props: {
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="category">
-            <Form.Label>{formData.methodology === CUSTOM_METHODOLOGY ? "Custom category (optional)" : "Category (optional)"}</Form.Label>
+            <Form.Label>
+              {formData.methodology === CUSTOM_METHODOLOGY ? "Custom category (optional)" : "Category (optional)"}
+            </Form.Label>
             {formData.methodology === CUSTOM_METHODOLOGY ? (
               <Form.Control
                 name="category"
@@ -321,18 +314,14 @@ export function AddThreatModal(props: {
                 placeholder="Your own category, e.g. Insider fraud"
               />
             ) : (
-            <Form.Select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-            >
-              <option value="">None</option>
-              {categoriesWith(formData.methodology, formData.category).map((category) => (
-                <option key={category} value={category}>
-                  {categoryLabel(formData.methodology, category)}
-                </option>
-              ))}
-            </Form.Select>
+              <Form.Select name="category" value={formData.category} onChange={handleInputChange}>
+                <option value="">None</option>
+                {categoriesWith(formData.methodology, formData.category).map((category) => (
+                  <option key={category} value={category}>
+                    {categoryLabel(formData.methodology, category)}
+                  </option>
+                ))}
+              </Form.Select>
             )}
           </Form.Group>
 
@@ -351,10 +340,7 @@ export function AddThreatModal(props: {
           <Button variant="secondary" type="button" onClick={props.onHide}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || (!props.editing && props.elements.length === 0)}
-          >
+          <Button type="submit" disabled={isSubmitting || (!props.editing && props.elements.length === 0)}>
             {isSubmitting ? (props.editing ? "Saving..." : "Adding...") : props.editing ? "Save changes" : "Add threat"}
           </Button>
         </Modal.Footer>

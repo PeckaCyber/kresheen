@@ -59,8 +59,19 @@ BOUNDARY_KIND_NETWORK = "network"
 """`boundary_kind` for a boundary derived from a subnet or VPC (a machine label)."""
 
 DATA_STORE_HINTS = (
-    "db", "database", "bucket", "storage", "queue", "table", "cache", "efs", "file_system", "dynamodb", "rds",
-    "elasticache", "redshift",
+    "db",
+    "database",
+    "bucket",
+    "storage",
+    "queue",
+    "table",
+    "cache",
+    "efs",
+    "file_system",
+    "dynamodb",
+    "rds",
+    "elasticache",
+    "redshift",
 )
 """Which resource types read as a data store on the diagram. Display only: it
 never decides which threats apply (that is the reasoning stage's job)."""
@@ -68,11 +79,23 @@ never decides which threats apply (that is the reasoning stage's job)."""
 _PLUMBING_PREFIXES = ("random_", "null_", "time_", "terraform_data", "local_", "tls_")
 _PLUMBING_TYPES = frozenset(
     {
-        "aws_route_table", "aws_route", "aws_route_table_association", "aws_main_route_table_association",
-        "aws_iam_instance_profile", "aws_key_pair", "aws_s3_bucket_versioning", "aws_lb_target_group_attachment",
-        "aws_eip_association", "aws_network_acl_association", "aws_db_subnet_group", "aws_elasticache_subnet_group",
-        "aws_security_group_rule", "aws_vpc_security_group_ingress_rule", "aws_vpc_security_group_egress_rule",
-        "aws_iam_role_policy_attachment", "aws_lb_listener_certificate",
+        "aws_route_table",
+        "aws_route",
+        "aws_route_table_association",
+        "aws_main_route_table_association",
+        "aws_iam_instance_profile",
+        "aws_key_pair",
+        "aws_s3_bucket_versioning",
+        "aws_lb_target_group_attachment",
+        "aws_eip_association",
+        "aws_network_acl_association",
+        "aws_db_subnet_group",
+        "aws_elasticache_subnet_group",
+        "aws_security_group_rule",
+        "aws_vpc_security_group_ingress_rule",
+        "aws_vpc_security_group_egress_rule",
+        "aws_iam_role_policy_attachment",
+        "aws_lb_listener_certificate",
     }
 )
 """Resource types kept as facts but not drawn. A security-group *rule* resource
@@ -221,7 +244,15 @@ def config_refs(plan: dict[str, Any]) -> dict[str, dict[str, list[str]]]:
                 if isinstance(refs, list):
                     for ref in refs:
                         parts = str(ref).split(".")
-                        if len(parts) >= 2 and parts[0] not in ("var", "local", "data", "module", "each", "count", "path"):
+                        if len(parts) >= 2 and parts[0] not in (
+                            "var",
+                            "local",
+                            "data",
+                            "module",
+                            "each",
+                            "count",
+                            "path",
+                        ):
                             into.setdefault(attr, []).append(base_address(f"{parts[0]}.{parts[1]}"))
                 else:  # a nested block: {attr: expression, ...}
                     collect(node, into)
@@ -302,16 +333,28 @@ def _ports(rule: dict[str, Any]) -> tuple[int, int]:
 
 def _normalize_rule(raw: dict[str, Any], groups: list[str]) -> dict[str, Any]:
     proto = str(raw.get("protocol", raw.get("ip_protocol", "tcp")))
-    cidrs = [c for c in [*_as_list(raw.get("cidr_blocks")), *_as_list(raw.get("ipv6_cidr_blocks")),
-                         *_as_list(raw.get("cidr_ipv4")), *_as_list(raw.get("cidr_ipv6"))] if c]
+    cidrs = [
+        c
+        for c in [
+            *_as_list(raw.get("cidr_blocks")),
+            *_as_list(raw.get("ipv6_cidr_blocks")),
+            *_as_list(raw.get("cidr_ipv4")),
+            *_as_list(raw.get("cidr_ipv6")),
+        ]
+        if c
+    ]
     lo, hi = _ports({**raw, "protocol": proto})
-    return {"protocol": "all" if proto == "-1" else proto, "from_port": lo, "to_port": hi, "cidr_blocks": cidrs,
-            "security_groups": groups, "description": str(raw.get("description") or "")}
+    return {
+        "protocol": "all" if proto == "-1" else proto,
+        "from_port": lo,
+        "to_port": hi,
+        "cidr_blocks": cidrs,
+        "security_groups": groups,
+        "description": str(raw.get("description") or ""),
+    }
 
 
-def _fold_security_group_rules(
-    resources: list[dict[str, Any]], resolver: _Resolver
-) -> dict[str, list[dict[str, Any]]]:
+def _fold_security_group_rules(resources: list[dict[str, Any]], resolver: _Resolver) -> dict[str, list[dict[str, Any]]]:
     """SG address -> normalized ingress rules: the group's inline rules plus any
     standalone rule resources that point at it."""
     by_group: dict[str, list[dict[str, Any]]] = {}
@@ -320,15 +363,19 @@ def _fold_security_group_rules(
         if r["type"] == "aws_security_group":
             for raw in _as_list(after.get("ingress")):
                 if isinstance(raw, dict):
-                    groups = resolver.targets({"address": r["address"], "after": {"g": raw.get("security_groups")}},
-                                              ["g"], ("aws_security_group",))
+                    groups = resolver.targets(
+                        {"address": r["address"], "after": {"g": raw.get("security_groups")}},
+                        ["g"],
+                        ("aws_security_group",),
+                    )
                     by_group.setdefault(r["address"], []).append(_normalize_rule(raw, groups))
         elif r["type"] in ("aws_security_group_rule", "aws_vpc_security_group_ingress_rule"):
             if r["type"] == "aws_security_group_rule" and after.get("type") != "ingress":
                 continue
             owner = resolver.targets(r, ["security_group_id"], ("aws_security_group",))
-            source = resolver.targets(r, ["source_security_group_id", "referenced_security_group_id"],
-                                      ("aws_security_group",))
+            source = resolver.targets(
+                r, ["source_security_group_id", "referenced_security_group_id"], ("aws_security_group",)
+            )
             for group in owner:
                 by_group.setdefault(group, []).append(_normalize_rule(after, source))
     return by_group
@@ -378,8 +425,13 @@ def build_terraform_facts(
         if user_data is not None:
             after["user_data"] = user_data
         resources.append(
-            {"address": address, "type": resource_type, "provider": record.get("provider_name", ""),
-             "after": after, "user_data_secret": user_data_secret}
+            {
+                "address": address,
+                "type": resource_type,
+                "provider": record.get("provider_name", ""),
+                "after": after,
+                "user_data_secret": user_data_secret,
+            }
         )
 
     resolver = _Resolver(resources, {k: v for record in records for k, v in (record.get("_config_refs") or {}).items()})
@@ -390,11 +442,23 @@ def build_terraform_facts(
         return resolver.targets(resource, attrs, tuple(types))
 
     subnet_public: dict[str, bool] = {}
-    igw_routes = {r["address"] for r in resources if r["type"] == "aws_route_table" and any(
-        str(route.get("gateway_id", "")).startswith("igw-") or str(route.get("gateway_id", "")).startswith("aws_internet_gateway")
-        for route in _as_list(r["after"].get("route")) if isinstance(route, dict))}
-    igw_routes |= {a for r in resources if r["type"] == "aws_route" and str(r["after"].get("gateway_id", "")).startswith("igw-")
-                   for a in targets(r, ["route_table_id"], "aws_route_table")}
+    igw_routes = {
+        r["address"]
+        for r in resources
+        if r["type"] == "aws_route_table"
+        and any(
+            str(route.get("gateway_id", "")).startswith("igw-")
+            or str(route.get("gateway_id", "")).startswith("aws_internet_gateway")
+            for route in _as_list(r["after"].get("route"))
+            if isinstance(route, dict)
+        )
+    }
+    igw_routes |= {
+        a
+        for r in resources
+        if r["type"] == "aws_route" and str(r["after"].get("gateway_id", "")).startswith("igw-")
+        for a in targets(r, ["route_table_id"], "aws_route_table")
+    }
     for r in resources:
         if r["type"] == "aws_route_table_association":
             subnets = targets(r, ["subnet_id"], "aws_subnet")
@@ -419,8 +483,11 @@ def build_terraform_facts(
     exposure: dict[str, list[dict[str, Any]]] = {}
     for r in resources:
         extra: dict[str, Any] = {}
-        groups = targets(r, ["vpc_security_group_ids", "security_groups", "security_group_ids", "security_group_id"],
-                         "aws_security_group")
+        groups = targets(
+            r,
+            ["vpc_security_group_ids", "security_groups", "security_group_ids", "security_group_id"],
+            "aws_security_group",
+        )
         if groups:
             extra["security_group_addresses"] = groups
         boundary, kind = boundary_of(r)
@@ -441,8 +508,11 @@ def build_terraform_facts(
                 statements += policy_statements(inline.get("policy"))
         if statements:
             extra["policy_statements"] = statements
-        if r["type"] in ("aws_iam_user_policy_attachment", "aws_iam_role_policy_attachment",
-                         "aws_iam_group_policy_attachment") and r["after"].get("policy_arn"):
+        if r["type"] in (
+            "aws_iam_user_policy_attachment",
+            "aws_iam_role_policy_attachment",
+            "aws_iam_group_policy_attachment",
+        ) and r["after"].get("policy_arn"):
             extra["managed_policy_arn"] = r["after"]["policy_arn"]
         if r["type"] == "aws_iam_role_policy" and r["after"].get("role"):
             extra["policy_for_role"] = targets(r, ["role"], "aws_iam_role")
@@ -452,15 +522,20 @@ def build_terraform_facts(
                 extra["role_addresses"] = roles
         if r["type"] == "aws_iam_role":
             extra["grant_policy_addresses"] = [
-                p["address"] for p in resources
+                p["address"]
+                for p in resources
                 if p["type"] == "aws_iam_role_policy" and r["address"] in targets(p, ["role"], "aws_iam_role")
             ]
         if r["type"] == "aws_vpc":
             extra["has_flow_log"] = any(
                 r["address"] in targets(f, ["vpc_id", "subnet_id"], "aws_vpc")
-                or any(v == r["address"] for sub in targets(f, ["subnet_id"], "aws_subnet")
-                       for v in targets(by_address[sub], ["vpc_id"], "aws_vpc"))
-                for f in resources if f["type"] == "aws_flow_log"
+                or any(
+                    v == r["address"]
+                    for sub in targets(f, ["subnet_id"], "aws_subnet")
+                    for v in targets(by_address[sub], ["vpc_id"], "aws_vpc")
+                )
+                for f in resources
+                if f["type"] == "aws_flow_log"
             )
         # Which security groups admit the internet, and to a reachable resource?
         world = [rule for g in groups for rule in rules_by_group.get(g, []) if _is_world(rule)]
@@ -474,8 +549,12 @@ def build_terraform_facts(
         if reachable and world:
             exposure[r["address"]] = world
             extra["internet_exposed"] = True
-            extra["internet_ports"] = sorted({f"{x['from_port']}-{x['to_port']}" if x["from_port"] != x["to_port"]
-                                              else str(x["from_port"]) for x in world})
+            extra["internet_ports"] = sorted(
+                {
+                    f"{x['from_port']}-{x['to_port']}" if x["from_port"] != x["to_port"] else str(x["from_port"])
+                    for x in world
+                }
+            )
         derived[r["address"]] = extra
 
     # -- nodes ------------------------------------------------------------------------
@@ -484,15 +563,20 @@ def build_terraform_facts(
     for r in resources:
         after = r["after"]
         node = FactNode(
-            id=new_fact_node_id(), run_id=run_id, application_id=application_id,
-            node_type=_node_type(r["type"]), name=r["address"],
+            id=new_fact_node_id(),
+            run_id=run_id,
+            application_id=application_id,
+            node_type=_node_type(r["type"]),
+            name=r["address"],
             attributes={
-                "resource_type": r["type"], "provider": r["provider"],
+                "resource_type": r["type"],
+                "provider": r["provider"],
                 **_scalars(after),
                 "config": {k: v for k, v in after.items() if k != "tags_all"},
                 **derived[r["address"]],
             },
-            source_ref=source_ref, discovered_at=now,
+            source_ref=source_ref,
+            discovered_at=now,
         )
         nodes.append(node)
         node_of[r["address"]] = node
@@ -500,22 +584,42 @@ def build_terraform_facts(
     edges: list[FactEdge] = []
 
     def edge(src: FactNode, dst: FactNode, label: str, **attributes: Any) -> None:
-        edges.append(FactEdge(id=new_fact_edge_id(), run_id=run_id, application_id=application_id,
-                              source_node_id=src.id, target_node_id=dst.id, edge_type="data_flow", label=label,
-                              attributes=attributes))
+        edges.append(
+            FactEdge(
+                id=new_fact_edge_id(),
+                run_id=run_id,
+                application_id=application_id,
+                source_node_id=src.id,
+                target_node_id=dst.id,
+                edge_type="data_flow",
+                label=label,
+                attributes=attributes,
+            )
+        )
 
     internet: FactNode | None = None
     for address, world in exposure.items():
         if internet is None:
             internet = FactNode(
-                id=new_fact_node_id(), run_id=run_id, application_id=application_id, node_type="external_entity",
-                name="Internet", attributes={"trust_boundary": INTERNET_BOUNDARY, "note": "Untrusted clients"},
-                source_ref=source_ref, discovered_at=now,
+                id=new_fact_node_id(),
+                run_id=run_id,
+                application_id=application_id,
+                node_type="external_entity",
+                name="Internet",
+                attributes={"trust_boundary": INTERNET_BOUNDARY, "note": "Untrusted clients"},
+                source_ref=source_ref,
+                discovered_at=now,
             )
             nodes.append(internet)
         label, encrypted = _port_label(world)
-        edge(internet, node_of[address], label, protocol=label.split("/", 1)[0], encrypted=encrypted,
-             via="security group admitting 0.0.0.0/0")
+        edge(
+            internet,
+            node_of[address],
+            label,
+            protocol=label.split("/", 1)[0],
+            encrypted=encrypted,
+            via="security group admitting 0.0.0.0/0",
+        )
 
     # Load balancer -> target group, through listeners and listener rules.
     listener_lb: dict[str, str] = {}
@@ -526,15 +630,25 @@ def build_terraform_facts(
     for r in resources:
         if r["type"] in ("aws_lb_listener", "aws_alb_listener", "aws_lb_listener_rule", "aws_alb_listener_rule"):
             lb = listener_lb.get(r["address"]) or next(
-                (listener_lb[x] for x in targets(r, ["listener_arn"], "aws_lb_listener", "aws_alb_listener")
-                 if x in listener_lb), None)
+                (
+                    listener_lb[x]
+                    for x in targets(r, ["listener_arn"], "aws_lb_listener", "aws_alb_listener")
+                    if x in listener_lb
+                ),
+                None,
+            )
             if lb is None:
                 continue
             protocol = str(r["after"].get("protocol") or listener_protocol(r, listener_lb, by_address, targets)).upper()
             for group in targets(r, ["target_group_arn"], "aws_lb_target_group", "aws_alb_target_group"):
-                edge(node_of[lb], node_of[group], protocol.lower() or "http", protocol=protocol.lower() or "http",
-                     encrypted=protocol in ("HTTPS", "TLS", "SSL") or (None if not protocol else False),
-                     via=f"listener {r['address']}")
+                edge(
+                    node_of[lb],
+                    node_of[group],
+                    protocol.lower() or "http",
+                    protocol=protocol.lower() or "http",
+                    encrypted=protocol in ("HTTPS", "TLS", "SSL") or (None if not protocol else False),
+                    via=f"listener {r['address']}",
+                )
     for r in resources:
         if r["type"] == "aws_lb_target_group_attachment":
             for group in targets(r, ["target_group_arn"], "aws_lb_target_group", "aws_alb_target_group"):
@@ -544,9 +658,16 @@ def build_terraform_facts(
     # Security group -> security group ingress: members of the source group reach members of this one.
     members: dict[str, list[str]] = {}
     for address, extra in derived.items():
-        if by_address[address]["type"] in ("aws_instance", "aws_lb", "aws_alb", "aws_db_instance",
-                                           "aws_elasticache_replication_group", "aws_elasticache_cluster",
-                                           "aws_efs_mount_target", "aws_rds_cluster_instance"):
+        if by_address[address]["type"] in (
+            "aws_instance",
+            "aws_lb",
+            "aws_alb",
+            "aws_db_instance",
+            "aws_elasticache_replication_group",
+            "aws_elasticache_cluster",
+            "aws_efs_mount_target",
+            "aws_rds_cluster_instance",
+        ):
             for group in extra.get("security_group_addresses", []):
                 members.setdefault(group, []).append(address)
     seen_pairs: set[tuple[str, str]] = set()
@@ -558,8 +679,14 @@ def build_terraform_facts(
                         if src != dst and (src, dst) not in seen_pairs:
                             seen_pairs.add((src, dst))
                             label, encrypted = _port_label([rule])
-                            edge(node_of[src], node_of[dst], label, protocol=label.split("/", 1)[0],
-                                 encrypted=encrypted, via=f"security group {group} ingress")
+                            edge(
+                                node_of[src],
+                                node_of[dst],
+                                label,
+                                protocol=label.split("/", 1)[0],
+                                encrypted=encrypted,
+                                via=f"security group {group} ingress",
+                            )
 
     # Instance -> S3 bucket where the instance's role can use S3.
     role_policies = _role_grants(resources, resolver, derived)
@@ -568,12 +695,20 @@ def build_terraform_facts(
             continue
         for role in _instance_roles(r, resolver, by_address):
             for bucket in _reachable_buckets(role_policies.get(role, []), resources):
-                edge(node_of[r["address"]], node_of[bucket], "s3 (IAM grant)", protocol="https", encrypted=True,
-                     via=f"role {role}")
+                edge(
+                    node_of[r["address"]],
+                    node_of[bucket],
+                    "s3 (IAM grant)",
+                    protocol="https",
+                    encrypted=True,
+                    via=f"role {role}",
+                )
     return nodes, edges
 
 
-def listener_protocol(resource: dict[str, Any], listener_lb: dict[str, str], by_address: dict[str, Any], targets: Any) -> str:
+def listener_protocol(
+    resource: dict[str, Any], listener_lb: dict[str, str], by_address: dict[str, Any], targets: Any
+) -> str:
     """The protocol of the listener a rule belongs to (a rule has none of its own)."""
     for listener in targets(resource, ["listener_arn"], "aws_lb_listener", "aws_alb_listener"):
         return str(by_address[listener]["after"].get("protocol") or "")
@@ -605,7 +740,9 @@ def _reachable_buckets(statements: list[dict[str, Any]], resources: list[dict[st
     buckets = [r for r in resources if r["type"] == "aws_s3_bucket"]
     out = []
     for statement in statements:
-        if statement["effect"] != "Allow" or not any(a == "*" or a.lower().startswith("s3:") for a in statement["actions"]):
+        if statement["effect"] != "Allow" or not any(
+            a == "*" or a.lower().startswith("s3:") for a in statement["actions"]
+        ):
             continue
         for bucket in buckets:
             name = str(bucket["after"].get("bucket") or bucket["after"].get("id") or "")

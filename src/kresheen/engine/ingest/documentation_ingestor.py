@@ -43,10 +43,7 @@ class DocumentationIngestor(SourceIngestor):
             attributes={
                 "filename": filename,
                 "content": content[:_CONTENT_PREVIEW_CHARS],
-                "note": (
-                    "supplementary documentation; stored for reference, not parsed by the "
-                    "rule-based analysis"
-                ),
+                "note": ("supplementary documentation; stored for reference, not parsed by the rule-based analysis"),
             },
             source_ref="documentation",
             discovered_at=datetime.now(UTC),

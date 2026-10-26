@@ -52,9 +52,15 @@ def test_owner_cannot_add_a_case_variant_of_an_existing_user(tmp_path):
     repo.save_user(owner)
     repo.save_user(_user("USER-2", "bob@example.com"))
     client = TestClient(create_app(db_url=db_url))
-    csrf = client.post("/api/auth/login", json={"email": "owner@example.com", "password": _PASSWORD}).json()["csrf_token"]
-    response = client.post("/api/users", json={"email": "BOB@example.com", "role": "member"}, headers={"X-CSRF-Token": csrf})
+    csrf = client.post("/api/auth/login", json={"email": "owner@example.com", "password": _PASSWORD}).json()[
+        "csrf_token"
+    ]
+    response = client.post(
+        "/api/users", json={"email": "BOB@example.com", "role": "member"}, headers={"X-CSRF-Token": csrf}
+    )
     assert response.status_code == 409
-    created = client.post("/api/users", json={"email": " New.Person@Example.com ", "role": "member"}, headers={"X-CSRF-Token": csrf})
+    created = client.post(
+        "/api/users", json={"email": " New.Person@Example.com ", "role": "member"}, headers={"X-CSRF-Token": csrf}
+    )
     assert created.status_code == 200, created.text
     assert created.json()["email"] == "new.person@example.com"

@@ -159,7 +159,10 @@ def _step(level: int, by: int = 1) -> int:
 def _evidence(findings: list[Finding], scope: str) -> list[ThreatEvidence]:
     return [
         ThreatEvidence(
-            finding_id=f.id, title=f.title, severity=f.severity.value, scope=scope  # type: ignore[arg-type]
+            finding_id=f.id,
+            title=f.title,
+            severity=f.severity.value,
+            scope=scope,  # type: ignore[arg-type]
         )
         for f in findings
     ]
@@ -292,9 +295,7 @@ def assess_threats(
             exposed = False
             exposure_asserted = False
 
-        full_control, partial_control = _control_coverage(
-            threat, element_by_id, flow_by_id, incoming_by_target
-        )
+        full_control, partial_control = _control_coverage(threat, element_by_id, flow_by_id, incoming_by_target)
 
         likely = LIKELIHOOD_ORDER.index("likely")
         if exposed and not full_control:
@@ -340,7 +341,9 @@ def assess_threats(
             if exposed and (exploited or high_epss):
                 level = _step(level)
                 if exploited:
-                    factors.append(f"{len(exploited)} supporting finding(s) are known to be actively exploited (CISA KEV)")
+                    factors.append(
+                        f"{len(exploited)} supporting finding(s) are known to be actively exploited (CISA KEV)"
+                    )
                 if high_epss:
                     top_epss = max(f.evidence.epss_score for f in high_epss if f.evidence.epss_score is not None)
                     factors.append(f"exploitation probability (EPSS) as high as {top_epss:.0%} on a supporting finding")

@@ -11,8 +11,22 @@ const PATH: AttackPathOut = {
   risk_factors: ["reaches an asset tagged 'PII'", "no hop on this path requires authentication"],
   boundary_crossings: 1,
   hops: [
-    { from_name: "Customer", to_name: "Web", flow_label: "HTTPS", crosses_boundary: true, authenticated: null, encrypted: true },
-    { from_name: "Web", to_name: "Orders DB", flow_label: "SQL", crosses_boundary: false, authenticated: null, encrypted: null },
+    {
+      from_name: "Customer",
+      to_name: "Web",
+      flow_label: "HTTPS",
+      crosses_boundary: true,
+      authenticated: null,
+      encrypted: true,
+    },
+    {
+      from_name: "Web",
+      to_name: "Orders DB",
+      flow_label: "SQL",
+      crosses_boundary: false,
+      authenticated: null,
+      encrypted: null,
+    },
   ],
 };
 

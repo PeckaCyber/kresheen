@@ -11,7 +11,9 @@ const emptyRollup = { application_count: 0, worst_severity: null, finding_count:
 
 describe("Onboarding", () => {
   it("offers only inputs the engine reads, and says documents are not analysed", () => {
-    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy={null} sampleError={null} />);
+    render(
+      <Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy={null} sampleError={null} />,
+    );
 
     expect(screen.getByText("Upload infrastructure files")).toBeInTheDocument();
     expect(screen.getByText("Connect a GitHub repository")).toBeInTheDocument();
@@ -25,7 +27,9 @@ describe("Onboarding", () => {
     const onPick = vi.fn();
     const onSample = vi.fn();
     const onDescribe = vi.fn();
-    render(<Onboarding onPick={onPick} onDescribe={onDescribe} onSample={onSample} sampleBusy={null} sampleError={null} />);
+    render(
+      <Onboarding onPick={onPick} onDescribe={onDescribe} onSample={onSample} sampleBusy={null} sampleError={null} />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /Start drawing/ }));
     expect(onPick).toHaveBeenCalledWith("blank");
@@ -42,7 +46,9 @@ describe("Onboarding", () => {
   });
 
   it("shows a sample error and disables every sample while one is being created", () => {
-    render(<Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy="aws" sampleError="Nope" />);
+    render(
+      <Onboarding onPick={() => {}} onDescribe={() => {}} onSample={() => {}} sampleBusy="aws" sampleError="Nope" />,
+    );
     expect(screen.getByText("Nope")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Creating the sample.*AWS app/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Open sample: Kubernetes app" })).toBeDisabled();

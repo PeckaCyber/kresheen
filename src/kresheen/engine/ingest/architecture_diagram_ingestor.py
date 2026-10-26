@@ -64,8 +64,7 @@ class ArchitectureDiagramIngestor(SourceIngestor):
                 attributes={
                     "filename": filename,
                     "note": (
-                        "uploaded architecture diagram in a format this version cannot read; "
-                        "stored as a reference only"
+                        "uploaded architecture diagram in a format this version cannot read; stored as a reference only"
                     ),
                     "reason": records[0].get("reason", "") if records else "",
                 },

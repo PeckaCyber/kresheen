@@ -16,22 +16,31 @@ from kresheen.engine.threats.config_rules_aws import AWS_CONFIG_RULES
 
 
 def _plan(*changes: dict, configuration: dict | None = None) -> str:
-    plan: dict = {"resource_changes": [{"actions": None, **c, "change": {"actions": ["create"], **c.get("change", {})}}
-                                       for c in changes]}
+    plan: dict = {
+        "resource_changes": [
+            {"actions": None, **c, "change": {"actions": ["create"], **c.get("change", {})}} for c in changes
+        ]
+    }
     if configuration:
         plan["configuration"] = configuration
     return json.dumps(plan)
 
 
 def _r(rtype: str, name: str, after: dict, **extra) -> dict:
-    return {"address": f"{rtype}.{name}", "type": rtype, "name": name, "provider_name": "aws",
-            "change": {"after": after, **extra}}
+    return {
+        "address": f"{rtype}.{name}",
+        "type": rtype,
+        "name": name,
+        "provider_name": "aws",
+        "change": {"after": after, **extra},
+    }
 
 
 def _facts(*changes: dict, configuration: dict | None = None):
     ingestor = ManifestUploadIngestor()
-    nodes, edges = ingestor.normalize(ingestor.parse(_plan(*changes, configuration=configuration)),
-                                      run_id="R", application_id="A")
+    nodes, edges = ingestor.normalize(
+        ingestor.parse(_plan(*changes, configuration=configuration)), run_id="R", application_id="A"
+    )
     return nodes, edges, {n.name: n for n in nodes}
 
 
@@ -45,8 +54,14 @@ def _sg(name, ingress, sg_id="sg-1", vpc="vpc-1"):
 
 
 def _rule(port_from, port_to=None, cidr="0.0.0.0/0", protocol="tcp", description="", groups=None):
-    return {"from_port": port_from, "to_port": port_to if port_to is not None else port_from, "protocol": protocol,
-            "cidr_blocks": [cidr] if cidr else [], "security_groups": groups or [], "description": description}
+    return {
+        "from_port": port_from,
+        "to_port": port_to if port_to is not None else port_from,
+        "protocol": protocol,
+        "cidr_blocks": [cidr] if cidr else [],
+        "security_groups": groups or [],
+        "description": description,
+    }
 
 
 # -- redaction -----------------------------------------------------------------------------------
@@ -54,9 +69,18 @@ def _rule(port_from, port_to=None, cidr="0.0.0.0/0", protocol="tcp", description
 
 def test_sensitive_values_and_credential_named_keys_are_redacted_before_storage():
     _, _, by = _facts(
-        _r("aws_db_instance", "db", {"id": "db-1", "username": "admin", "password": "hunter2-real", "engine": "postgres",
-                                     "master_user_secret_arn": "arn:x"},
-           after_sensitive={"username": True}),
+        _r(
+            "aws_db_instance",
+            "db",
+            {
+                "id": "db-1",
+                "username": "admin",
+                "password": "hunter2-real",
+                "engine": "postgres",
+                "master_user_secret_arn": "arn:x",
+            },
+            after_sensitive={"username": True},
+        ),
     )
     attrs = by["aws_db_instance.db"].attributes
     stored = json.dumps(attrs)
@@ -85,8 +109,9 @@ def test_plan_with_wrong_types_is_refused_with_a_clear_error():
 
 def test_user_data_is_decoded_redacted_and_flagged_without_storing_the_secret():
     script = "#!/bin/bash\nexport DB_PASSWORD=supersecret123\nyum install -y docker\n"
-    _, _, by = _facts(_r("aws_instance", "web", {
-        "id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()}))
+    _, _, by = _facts(
+        _r("aws_instance", "web", {"id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()})
+    )
     node = by["aws_instance.web"]
     assert node.attributes["user_data_has_secrets"] is True
     assert "supersecret123" not in json.dumps(node.attributes)
@@ -96,14 +121,18 @@ def test_user_data_is_decoded_redacted_and_flagged_without_storing_the_secret():
 
 def test_credentials_embedded_in_a_url_in_user_data_are_redacted_and_flagged():
     script = "git clone https://deploy:hunter2pass@git.example.com/org/repo\n"
-    _, _, by = _facts(_r("aws_instance", "web", {"id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()}))
+    _, _, by = _facts(
+        _r("aws_instance", "web", {"id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()})
+    )
     node = by["aws_instance.web"]
     assert node.attributes["user_data_has_secrets"] is True and "hunter2pass" not in json.dumps(node.attributes)
 
 
 def test_user_data_that_fetches_a_secret_is_not_flagged_as_embedding_one():
     script = "DB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id db)\nTOKEN=${var_token}\nDEBUG=false\n"
-    _, _, by = _facts(_r("aws_instance", "web", {"id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()}))
+    _, _, by = _facts(
+        _r("aws_instance", "web", {"id": "i-1", "user_data_base64": base64.b64encode(script.encode()).decode()})
+    )
     assert "user_data_has_secrets" not in by["aws_instance.web"].attributes
 
 
@@ -136,9 +165,21 @@ def test_internet_edge_needs_a_public_host_and_a_security_group_that_admits_the_
         _r("aws_vpc", "v", {"id": "vpc-1", "cidr_block": "10.0.0.0/16"}),
         _sg("web", [_rule(443), _rule(22)]),
         _sg("closed", [_rule(3306, cidr="10.0.0.0/16")], sg_id="sg-2"),
-        _r("aws_instance", "public", {"id": "i-1", "associate_public_ip_address": True, "vpc_security_group_ids": ["sg-1"]}),
-        _r("aws_instance", "private", {"id": "i-2", "associate_public_ip_address": False, "vpc_security_group_ids": ["sg-1"]}),
-        _r("aws_instance", "shut", {"id": "i-3", "associate_public_ip_address": True, "vpc_security_group_ids": ["sg-2"]}),
+        _r(
+            "aws_instance",
+            "public",
+            {"id": "i-1", "associate_public_ip_address": True, "vpc_security_group_ids": ["sg-1"]},
+        ),
+        _r(
+            "aws_instance",
+            "private",
+            {"id": "i-2", "associate_public_ip_address": False, "vpc_security_group_ids": ["sg-1"]},
+        ),
+        _r(
+            "aws_instance",
+            "shut",
+            {"id": "i-3", "associate_public_ip_address": True, "vpc_security_group_ids": ["sg-2"]},
+        ),
     )
     targets = {by_id.name for e in edges for by_id in nodes if by_id.id == e.target_node_id}
     assert targets == {"aws_instance.public"}
@@ -164,22 +205,47 @@ def test_load_balancer_reaches_target_groups_through_listeners_and_rules_nested_
         _r("aws_lb", "front", {"id": "lb1", "arn": "arn:lb1", "internal": True}),
         _r("aws_lb_target_group", "app", {"id": "tg1", "arn": "arn:tg1"}),
         _r("aws_lb_target_group", "api", {"id": "tg2", "arn": "arn:tg2"}),
-        _r("aws_lb_listener", "https", {"id": "l1", "arn": "arn:l1", "load_balancer_arn": "arn:lb1", "protocol": "HTTPS",
-                                        "default_action": [{"type": "forward", "target_group_arn": "arn:tg1"}]}),
-        _r("aws_lb_listener_rule", "api", {"id": "r1", "listener_arn": "arn:l1",
-                                            "action": [{"type": "forward", "target_group_arn": "arn:tg2"}]}),
+        _r(
+            "aws_lb_listener",
+            "https",
+            {
+                "id": "l1",
+                "arn": "arn:l1",
+                "load_balancer_arn": "arn:lb1",
+                "protocol": "HTTPS",
+                "default_action": [{"type": "forward", "target_group_arn": "arn:tg1"}],
+            },
+        ),
+        _r(
+            "aws_lb_listener_rule",
+            "api",
+            {"id": "r1", "listener_arn": "arn:l1", "action": [{"type": "forward", "target_group_arn": "arn:tg2"}]},
+        ),
     )
     names = {n.id: n.name for n in nodes}
     assert {(names[e.source_node_id], names[e.target_node_id]) for e in edges} == {
-        ("aws_lb.front", "aws_lb_target_group.app"), ("aws_lb.front", "aws_lb_target_group.api")}
+        ("aws_lb.front", "aws_lb_target_group.app"),
+        ("aws_lb.front", "aws_lb_target_group.api"),
+    }
     assert all(e.attributes["encrypted"] is True for e in edges)
 
 
 def test_a_real_plan_resolves_unknown_ids_through_the_configuration_block():
     """A `terraform plan` leaves ids unknown, so the relationship is only in `configuration`."""
-    configuration = {"root_module": {"resources": [
-        {"address": "aws_instance.web", "expressions": {
-            "vpc_security_group_ids": {"references": ["aws_security_group.web.id", "aws_security_group.web"]}}}]}}
+    configuration = {
+        "root_module": {
+            "resources": [
+                {
+                    "address": "aws_instance.web",
+                    "expressions": {
+                        "vpc_security_group_ids": {
+                            "references": ["aws_security_group.web.id", "aws_security_group.web"]
+                        }
+                    },
+                }
+            ]
+        }
+    }
     _, edges, _ = _facts(
         _sg("web", [_rule(80)], sg_id=""),  # no id in `after`, as in a plan
         _r("aws_instance", "web", {"associate_public_ip_address": True}),
@@ -197,14 +263,25 @@ def test_security_group_ingress_from_another_group_becomes_a_flow_between_member
     )
     names = {n.id: n.name for n in nodes}
     assert [(names[e.source_node_id], names[e.target_node_id], e.label) for e in edges] == [
-        ("aws_instance.app", "aws_db_instance.db", "tcp/5432")]
+        ("aws_instance.app", "aws_db_instance.db", "tcp/5432")
+    ]
 
 
 def test_a_standalone_security_group_rule_is_folded_into_its_group():
     _, _, by = _facts(
         _sg("g", [], sg_id="sg-1"),
-        _r("aws_security_group_rule", "ssh", {"type": "ingress", "security_group_id": "sg-1", "from_port": 22, "to_port": 22,
-                                              "protocol": "tcp", "cidr_blocks": ["0.0.0.0/0"]}),
+        _r(
+            "aws_security_group_rule",
+            "ssh",
+            {
+                "type": "ingress",
+                "security_group_id": "sg-1",
+                "from_port": 22,
+                "to_port": 22,
+                "protocol": "tcp",
+                "cidr_blocks": ["0.0.0.0/0"],
+            },
+        ),
     )
     assert by["aws_security_group.g"].attributes["ingress_rules"][0]["from_port"] == 22
 
@@ -213,7 +290,12 @@ def test_a_standalone_security_group_rule_is_folded_into_its_group():
 
 
 def _bucket_policy(principal, bucket="quay-images", condition=None):
-    statement = {"Effect": "Allow", "Principal": principal, "Action": "s3:GetObject", "Resource": f"arn:aws:s3:::{bucket}/*"}
+    statement = {
+        "Effect": "Allow",
+        "Principal": principal,
+        "Action": "s3:GetObject",
+        "Resource": f"arn:aws:s3:::{bucket}/*",
+    }
     if condition:
         statement["Condition"] = condition
     return _r("aws_s3_bucket_policy", "p", {"bucket": bucket, "policy": json.dumps({"Statement": [statement]})})
@@ -235,8 +317,13 @@ def test_named_principal_or_conditioned_bucket_policy_is_not_anonymous():
 
 
 def test_public_access_block_only_fires_when_a_flag_is_explicitly_false():
-    on = {"bucket": "b", "block_public_acls": True, "block_public_policy": True, "ignore_public_acls": True,
-          "restrict_public_buckets": True}
+    on = {
+        "bucket": "b",
+        "block_public_acls": True,
+        "block_public_policy": True,
+        "ignore_public_acls": True,
+        "restrict_public_buckets": True,
+    }
     assert _hits(*_facts(_r("aws_s3_bucket_public_access_block", "x", on))[:2], "SC-AWS-T05") == []
     off = {**on, "block_public_policy": False}
     hits = _hits(*_facts(_r("aws_s3_bucket_public_access_block", "x", off))[:2], "SC-AWS-T05")
@@ -254,8 +341,13 @@ def test_public_database_is_flagged_only_when_publicly_accessible_is_true():
 def test_kubernetes_facts_are_unaffected_by_the_aws_rules():
     from kresheen.engine.ingest.k8s_facts import build_k8s_facts
 
-    manifest = [{"kind": "Deployment", "metadata": {"name": "web", "namespace": "prod"},
-                 "spec": {"template": {"spec": {"containers": [{"name": "c", "image": "nginx"}]}}}}]
+    manifest = [
+        {
+            "kind": "Deployment",
+            "metadata": {"name": "web", "namespace": "prod"},
+            "spec": {"template": {"spec": {"containers": [{"name": "c", "image": "nginx"}]}}},
+        }
+    ]
     nodes, edges = build_k8s_facts(manifest, run_id="R", application_id="A")
     context = FactContext(nodes, edges)
     assert all(rule.detect(context) == [] for rule in AWS_CONFIG_RULES)

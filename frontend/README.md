@@ -25,14 +25,14 @@ kresheen serve
 
 ## Build and test
 
-| Command | What it does |
-|---|---|
-| `npm run build` | Type-check, then build to `dist/` |
-| `npm run preview` | Serve the built `dist/` (used by the end-to-end tests) |
-| `npm test` | Unit and component tests (Vitest), once |
-| `npm run test:watch` | The same, in watch mode |
-| `npx tsc -b --noEmit` | Type-check only (`npm run lint` does the same) |
-| `npm run e2e` | End-to-end tests (Playwright); they need a running backend, see [e2e/README.md](e2e/README.md) |
+| Command               | What it does                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| `npm run build`       | Type-check, then build to `dist/`                                                              |
+| `npm run preview`     | Serve the built `dist/` (used by the end-to-end tests)                                         |
+| `npm test`            | Unit and component tests (Vitest), once                                                        |
+| `npm run test:watch`  | The same, in watch mode                                                                        |
+| `npx tsc -b --noEmit` | Type-check only (`npm run lint` does the same)                                                 |
+| `npm run e2e`         | End-to-end tests (Playwright); they need a running backend, see [e2e/README.md](e2e/README.md) |
 
 Dependencies are pinned to exact versions. Bump them deliberately, then re-run the build, the tests and the
 end-to-end tests.

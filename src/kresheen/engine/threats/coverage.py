@@ -62,15 +62,21 @@ def _ingress_gaps(fact_nodes: list[FactNode], ctx: FactContext, fact_edges: list
         for backend in backends:
             svc = service_by_ns_name.get((ingress.attributes["namespace"], backend))
             if svc is None:
-                gaps.append(CoverageGap(
-                    "ingress", ingress.name,
-                    f"names backend service '{backend}', not found in namespace {ingress.attributes['namespace']}",
-                ))
+                gaps.append(
+                    CoverageGap(
+                        "ingress",
+                        ingress.name,
+                        f"names backend service '{backend}', not found in namespace {ingress.attributes['namespace']}",
+                    )
+                )
             elif svc.id not in services_with_targets:
-                gaps.append(CoverageGap(
-                    "ingress", ingress.name,
-                    f"routes to Service {backend}, but its selector matches no workload, so no rule evaluated it",
-                ))
+                gaps.append(
+                    CoverageGap(
+                        "ingress",
+                        ingress.name,
+                        f"routes to Service {backend}, but its selector matches no workload, so no rule evaluated it",
+                    )
+                )
     return gaps
 
 
@@ -86,15 +92,21 @@ def _rbac_binding_gaps(ctx: FactContext) -> list[CoverageGap]:
         for subject in subjects:
             kind = subject.get("kind")
             if kind != "ServiceAccount":
-                gaps.append(CoverageGap(
-                    "rbac_binding", binding.name,
-                    f"grants a role to a {kind or 'unknown'} subject; config rules only evaluate ServiceAccount subjects",
-                ))
+                gaps.append(
+                    CoverageGap(
+                        "rbac_binding",
+                        binding.name,
+                        f"grants a role to a {kind or 'unknown'} subject; config rules only evaluate ServiceAccount subjects",
+                    )
+                )
                 continue
             ns = subject.get("namespace") or binding.attributes.get("binding_namespace")
             if (subject.get("name"), ns) not in workload_sa_ns:
-                gaps.append(CoverageGap(
-                    "rbac_binding", binding.name,
-                    f"grants a role to ServiceAccount {subject.get('name')} ({ns}), which no workload in the diagram uses",
-                ))
+                gaps.append(
+                    CoverageGap(
+                        "rbac_binding",
+                        binding.name,
+                        f"grants a role to ServiceAccount {subject.get('name')} ({ns}), which no workload in the diagram uses",
+                    )
+                )
     return gaps

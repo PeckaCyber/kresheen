@@ -44,9 +44,7 @@ def build_run_dfd(
         # Manual assets are user-authored, never produced by a rule check --
         # no Finding's asset_id can ever equal one, so skip the lookup
         # rather than run a query guaranteed to return nothing.
-        open_findings = (
-            [] if is_manual else repo.list_findings(run_id=run_id, asset_id=asset.id, status="open")
-        )
+        open_findings = [] if is_manual else repo.list_findings(run_id=run_id, asset_id=asset.id, status="open")
         worst = min((f.severity.value for f in open_findings), key=SEVERITY_ORDER.index, default=None)
         layout = merged.layout_by_key.get(f"{asset.type.value}:{asset.name}") if is_manual else None
         legacy_x = asset.position_x if is_manual else None

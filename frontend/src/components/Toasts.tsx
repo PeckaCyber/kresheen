@@ -44,10 +44,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <ToastContainer position="bottom-end" className="p-3">
         {toasts.map((toast) => (
-          <Toast key={toast.id} show bg={toast.type === "success" ? "success" : "danger"} role="status" aria-live="polite">
-            <Toast.Body className={toast.type === "success" ? "text-white" : "text-white"}>
-              {toast.message}
-            </Toast.Body>
+          <Toast
+            key={toast.id}
+            show
+            bg={toast.type === "success" ? "success" : "danger"}
+            role="status"
+            aria-live="polite"
+          >
+            <Toast.Body className={toast.type === "success" ? "text-white" : "text-white"}>{toast.message}</Toast.Body>
           </Toast>
         ))}
       </ToastContainer>

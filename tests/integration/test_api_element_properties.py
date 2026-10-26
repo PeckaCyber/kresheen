@@ -47,8 +47,9 @@ def test_stating_a_property_adds_a_threat_and_clearing_it_removes_it(tmp_path):
     db = _add(client, app_url, headers, "DB", "data_store")
     assert "STORE-P-01" not in _rule_ids(client, app_url, run)
 
-    saved = _put(client, app_url, run, headers, element_kind="component", element_id=db["id"],
-                 properties={"is_encrypted": False})
+    saved = _put(
+        client, app_url, run, headers, element_kind="component", element_id=db["id"], properties={"is_encrypted": False}
+    )
 
     assert saved.status_code == 200
     assert saved.json() == {"element_key": "data_store:DB", "properties": {"is_encrypted": False}}
@@ -66,12 +67,22 @@ def test_flow_properties_generate_flow_threats_and_show_on_the_edge(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     _application, run, app_url, headers = _blank_model(client, csrf)
     web, db = _add(client, app_url, headers, "Web"), _add(client, app_url, headers, "DB", "data_store")
-    client.post(f"{app_url}/manual-flows", headers=headers,
-                json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"})
+    client.post(
+        f"{app_url}/manual-flows",
+        headers=headers,
+        json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"},
+    )
     flow_id = client.get(f"{app_url}/runs/{run['id']}/dfd").json()["edges"][0]["id"]
 
-    saved = _put(client, app_url, run, headers, element_kind="flow", element_id=flow_id,
-                 properties={"is_encrypted": False, "crosses_public_network": True, "protocol": " HTTP "})
+    saved = _put(
+        client,
+        app_url,
+        run,
+        headers,
+        element_kind="flow",
+        element_id=flow_id,
+        properties={"is_encrypted": False, "crosses_public_network": True, "protocol": " HTTP "},
+    )
 
     assert saved.json()["element_key"] == "flow:Web->DB"
     assert saved.json()["properties"]["protocol"] == "HTTP"
@@ -89,10 +100,11 @@ def test_invalid_requests_are_rejected(tmp_path):
 
     assert _put(client, app_url, run, headers, **body, properties={"is_encrypted": True}).status_code == 422
     assert _put(client, app_url, run, headers, **body, properties={"authenticates_callers": "no"}).status_code == 422
-    assert _put(client, app_url, run, headers, element_kind="component", element_id="nope",
-                properties={}).status_code == 404
-    assert _put(client, app_url, run, headers, element_kind="flow", element_id="nope",
-                properties={}).status_code == 404
+    assert (
+        _put(client, app_url, run, headers, element_kind="component", element_id="nope", properties={}).status_code
+        == 404
+    )
+    assert _put(client, app_url, run, headers, element_kind="flow", element_id="nope", properties={}).status_code == 404
     no_csrf = client.put(f"{app_url}/runs/{run['id']}/element-properties", json={**body, "properties": {}})
     assert no_csrf.status_code == 403
 
@@ -104,8 +116,15 @@ def test_properties_apply_to_scanned_components_and_survive_a_rerun(tmp_path):
     app_url = f"/api/applications/{application['id']}"
     name, component_id = next(iter(_component_ids(client, application, run_1).items()))
 
-    _put(client, app_url, run_1, headers, element_kind="component", element_id=component_id,
-         properties={"runs_privileged": True})
+    _put(
+        client,
+        app_url,
+        run_1,
+        headers,
+        element_kind="component",
+        element_id=component_id,
+        properties={"runs_privileged": True},
+    )
     run_2 = client.post(f"{app_url}/runs", headers=headers).json()
 
     assert "PROC-P-02" in _rule_ids(client, app_url, run_2)
@@ -117,15 +136,28 @@ def test_out_of_scope_hides_generated_threats_but_keeps_manual_ones(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     _application, run, app_url, headers = _blank_model(client, csrf)
     web, db = _add(client, app_url, headers, "Web"), _add(client, app_url, headers, "DB", "data_store")
-    client.post(f"{app_url}/manual-flows", headers=headers,
-                json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"})
-    client.post(f"{app_url}/runs/{run['id']}/manual-threats", headers=headers, json={
-        "element_kind": "component", "element_id": web["id"], "title": "Session theft"})
+    client.post(
+        f"{app_url}/manual-flows",
+        headers=headers,
+        json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"},
+    )
+    client.post(
+        f"{app_url}/runs/{run['id']}/manual-threats",
+        headers=headers,
+        json={"element_kind": "component", "element_id": web["id"], "title": "Session theft"},
+    )
     before = _threats(client, app_url, run)
     assert {t["element_name"] for t in before} >= {"Web", "DB", "Web -> DB"}
 
-    _put(client, app_url, run, headers, element_kind="component", element_id=web["id"],
-         properties={"out_of_scope": True, "out_of_scope_reason": "Owned by another team"})
+    _put(
+        client,
+        app_url,
+        run,
+        headers,
+        element_kind="component",
+        element_id=web["id"],
+        properties={"out_of_scope": True, "out_of_scope_reason": "Owned by another team"},
+    )
 
     after = _threats(client, app_url, run)
     web_threats = [t for t in after if t["element_name"] == "Web"]
@@ -144,11 +176,21 @@ def test_properties_follow_a_rename(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     _application, run, app_url, headers = _blank_model(client, csrf)
     web, db = _add(client, app_url, headers, "Web"), _add(client, app_url, headers, "DB", "data_store")
-    client.post(f"{app_url}/manual-flows", headers=headers,
-                json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"})
+    client.post(
+        f"{app_url}/manual-flows",
+        headers=headers,
+        json={"source_ref": f"asset:{web['id']}", "target_ref": f"asset:{db['id']}"},
+    )
     flow_id = client.get(f"{app_url}/runs/{run['id']}/dfd").json()["edges"][0]["id"]
-    _put(client, app_url, run, headers, element_kind="component", element_id=web["id"],
-         properties={"runs_privileged": True})
+    _put(
+        client,
+        app_url,
+        run,
+        headers,
+        element_kind="component",
+        element_id=web["id"],
+        properties={"runs_privileged": True},
+    )
     _put(client, app_url, run, headers, element_kind="flow", element_id=flow_id, properties={"authenticated": False})
 
     client.patch(f"{app_url}/manual-assets/{web['id']}", headers=headers, json={"name": "Storefront"})
@@ -165,8 +207,15 @@ def test_properties_are_deleted_with_their_application(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     application, run, app_url, headers = _blank_model(client, csrf)
     web = _add(client, app_url, headers, "Web")
-    _put(client, app_url, run, headers, element_kind="component", element_id=web["id"],
-         properties={"is_web_application": True})
+    _put(
+        client,
+        app_url,
+        run,
+        headers,
+        element_kind="component",
+        element_id=web["id"],
+        properties={"is_web_application": True},
+    )
     repo = SQLRepository(f"sqlite:///{tmp_path}/test.db")
     assert len(repo.list_element_properties(application["id"])) == 1
 

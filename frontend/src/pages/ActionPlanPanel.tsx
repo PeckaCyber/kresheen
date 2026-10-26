@@ -132,7 +132,8 @@ export function ActionPlanPanel({
             {isExpanded && (
               <div className="small text-muted mt-1">
                 {action.elements.join(", ")}
-                {action.element_count > action.elements.length && ` and ${action.element_count - action.elements.length} more`}
+                {action.element_count > action.elements.length &&
+                  ` and ${action.element_count - action.elements.length} more`}
                 {action.cwe_refs.length > 0 && <div>{action.cwe_refs.join(", ")}</div>}
               </div>
             )}
@@ -158,7 +159,12 @@ export function ActionPlanPanel({
             <RiskBadge level={action.max_risk}>{action.max_risk}</RiskBadge>
           </td>
           <td>
-            <Badge bg={action.basis === "observed" ? "danger" : action.basis === "specific" ? "primary" : "light"} text={action.basis === "generic" ? "muted" : undefined} className="fw-normal" title={BASIS_HINTS[action.basis]}>
+            <Badge
+              bg={action.basis === "observed" ? "danger" : action.basis === "specific" ? "primary" : "light"}
+              text={action.basis === "generic" ? "muted" : undefined}
+              className="fw-normal"
+              title={BASIS_HINTS[action.basis]}
+            >
               {action.basis}
             </Badge>
           </td>
@@ -189,7 +195,11 @@ export function ActionPlanPanel({
                   onChange={(e) => setDeclining({ id: action.id, reason: e.target.value })}
                   aria-label="Reason for declining this fix"
                 />
-                <Button size="sm" disabled={!declining.reason.trim()} onClick={() => void setStatus(action, "wont_do", declining.reason)}>
+                <Button
+                  size="sm"
+                  disabled={!declining.reason.trim()}
+                  onClick={() => void setStatus(action, "wont_do", declining.reason)}
+                >
                   Save
                 </Button>
                 <Button size="sm" variant="outline-secondary" onClick={() => setDeclining(null)}>

@@ -43,16 +43,28 @@ def _dfd(assets: list[Asset], edges: list[dict] | None = None) -> MergedDfd:
 
 def _threat(key: str, title: str = "A threat", severity: str = "medium") -> Threat:
     return Threat(
-        key=key, rule_id=key.split("|")[0], element_kind="component", element_id="ignored",
-        element_name="ignored", element_type="process", title=title, description="d",
-        severity=severity, mitigations=[],
+        key=key,
+        rule_id=key.split("|")[0],
+        element_kind="component",
+        element_id="ignored",
+        element_name="ignored",
+        element_type="process",
+        title=title,
+        description="d",
+        severity=severity,
+        mitigations=[],
     )
 
 
 def _finding(asset_id: str, title: str = "A finding", stride: str | None = "Tampering") -> Finding:
     return Finding.create(
-        domain=Domain.THREAT_MODEL, source_tool="kresheen", title=title, description="d",
-        severity=Severity.MEDIUM, asset_id=asset_id, evidence=Evidence(stride_category=stride),
+        domain=Domain.THREAT_MODEL,
+        source_tool="kresheen",
+        title=title,
+        description="d",
+        severity=Severity.MEDIUM,
+        asset_id=asset_id,
+        evidence=Evidence(stride_category=stride),
     )
 
 
@@ -131,8 +143,13 @@ def test_finding_identity_key_falls_back_to_raw_asset_id_when_unresolvable():
 
 def test_finding_identity_key_prefers_cve_over_stride_and_title():
     finding = Finding.create(
-        domain=Domain.VULNERABILITY, source_tool="grype", title="lodash vuln", description="d",
-        severity=Severity.HIGH, asset_id="A-1", evidence=Evidence(cve_refs=["CVE-2024-1234"]),
+        domain=Domain.VULNERABILITY,
+        source_tool="grype",
+        title="lodash vuln",
+        description="d",
+        severity=Severity.HIGH,
+        asset_id="A-1",
+        evidence=Evidence(cve_refs=["CVE-2024-1234"]),
     )
     assert finding_identity_key(finding, {"A-1": _asset("A-1", "web")}) == ("process:web", "CVE-2024-1234")
 
@@ -204,14 +221,20 @@ def test_build_run_diff_end_to_end_across_two_real_runs(tmp_path):
     repo = SQLRepository(f"sqlite:///{tmp_path}/diff.db")
     repo.save_data_source(
         DataSourceConfig(
-            id="DS-1", application_id="APP-1", type="manifest_upload",
-            connection_details={"content": _MANIFEST_V1}, created_at=_now(),
+            id="DS-1",
+            application_id="APP-1",
+            type="manifest_upload",
+            connection_details={"content": _MANIFEST_V1},
+            created_at=_now(),
         )
     )
     repo.save_run(
         ThreatModelRun(
-            id="RUN-1", application_id="APP-1", triggered_by_user_id="U",
-            data_source_config_ids=["DS-1"], started_at=_now(),
+            id="RUN-1",
+            application_id="APP-1",
+            triggered_by_user_id="U",
+            data_source_config_ids=["DS-1"],
+            started_at=_now(),
         )
     )
     execute_run(repo, "RUN-1")
@@ -219,14 +242,20 @@ def test_build_run_diff_end_to_end_across_two_real_runs(tmp_path):
     # Simulate "the user edited the data source and re-ran".
     repo.save_data_source(
         DataSourceConfig(
-            id="DS-1", application_id="APP-1", type="manifest_upload",
-            connection_details={"content": _MANIFEST_V2}, created_at=_now(),
+            id="DS-1",
+            application_id="APP-1",
+            type="manifest_upload",
+            connection_details={"content": _MANIFEST_V2},
+            created_at=_now(),
         )
     )
     repo.save_run(
         ThreatModelRun(
-            id="RUN-2", application_id="APP-1", triggered_by_user_id="U",
-            data_source_config_ids=["DS-1"], started_at=_now(),
+            id="RUN-2",
+            application_id="APP-1",
+            triggered_by_user_id="U",
+            data_source_config_ids=["DS-1"],
+            started_at=_now(),
         )
     )
     execute_run(repo, "RUN-2")

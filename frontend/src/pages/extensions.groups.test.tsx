@@ -6,7 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@kresheen/pro", () => ({
   default: {
     groupActions: [
-      { id: "demo", render: ({ group }: { group: { id: string; name: string } }) => <button type="button">Demo {group.name}</button> },
+      {
+        id: "demo",
+        render: ({ group }: { group: { id: string; name: string } }) => (
+          <button type="button">Demo {group.name}</button>
+        ),
+      },
     ],
   },
 }));
@@ -20,7 +25,14 @@ function jsonResponse(body: unknown): Response {
 const rollup = { application_count: 0, worst_severity: null, finding_count: 0, stale_count: 0 };
 
 function renderPage(myRole: string | null | undefined) {
-  const group = { id: "grp-1", name: "Payments", description: "", created_at: "2026-09-20T10:00:00Z", rollup, my_role: myRole };
+  const group = {
+    id: "grp-1",
+    name: "Payments",
+    description: "",
+    created_at: "2026-09-20T10:00:00Z",
+    rollup,
+    my_role: myRole,
+  };
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) =>

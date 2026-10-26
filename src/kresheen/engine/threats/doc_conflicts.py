@@ -69,8 +69,11 @@ def check_doc_conflicts(fact_nodes: list[FactNode]) -> list[DocConflict]:
         if norm in infra_names or norm in seen:
             continue
         seen.add(norm)
-        conflicts.append(DocConflict(
-            "diagram_only", node.name,
-            "named in the architecture diagram, but no ingested infrastructure component matches it",
-        ))
+        conflicts.append(
+            DocConflict(
+                "diagram_only",
+                node.name,
+                "named in the architecture diagram, but no ingested infrastructure component matches it",
+            )
+        )
     return conflicts

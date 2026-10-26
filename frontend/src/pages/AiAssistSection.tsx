@@ -54,9 +54,7 @@ function InstanceToggle({ onChanged }: { onChanged: () => void }) {
   async function toggle(enabled: boolean) {
     setError(null);
     try {
-      setSettings(
-        await apiFetch<AiSettings>("/api/settings/ai", { method: "PUT", body: JSON.stringify({ enabled }) }),
-      );
+      setSettings(await apiFetch<AiSettings>("/api/settings/ai", { method: "PUT", body: JSON.stringify({ enabled }) }));
       onChanged();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not change the AI assist setting.");
@@ -88,8 +86,12 @@ function InstanceToggle({ onChanged }: { onChanged: () => void }) {
 
 function errorMessage(err: unknown, fallback: string): string {
   if (!(err instanceof ApiError)) return fallback;
-  if (err.status === 422) return err.message === "Invalid API key." ? "Anthropic did not accept this key. Check it and try again." : err.message;
-  if (err.status === 400) return "The server cannot store API keys because KRESHEEN_SECRET_KEY is not set. Ask your administrator.";
+  if (err.status === 422)
+    return err.message === "Invalid API key."
+      ? "Anthropic did not accept this key. Check it and try again."
+      : err.message;
+  if (err.status === 400)
+    return "The server cannot store API keys because KRESHEEN_SECRET_KEY is not set. Ask your administrator.";
   if (err.status === 429) return "Anthropic is rate limiting this key. Wait a bit and try again.";
   if (err.status === 502) return `Anthropic could not be reached or returned an error: ${err.message}`;
   if (err.status === 404) return "AI assist is turned off.";

@@ -125,18 +125,25 @@ export function CreateApplicationModal({ show, onHide, groupId, groups, preset, 
             {blank
               ? "You will draw the components on a canvas next. You can also attach inputs now."
               : "The threat model is computed from these. Leave them empty to start a blank canvas and draw it yourself."}{" "}
-            Documentation and diagram formats other than Threat Dragon JSON are stored for reference only and are
-            not analysed yet.
+            Documentation and diagram formats other than Threat Dragon JSON are stored for reference only and are not
+            analysed yet.
           </p>
           {drafts.map((draft) => (
             <DataSourceDraftFields
               key={draft.key}
               draft={draft}
               onChange={(update) => updateDraft(draft.key, update)}
-              onRemove={drafts.length > 1 ? () => setDrafts((prev) => prev.filter((d) => d.key !== draft.key)) : undefined}
+              onRemove={
+                drafts.length > 1 ? () => setDrafts((prev) => prev.filter((d) => d.key !== draft.key)) : undefined
+              }
             />
           ))}
-          <Button variant="outline-secondary" size="sm" type="button" onClick={() => setDrafts((prev) => [...prev, newDraft()])}>
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            type="button"
+            onClick={() => setDrafts((prev) => [...prev, newDraft()])}
+          >
             + Add another input
           </Button>
         </Modal.Body>
@@ -145,7 +152,11 @@ export function CreateApplicationModal({ show, onHide, groupId, groups, preset, 
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Creating..." : drafts.some(hasContent) ? "Create and run threat model" : "Create blank model"}
+            {submitting
+              ? "Creating..."
+              : drafts.some(hasContent)
+                ? "Create and run threat model"
+                : "Create blank model"}
           </Button>
         </Modal.Footer>
       </Form>

@@ -8,8 +8,14 @@ from kresheen.models.finding import Severity
 
 def _node(node_id: str, source_ref: str, node_type: str = "process", **attributes) -> FactNode:
     return FactNode(
-        id=node_id, run_id="RUN-1", application_id="APP-1", node_type=node_type, name=node_id,
-        attributes=attributes, source_ref=source_ref, discovered_at=datetime.now(UTC),
+        id=node_id,
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type=node_type,
+        name=node_id,
+        attributes=attributes,
+        source_ref=source_ref,
+        discovered_at=datetime.now(UTC),
     )
 
 
@@ -54,8 +60,13 @@ def test_kb_matches_only_enrich_an_already_raised_finding_never_trigger_one():
 
     now = datetime.now(UTC)
     attack_entry = ThreatKBEntry(
-        id="KB-1", source="mitre_attack", external_id="T1610", name="host network",
-        description="host network namespace sharing", created_at=now, updated_at=now,
+        id="KB-1",
+        source="mitre_attack",
+        external_id="T1610",
+        name="host network",
+        description="host network namespace sharing",
+        created_at=now,
+        updated_at=now,
     )
     # A node with no risky attributes at all should still produce zero
     # findings even though a KB entry could textually match its name --
@@ -139,9 +150,7 @@ def test_grype_severity_strings_map_onto_this_apps_severity_enum():
         ("unknown", Severity.INFO),
         ("something-grype-has-never-actually-returned", Severity.INFO),
     ]:
-        node = _node(
-            "vuln", "grype", node_type="vulnerability", cve_id="CVE-1", severity=grype_severity, package="x"
-        )
+        node = _node("vuln", "grype", node_type="vulnerability", cve_id="CVE-1", severity=grype_severity, package="x")
         graph = FactGraph.build([node], [])
         findings = generate_findings(graph, [], run_id="RUN-1")
         assert findings[0].severity == expected, grype_severity
@@ -155,11 +164,21 @@ def test_grype_vulnerability_attaches_to_the_matching_lockfile_not_itself():
     It must attach to the real dependency-manifest/lockfile fact for its
     ecosystem instead."""
     vuln = _node(
-        "vuln-1", "grype", node_type="vulnerability", cve_id="GO-2026-6180",
-        severity="high", package="golang.org/x/mod", version="v0.39.0", purl="pkg:golang/golang.org/x/mod@v0.39.0",
+        "vuln-1",
+        "grype",
+        node_type="vulnerability",
+        cve_id="GO-2026-6180",
+        severity="high",
+        package="golang.org/x/mod",
+        version="v0.39.0",
+        purl="pkg:golang/golang.org/x/mod@v0.39.0",
     )
-    manifest = _node("gomod-1", "github_repository", node_type="code_artifact", kind="dependency_manifest", language="go")
-    lockfile = _node("gosum-1", "github_repository", node_type="code_artifact", kind="dependency_lockfile", language="go")
+    manifest = _node(
+        "gomod-1", "github_repository", node_type="code_artifact", kind="dependency_manifest", language="go"
+    )
+    lockfile = _node(
+        "gosum-1", "github_repository", node_type="code_artifact", kind="dependency_lockfile", language="go"
+    )
     graph = FactGraph.build([vuln, manifest, lockfile], [])
 
     findings = generate_findings(graph, [], run_id="RUN-1")
@@ -170,10 +189,17 @@ def test_grype_vulnerability_attaches_to_the_matching_lockfile_not_itself():
 
 def test_grype_vulnerability_falls_back_to_manifest_when_no_lockfile_exists():
     vuln = _node(
-        "vuln-1", "grype", node_type="vulnerability", cve_id="CVE-1",
-        severity="high", package="x", purl="pkg:npm/x@1.0.0",
+        "vuln-1",
+        "grype",
+        node_type="vulnerability",
+        cve_id="CVE-1",
+        severity="high",
+        package="x",
+        purl="pkg:npm/x@1.0.0",
     )
-    manifest = _node("pkgjson-1", "github_repository", node_type="code_artifact", kind="dependency_manifest", language="node")
+    manifest = _node(
+        "pkgjson-1", "github_repository", node_type="code_artifact", kind="dependency_manifest", language="node"
+    )
     graph = FactGraph.build([vuln, manifest], [])
 
     findings = generate_findings(graph, [], run_id="RUN-1")
@@ -182,9 +208,27 @@ def test_grype_vulnerability_falls_back_to_manifest_when_no_lockfile_exists():
 
 
 def test_two_vulnerabilities_in_the_same_ecosystem_attach_to_the_same_asset():
-    vuln_a = _node("vuln-a", "grype", node_type="vulnerability", cve_id="CVE-A", severity="high", package="x", purl="pkg:npm/x@1.0.0")
-    vuln_b = _node("vuln-b", "grype", node_type="vulnerability", cve_id="CVE-B", severity="medium", package="y", purl="pkg:npm/y@2.0.0")
-    lockfile = _node("lock-1", "github_repository", node_type="code_artifact", kind="dependency_lockfile", language="node")
+    vuln_a = _node(
+        "vuln-a",
+        "grype",
+        node_type="vulnerability",
+        cve_id="CVE-A",
+        severity="high",
+        package="x",
+        purl="pkg:npm/x@1.0.0",
+    )
+    vuln_b = _node(
+        "vuln-b",
+        "grype",
+        node_type="vulnerability",
+        cve_id="CVE-B",
+        severity="medium",
+        package="y",
+        purl="pkg:npm/y@2.0.0",
+    )
+    lockfile = _node(
+        "lock-1", "github_repository", node_type="code_artifact", kind="dependency_lockfile", language="node"
+    )
     graph = FactGraph.build([vuln_a, vuln_b, lockfile], [])
 
     findings = generate_findings(graph, [], run_id="RUN-1")
@@ -194,8 +238,13 @@ def test_two_vulnerabilities_in_the_same_ecosystem_attach_to_the_same_asset():
 
 def test_grype_vulnerability_falls_back_to_the_hub_node_when_no_manifest_matches():
     vuln = _node(
-        "vuln-1", "grype", node_type="vulnerability", cve_id="CVE-1",
-        severity="high", package="x", purl="pkg:npm/x@1.0.0",
+        "vuln-1",
+        "grype",
+        node_type="vulnerability",
+        cve_id="CVE-1",
+        severity="high",
+        package="x",
+        purl="pkg:npm/x@1.0.0",
     )
     hub = _node("hub-1", "github_repository", node_type="external_entity")
     graph = FactGraph.build([vuln, hub], [])

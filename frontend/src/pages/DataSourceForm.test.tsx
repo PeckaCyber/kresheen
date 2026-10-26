@@ -11,13 +11,23 @@ function file(name: string, content: string): File {
 
 describe("combineManifestFiles", () => {
   it("passes a single file (a Terraform plan or one YAML) through unchanged", async () => {
-    expect(await combineManifestFiles([file("plan.json", '{"a":1}')])).toEqual({ fileName: "plan.json", content: '{"a":1}' });
+    expect(await combineManifestFiles([file("plan.json", '{"a":1}')])).toEqual({
+      fileName: "plan.json",
+      content: '{"a":1}',
+    });
   });
 
   it("joins several YAML files into one manifest with document separators", async () => {
-    const result = await combineManifestFiles([file("a.yaml", "kind: A"), file("b.yml", "kind: B\n"), file("c.YAML", "kind: C")]);
+    const result = await combineManifestFiles([
+      file("a.yaml", "kind: A"),
+      file("b.yml", "kind: B\n"),
+      file("c.YAML", "kind: C"),
+    ]);
 
-    expect(result).toEqual({ fileName: "3 files: a.yaml, b.yml, c.YAML", content: "kind: A\n---\nkind: B\n---\nkind: C\n" });
+    expect(result).toEqual({
+      fileName: "3 files: a.yaml, b.yml, c.YAML",
+      content: "kind: A\n---\nkind: B\n---\nkind: C\n",
+    });
   });
 
   it("names the first three files and elides the rest", async () => {
@@ -48,7 +58,12 @@ describe("DataSourceDraftFields file input", () => {
     const input = screen.getByLabelText(/Manifest files/);
 
     fireEvent.change(input, { target: { files: [file("a.yaml", "kind: A"), file("b.yaml", "kind: B")] } });
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ fileName: "2 files: a.yaml, b.yaml", content: "kind: A\n---\nkind: B\n" }));
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith({
+        fileName: "2 files: a.yaml, b.yaml",
+        content: "kind: A\n---\nkind: B\n",
+      }),
+    );
 
     fireEvent.change(input, { target: { files: [file("a.yaml", "kind: A"), file("p.json", "{}")] } });
     expect(await screen.findByText(/Select several Kubernetes YAML files/)).toBeInTheDocument();

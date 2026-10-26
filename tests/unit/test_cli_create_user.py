@@ -9,9 +9,7 @@ def test_first_user_is_always_owner_regardless_of_role_flag(tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     runner = CliRunner()
 
-    result = runner.invoke(
-        cli, ["create-user", "--db", db_url, "--email", "first@example.com", "--role", "member"]
-    )
+    result = runner.invoke(cli, ["create-user", "--db", db_url, "--email", "first@example.com", "--role", "member"])
 
     assert result.exit_code == 0, result.output
     assert "role=owner" in result.output
@@ -25,9 +23,7 @@ def test_second_user_honors_requested_role(tmp_path):
     runner = CliRunner()
     runner.invoke(cli, ["create-user", "--db", db_url, "--email", "first@example.com"])
 
-    result = runner.invoke(
-        cli, ["create-user", "--db", db_url, "--email", "second@example.com", "--role", "member"]
-    )
+    result = runner.invoke(cli, ["create-user", "--db", db_url, "--email", "second@example.com", "--role", "member"])
 
     assert result.exit_code == 0, result.output
     user = SQLRepository(db_url).get_user_by_email("second@example.com")

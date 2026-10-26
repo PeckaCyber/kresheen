@@ -73,9 +73,7 @@ class InvalidModelOutput(ValueError):
 
 # ---------------------------------------------------------------- invisible characters
 
-_INVISIBLE_RE = re.compile(
-    r"[\u200b-\u200f\u2060-\u2064\ufeff\u202a-\u202e\U000e0000-\U000e007f]"
-)
+_INVISIBLE_RE = re.compile(r"[\u200b-\u200f\u2060-\u2064\ufeff\u202a-\u202e\U000e0000-\U000e007f]")
 
 
 def _normalise(text: str) -> str:

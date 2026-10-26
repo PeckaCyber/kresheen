@@ -5,18 +5,25 @@ from kresheen.engine.ingest.manifest_ingestor import ManifestUploadIngestor
 
 
 def _facts(manifest: str):
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": manifest})
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": manifest}
+    )
     return {n.name: n for n in nodes}, edges
 
 
 def _edge_labels(nodes, edges, edge_type=None):
     by_id = {n.id: n.name for n in nodes.values()}
-    return {(by_id[e.source_node_id], by_id[e.target_node_id], e.label) for e in edges if edge_type in (None, e.edge_type)}
+    return {
+        (by_id[e.source_node_id], by_id[e.target_node_id], e.label) for e in edges if edge_type in (None, e.edge_type)
+    }
 
 
 def test_redaction_hides_credential_values_and_reports_that_they_were_there():
     assert redact_value("admin-password", "hunter2") == ("<redacted>", True)
-    assert redact_value("DATABASE_URL", "postgresql://u:s3cret@db:5432/x") == ("postgresql://u:<redacted>@db:5432/x", True)
+    assert redact_value("DATABASE_URL", "postgresql://u:s3cret@db:5432/x") == (
+        "postgresql://u:<redacted>@db:5432/x",
+        True,
+    )
     safe, credential = redact_value("config", "host=db user=u password=s3cret sslmode=disable")
     assert credential and "s3cret" not in safe and "sslmode=disable" in safe
     safe, credential = redact_value("app.ini", "[x]\nSECRET_KEY = abc123\nMODE = prod")
@@ -76,7 +83,11 @@ subjects: [{kind: ServiceAccount, name: ci, namespace: ci-zone}]
 
 
 def test_service_selects_pods_by_template_labels_within_its_namespace_only():
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": """
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R",
+        application_id="A",
+        connection_details={
+            "content": """
 apiVersion: apps/v1
 kind: Deployment
 metadata: {name: web, namespace: a}
@@ -97,7 +108,9 @@ apiVersion: v1
 kind: Service
 metadata: {name: web, namespace: a}
 spec: {selector: {app: web}}
-"""})
+"""
+        },
+    )
     routes = [e for e in edges if e.edge_type == "routes_to"]
     assert len(routes) == 1
     target = next(n for n in nodes if n.id == routes[0].target_node_id)
@@ -198,8 +211,10 @@ spec: {selector: {app: db}}
     for e in edges:
         if e.edge_type == "data_flow":
             by_target[next(n.name for n in nodes.values() if n.id == e.target_node_id)] = e
-    assert by_target["Deployment/api"].attributes["encrypted"] is False   # first reference seen is the plain http env var
-    assert by_target["Deployment/db"].attributes["encrypted"] is False   # postgresql:// with no sslmode
+    assert (
+        by_target["Deployment/api"].attributes["encrypted"] is False
+    )  # first reference seen is the plain http env var
+    assert by_target["Deployment/db"].attributes["encrypted"] is False  # postgresql:// with no sslmode
     labels = _edge_labels(nodes, edges)
     assert ("ConfigMap/cfg", "Deployment/client", "config") in labels
 

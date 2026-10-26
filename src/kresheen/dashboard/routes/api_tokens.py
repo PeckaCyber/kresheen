@@ -91,9 +91,7 @@ def create_token(
 
 
 @router.delete("/{token_id}", status_code=204, dependencies=[Depends(require_csrf)])
-def revoke_token(
-    token_id: str, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)
-) -> None:
+def revoke_token(token_id: str, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)) -> None:
     owned = {t.id for t in repo.list_api_tokens_for_user(user.id)}
     if token_id not in owned:
         raise HTTPException(status_code=404, detail="Unknown token")

@@ -48,7 +48,9 @@ def _blank_to_none(value: object) -> object:
 
 
 # Sent to Anthropic as a request header, so only id characters are accepted (no spaces, no line breaks).
-WorkspaceId = Annotated[Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")] | None, BeforeValidator(_blank_to_none)]
+WorkspaceId = Annotated[
+    Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")] | None, BeforeValidator(_blank_to_none)
+]
 
 
 class ModelOut(BaseModel):
@@ -108,9 +110,7 @@ def _audit(request: Request, repo: Repository, user: User, action: str) -> None:
 
 
 @router.get("", response_model=AgentConfigOut)
-def get_agent_config(
-    user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)
-) -> AgentConfigOut:
+def get_agent_config(user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)) -> AgentConfigOut:
     return _out(repo.get_agent_config("user", user.id))
 
 
@@ -194,7 +194,7 @@ def save_agent_config(
 def remove_api_key(
     request: Request, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)
 ) -> AgentConfigOut:
-    """"Remove my key": deletes the encrypted key and the model choice (a model is meaningless without a key). Needs no
+    """ "Remove my key": deletes the encrypted key and the model choice (a model is meaningless without a key). Needs no
     `KRESHEEN_SECRET_KEY`, since nothing is decrypted."""
     existing = repo.get_agent_config("user", user.id)
     if existing is None or not existing.api_key_ref:

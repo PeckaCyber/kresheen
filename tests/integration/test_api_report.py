@@ -12,7 +12,7 @@ from kresheen.dashboard.app import create_app
 from tests.integration.test_api_applications import _logged_in_client, _run_with_manifest
 from tests.integration.test_api_manual_modeling import _add, _threats
 
-HOSTILE = '<img src=x onerror=alert(1)>'
+HOSTILE = "<img src=x onerror=alert(1)>"
 ENDPOINTS = ("report.html", "report.docx", "threats.csv", "findings.csv", "dfd.svg")
 
 
@@ -20,7 +20,13 @@ def _blank_model_named(client, csrf, name):
     headers = {"X-CSRF-Token": csrf}
     application = client.post("/api/applications", json={"name": name, "description": "d"}, headers=headers).json()
     run = client.post(f"/api/applications/{application['id']}/runs", headers=headers).json()
-    return application, run, f"/api/applications/{application['id']}/runs/{run['id']}", f"/api/applications/{application['id']}", headers
+    return (
+        application,
+        run,
+        f"/api/applications/{application['id']}/runs/{run['id']}",
+        f"/api/applications/{application['id']}",
+        headers,
+    )
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
@@ -79,13 +85,26 @@ def test_hostile_names_are_escaped_in_every_format_and_the_filename_stays_safe(t
     _app, run, run_url, app_url, headers = _blank_model_named(client, csrf, name)
     _add(client, app_url, headers, HOSTILE)
     comp = client.get(f"{run_url}/dfd").json()["nodes"][0]
-    client.post(f"{run_url}/manual-threats", headers=headers, json={
-        "element_kind": "component", "element_id": comp["id"], "title": HOSTILE, "description": HOSTILE,
-        "mitigations": [HOSTILE],
-    })
-    client.put(f"{run_url}/threats/status", headers=headers, json={
-        "threat_key": next(t["key"] for t in _threats(client, app_url, {"id": run["id"]})), "status": "accepted",
-        "note": HOSTILE})
+    client.post(
+        f"{run_url}/manual-threats",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": comp["id"],
+            "title": HOSTILE,
+            "description": HOSTILE,
+            "mitigations": [HOSTILE],
+        },
+    )
+    client.put(
+        f"{run_url}/threats/status",
+        headers=headers,
+        json={
+            "threat_key": next(t["key"] for t in _threats(client, app_url, {"id": run["id"]})),
+            "status": "accepted",
+            "note": HOSTILE,
+        },
+    )
 
     html = client.get(f"{run_url}/report.html")
     svg = client.get(f"{run_url}/dfd.svg")
@@ -96,7 +115,13 @@ def test_hostile_names_are_escaped_in_every_format_and_the_filename_stays_safe(t
     ET.fromstring(svg.text.split("?>\n", 1)[1])  # still well formed
     text = "\n".join(p.text for p in Document(io.BytesIO(docx.content)).paragraphs)
     assert HOSTILE in text  # literal text in Word, not markup
-    for response in (html, svg, docx, client.get(f"{run_url}/threats.csv"), client.get(f"{run_url}/report.html?download=1")):
+    for response in (
+        html,
+        svg,
+        docx,
+        client.get(f"{run_url}/threats.csv"),
+        client.get(f"{run_url}/report.html?download=1"),
+    ):
         disposition = response.headers.get("content-disposition", "")
         assert "\n" not in disposition and "\r" not in disposition and "X-Injected" not in response.headers
 
@@ -122,8 +147,11 @@ def test_threats_csv_has_the_columns_rows_and_neutralises_formulas(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     _app, run, run_url, app_url, headers = _blank_model_named(client, csrf, "Shop")
     web = _add(client, app_url, headers, "=cmd|' /C calc'!A0")
-    client.post(f"{run_url}/manual-threats", headers=headers, json={
-        "element_kind": "component", "element_id": web["id"], "title": "@SUM(1+1)", "severity": "high"})
+    client.post(
+        f"{run_url}/manual-threats",
+        headers=headers,
+        json={"element_kind": "component", "element_id": web["id"], "title": "@SUM(1+1)", "severity": "high"},
+    )
 
     response = client.get(f"{run_url}/threats.csv")
 
@@ -155,11 +183,20 @@ def test_report_lists_assumptions_and_out_of_scope_with_reasons(tmp_path):
     _app, _run, run_url, app_url, headers = _blank_model_named(client, csrf, "Shop")
     db = _add(client, app_url, headers, "Vault", "data_store")
     web = _add(client, app_url, headers, "Legacy")
-    client.put(f"{run_url}/element-properties", headers=headers, json={
-        "element_kind": "component", "element_id": db["id"], "properties": {"is_encrypted": False}})
-    client.put(f"{run_url}/element-properties", headers=headers, json={
-        "element_kind": "component", "element_id": web["id"],
-        "properties": {"out_of_scope": True, "out_of_scope_reason": "Owned by another team"}})
+    client.put(
+        f"{run_url}/element-properties",
+        headers=headers,
+        json={"element_kind": "component", "element_id": db["id"], "properties": {"is_encrypted": False}},
+    )
+    client.put(
+        f"{run_url}/element-properties",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": web["id"],
+            "properties": {"out_of_scope": True, "out_of_scope_reason": "Owned by another team"},
+        },
+    )
 
     html = client.get(f"{run_url}/report.html").text
 
@@ -185,7 +222,9 @@ def test_svg_export_is_a_standalone_document_with_restrictive_headers(tmp_path):
 
 def _docs_only_run(client, csrf):
     headers = {"X-CSRF-Token": csrf}
-    application = client.post("/api/applications", json={"name": "Docs only", "description": "d"}, headers=headers).json()
+    application = client.post(
+        "/api/applications", json={"name": "Docs only", "description": "d"}, headers=headers
+    ).json()
     client.post(
         f"/api/applications/{application['id']}/data-sources",
         json={"type": "documentation", "connection_details": {"filename": "design.md", "content": "# Design"}},

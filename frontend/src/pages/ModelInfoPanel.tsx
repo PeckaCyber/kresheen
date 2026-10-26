@@ -120,15 +120,23 @@ export function ModelInfoPanel({ applicationId }: { applicationId: string }) {
           <dd className="col-sm-9">{metadata.reviewer || <span className="text-muted">Not set</span>}</dd>
           <dt className="col-sm-3">Contributors</dt>
           <dd className="col-sm-9">
-            {metadata.contributors.length > 0 ? metadata.contributors.join(", ") : <span className="text-muted">Not set</span>}
+            {metadata.contributors.length > 0 ? (
+              metadata.contributors.join(", ")
+            ) : (
+              <span className="text-muted">Not set</span>
+            )}
           </dd>
           <dt className="col-sm-3">Methodologies</dt>
           <dd className="col-sm-9">
-            {metadata.methodologies.length > 0 ? metadata.methodologies.join(", ") : <span className="text-muted">Not set</span>}
+            {metadata.methodologies.length > 0 ? (
+              metadata.methodologies.join(", ")
+            ) : (
+              <span className="text-muted">Not set</span>
+            )}
             {unavailableSelected.length > 0 && (
               <div className="small text-warning-emphasis mt-1" role="note">
-                {unavailableLabel(unavailableSelected)} not available in this installation, so no threats are generated for{" "}
-                {unavailableSelected.length === 1 ? "it" : "them"}.
+                {unavailableLabel(unavailableSelected)} not available in this installation, so no threats are generated
+                for {unavailableSelected.length === 1 ? "it" : "them"}.
               </div>
             )}
           </dd>
@@ -149,7 +157,12 @@ export function ModelInfoPanel({ applicationId }: { applicationId: string }) {
       )}
       <Form.Group className="mb-2" controlId="model-info-name">
         <Form.Label className="small">Name</Form.Label>
-        <Form.Control value={nameDraft} maxLength={200} onChange={(event) => setNameDraft(event.target.value)} required />
+        <Form.Control
+          value={nameDraft}
+          maxLength={200}
+          onChange={(event) => setNameDraft(event.target.value)}
+          required
+        />
       </Form.Group>
       <Form.Group className="mb-2" controlId="model-info-description">
         <Form.Label className="small">Description</Form.Label>
@@ -174,20 +187,22 @@ export function ModelInfoPanel({ applicationId }: { applicationId: string }) {
       </Form.Group>
       <Form.Group className="mb-3">
         <Form.Label className="small d-block">Methodologies</Form.Label>
-        {[...selectableMethodologies(), ...methodologiesDraft.filter((m) => !isMethodologyAvailable(m))].map((methodology) => {
-          const unavailable = !isMethodologyAvailable(methodology);
-          return (
-            <Form.Check
-              key={methodology}
-              inline
-              type="checkbox"
-              id={`model-info-methodology-${methodology}`}
-              label={unavailable ? `${methodology} (not available)` : methodology}
-              checked={methodologiesDraft.includes(methodology)}
-              onChange={() => toggleMethodology(methodology)}
-            />
-          );
-        })}
+        {[...selectableMethodologies(), ...methodologiesDraft.filter((m) => !isMethodologyAvailable(m))].map(
+          (methodology) => {
+            const unavailable = !isMethodologyAvailable(methodology);
+            return (
+              <Form.Check
+                key={methodology}
+                inline
+                type="checkbox"
+                id={`model-info-methodology-${methodology}`}
+                label={unavailable ? `${methodology} (not available)` : methodology}
+                checked={methodologiesDraft.includes(methodology)}
+                onChange={() => toggleMethodology(methodology)}
+              />
+            );
+          },
+        )}
         {methodologiesDraft.some((m) => !isMethodologyAvailable(m)) && (
           <Form.Text className="d-block">
             A methodology that is not available here generates no threats. Untick it to remove it from this model.

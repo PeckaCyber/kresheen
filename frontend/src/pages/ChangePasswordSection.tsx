@@ -51,9 +51,7 @@ export function ChangePasswordSection({ defaultOpen }: { defaultOpen?: boolean }
   return (
     <CollapsibleCard title="Account" id="account" defaultOpen={defaultOpen}>
       {ssoOnly && (
-        <Alert variant="info">
-          This account signs in via single sign-on; there is no password to change here.
-        </Alert>
+        <Alert variant="info">This account signs in via single sign-on; there is no password to change here.</Alert>
       )}
       {!ssoOnly && (
         <>
@@ -98,11 +96,7 @@ export function ChangePasswordSection({ defaultOpen }: { defaultOpen?: boolean }
             </Form.Group>
             <Button
               type="submit"
-              disabled={
-                !currentPassword ||
-                newPassword.length < MIN_PASSWORD_LENGTH ||
-                newPassword !== confirmPassword
-              }
+              disabled={!currentPassword || newPassword.length < MIN_PASSWORD_LENGTH || newPassword !== confirmPassword}
             >
               Change password
             </Button>

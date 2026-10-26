@@ -99,9 +99,7 @@ def is_secret_key(key: str) -> bool:
 def redact_value(key: str, value: str) -> tuple[str, bool]:
     """Returns (safe value, whether it held credential material)."""
     has_url_credentials = bool(_URL_CREDENTIALS_RE.search(value))
-    text_hits = (bool(_TEXT_SECRET_LINE_RE.search(value)) and "\n" in value) or bool(
-        _INLINE_KV_SECRET_RE.search(value)
-    )
+    text_hits = (bool(_TEXT_SECRET_LINE_RE.search(value)) and "\n" in value) or bool(_INLINE_KV_SECRET_RE.search(value))
     credential = bool(value) and (is_secret_key(key) or has_url_credentials or text_hits)
     if is_secret_key(key) and value:
         return "<redacted>", True
@@ -191,7 +189,7 @@ def _container_facts(container: dict, *, init: bool) -> dict[str, Any]:
         if not isinstance(entry, dict):
             continue
         item: dict[str, Any] = {"name": entry.get("name", "")}
-        ref = (entry.get("valueFrom") or {})
+        ref = entry.get("valueFrom") or {}
         if isinstance(ref.get("configMapKeyRef"), dict):
             item["config_ref"] = {"kind": "configmap", **_ref(ref["configMapKeyRef"])}
         elif isinstance(ref.get("secretKeyRef"), dict):
@@ -230,9 +228,7 @@ def _ref(ref: dict) -> dict[str, Any]:
 
 def _workload_attributes(record: dict) -> dict[str, Any]:
     pod_spec = pod_spec_of(record)
-    containers = [
-        _container_facts(c, init=False) for c in pod_spec.get("containers") or [] if isinstance(c, dict)
-    ] + [
+    containers = [_container_facts(c, init=False) for c in pod_spec.get("containers") or [] if isinstance(c, dict)] + [
         _container_facts(c, init=True) for c in pod_spec.get("initContainers") or [] if isinstance(c, dict)
     ]
     configmaps: set[str] = set()
@@ -350,7 +346,7 @@ def _ingress_backends(spec: dict) -> set[str]:
     if default:
         names.add(str(default))
     for rule in spec.get("rules") or []:
-        for path in ((rule.get("http") or {}).get("paths") or []):
+        for path in (rule.get("http") or {}).get("paths") or []:
             name = ((path.get("backend") or {}).get("service") or {}).get("name")
             if name:
                 names.add(str(name))
@@ -405,22 +401,37 @@ def build_k8s_facts(
                 "Check it with `kubectl apply --dry-run=client -f <file>`."
             ) from exc
         node = FactNode(
-            id=new_fact_node_id(), run_id=run_id, application_id=application_id, node_type=node_type,
-            name=name, attributes=attrs, source_ref=source_ref, discovered_at=now,
+            id=new_fact_node_id(),
+            run_id=run_id,
+            application_id=application_id,
+            node_type=node_type,
+            name=name,
+            attributes=attrs,
+            source_ref=source_ref,
+            discovered_at=now,
         )
         nodes.append(node)
         record_by_node_id[node.id] = record
 
     def edge(source: FactNode, target: FactNode, edge_type: str, label: str, **attributes: Any) -> FactEdge:
         return FactEdge(
-            id=new_fact_edge_id(), run_id=run_id, application_id=application_id, source_node_id=source.id,
-            target_node_id=target.id, edge_type=edge_type, label=label, attributes=attributes,
+            id=new_fact_edge_id(),
+            run_id=run_id,
+            application_id=application_id,
+            source_node_id=source.id,
+            target_node_id=target.id,
+            edge_type=edge_type,
+            label=label,
+            attributes=attributes,
         )
 
     workloads = [n for n in nodes if n.node_type == "process"]
     services = [n for n in nodes if n.node_type == "service"]
-    stores = {(n.attributes["kind"], n.attributes["namespace"], n.name.split("/", 1)[1]): n
-              for n in nodes if n.node_type == "data_store"}
+    stores = {
+        (n.attributes["kind"], n.attributes["namespace"], n.name.split("/", 1)[1]): n
+        for n in nodes
+        if n.node_type == "data_store"
+    }
     edges: list[FactEdge] = []
 
     def selected_by(service: FactNode) -> list[FactNode]:
@@ -428,7 +439,8 @@ def build_k8s_facts(
         if not selector:
             return []
         return [
-            w for w in workloads
+            w
+            for w in workloads
             if w.attributes["namespace"] == service.attributes["namespace"]
             and selector.items() <= w.attributes["pod_labels"].items()
         ]
@@ -448,17 +460,30 @@ def build_k8s_facts(
         for target in exposed_by_service[service.id]:
             if internet is None:
                 internet = FactNode(
-                    id=new_fact_node_id(), run_id=run_id, application_id=application_id, node_type="external_entity",
-                    name="Internet", attributes={"trust_boundary": INTERNET_BOUNDARY, "note": "Untrusted clients"},
-                    source_ref=source_ref, discovered_at=now,
+                    id=new_fact_node_id(),
+                    run_id=run_id,
+                    application_id=application_id,
+                    node_type="external_entity",
+                    name="Internet",
+                    attributes={"trust_boundary": INTERNET_BOUNDARY, "note": "Untrusted clients"},
+                    source_ref=source_ref,
+                    discovered_at=now,
                 )
                 nodes.append(internet)
             ports = service.attributes.get("ports") or []
             proto = str((ports[0].get("name") or "tcp") if ports else "tcp").lower()
             plaintext = port_is_plaintext(ports[0].get("name"), ports[0].get("port")) if ports else None
-            edges.append(edge(internet, target, "data_flow", proto, protocol=proto,
-                              encrypted=None if plaintext is None else not plaintext,
-                              via=f"{service.attributes['service_type']} Service {service.name.split('/', 1)[1]}"))
+            edges.append(
+                edge(
+                    internet,
+                    target,
+                    "data_flow",
+                    proto,
+                    protocol=proto,
+                    encrypted=None if plaintext is None else not plaintext,
+                    via=f"{service.attributes['service_type']} Service {service.name.split('/', 1)[1]}",
+                )
+            )
 
     # Internet -> workload where an Ingress publishes a Service.
     service_by_ns_name = {(sv.attributes["namespace"], sv.name.split("/", 1)[1]): sv for sv in services}
@@ -470,16 +495,28 @@ def build_k8s_facts(
             for target in exposed_by_service[backend_svc.id]:
                 if internet is None:
                     internet = FactNode(
-                        id=new_fact_node_id(), run_id=run_id, application_id=application_id,
-                        node_type="external_entity", name="Internet",
+                        id=new_fact_node_id(),
+                        run_id=run_id,
+                        application_id=application_id,
+                        node_type="external_entity",
+                        name="Internet",
                         attributes={"trust_boundary": INTERNET_BOUNDARY, "note": "Untrusted clients"},
-                        source_ref=source_ref, discovered_at=now,
+                        source_ref=source_ref,
+                        discovered_at=now,
                     )
                     nodes.append(internet)
                 tls = bool(ingress.attributes.get("has_tls"))
-                edges.append(edge(internet, target, "data_flow", "https" if tls else "http",
-                                  protocol="https" if tls else "http", encrypted=tls,
-                                  via=f"Ingress {ingress.name.split('/', 1)[1]}"))
+                edges.append(
+                    edge(
+                        internet,
+                        target,
+                        "data_flow",
+                        "https" if tls else "http",
+                        protocol="https" if tls else "http",
+                        encrypted=tls,
+                        via=f"Ingress {ingress.name.split('/', 1)[1]}",
+                    )
+                )
 
     # Workload -> workload from hostnames/URLs the workload is configured with.
     service_index = {(s.attributes["namespace"], s.name.split("/", 1)[1]): s for s in services}
@@ -494,9 +531,17 @@ def build_k8s_facts(
                     if target.id == workload.id or (workload.id, target.id) in seen:
                         continue
                     seen.add((workload.id, target.id))
-                    edges.append(edge(workload, target, "data_flow", scheme or "tcp", protocol=scheme or "tcp",
-                                      encrypted=_encryption(scheme, url_text),
-                                      via=f"Service {svc.name.split('/', 1)[1]}"))
+                    edges.append(
+                        edge(
+                            workload,
+                            target,
+                            "data_flow",
+                            scheme or "tcp",
+                            protocol=scheme or "tcp",
+                            encrypted=_encryption(scheme, url_text),
+                            via=f"Service {svc.name.split('/', 1)[1]}",
+                        )
+                    )
 
     # In-pod wiring, for the diagram only.
     for workload in workloads:
@@ -546,9 +591,7 @@ def _referenced_hosts(text: str) -> list[tuple[str, str | None, str]]:
     return found
 
 
-def _resolve_service(
-    host: str, source_namespace: str, index: dict[tuple[str, str], FactNode]
-) -> FactNode | None:
+def _resolve_service(host: str, source_namespace: str, index: dict[tuple[str, str], FactNode]) -> FactNode | None:
     parts = host.split(".")
     name = parts[0]
     namespace = parts[1] if len(parts) > 1 and parts[1] != "svc" else source_namespace

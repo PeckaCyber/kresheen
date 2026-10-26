@@ -25,9 +25,24 @@ from kresheen.engine.ingest.diagrams.model import (
 
 _TYPES = {"external-entity": "external_entity", "process": "process", "datastore": "data_store"}
 _ENCRYPTED_PROTOCOLS = {
-    "https", "ssh", "sftp", "ftps", "smtp-encrypted", "pop3-encrypted", "imap-encrypted", "ldap-encrypted",
-    "jdbc-encrypted", "odbc-encrypted", "nosql-access-protocol-encrypted", "binary-encrypted", "text-encrypted",
-    "ssh-tunnel", "grpc-encrypted", "mqtt-encrypted", "wss", "ldaps",
+    "https",
+    "ssh",
+    "sftp",
+    "ftps",
+    "smtp-encrypted",
+    "pop3-encrypted",
+    "imap-encrypted",
+    "ldap-encrypted",
+    "jdbc-encrypted",
+    "odbc-encrypted",
+    "nosql-access-protocol-encrypted",
+    "binary-encrypted",
+    "text-encrypted",
+    "ssh-tunnel",
+    "grpc-encrypted",
+    "mqtt-encrypted",
+    "wss",
+    "ldaps",
 }
 
 
@@ -58,7 +73,7 @@ def parse_threagile(content: str) -> ParsedDiagram | None:
 
     boundary_of: dict[str, tuple[str, int]] = {}  # asset id -> (boundary name, size of that boundary)
     boundaries = parsed.get("trust_boundaries")
-    for name, boundary in (boundaries.items() if isinstance(boundaries, dict) else []):
+    for name, boundary in boundaries.items() if isinstance(boundaries, dict) else []:
         inside = boundary.get("technical_assets_inside") if isinstance(boundary, dict) else None
         if not isinstance(inside, list):
             continue
@@ -76,10 +91,12 @@ def parse_threagile(content: str) -> ParsedDiagram | None:
         if boundary is None and node_type == "external_entity" and asset.get("internet") is True:
             boundary = "Internet"
         diagram.components.append(
-            DiagramComponent(key=asset_id, name=clean_name(names[asset_id]), type=node_type, boundary=boundary, properties=properties)
+            DiagramComponent(
+                key=asset_id, name=clean_name(names[asset_id]), type=node_type, boundary=boundary, properties=properties
+            )
         )
         links = asset.get("communication_links")
-        for link_name, link in (links.items() if isinstance(links, dict) else []):
+        for link_name, link in links.items() if isinstance(links, dict) else []:
             if not isinstance(link, dict) or not isinstance(link.get("target"), str):
                 continue
             protocol = _str(link.get("protocol"))
@@ -90,5 +107,7 @@ def parse_threagile(content: str) -> ParsedDiagram | None:
                     flow_props["is_encrypted"] = True
             if _str(link.get("authentication")) not in ("", "none"):
                 flow_props["authenticated"] = True
-            diagram.flows.append(DiagramFlow(source=asset_id, target=link["target"], label=clean_name(link_name), properties=flow_props))
+            diagram.flows.append(
+                DiagramFlow(source=asset_id, target=link["target"], label=clean_name(link_name), properties=flow_props)
+            )
     return finish(diagram)

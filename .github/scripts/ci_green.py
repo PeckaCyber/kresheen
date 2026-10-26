@@ -71,9 +71,7 @@ def main() -> int:
             for name in required:
                 if name not in runs and name not in dispatched:
                     print(f"No {name} run for {a.sha} after 3 minutes; dispatching it on main")
-                    subprocess.run(
-                        ["gh", "workflow", "run", f"{name}.yml", "--ref", "main"], check=True
-                    )
+                    subprocess.run(["gh", "workflow", "run", f"{name}.yml", "--ref", "main"], check=True)
                     dispatched.add(name)
         if time.time() > deadline:
             print("Timed out waiting for:", *pending, sep="\n  ")

@@ -24,7 +24,11 @@ function plan(actions: ActionOut[]): ActionPlanOut {
   const open = actions.filter((a) => a.status === "todo" || a.status === "in_progress");
   return {
     actions,
-    summary: { total: actions.length, by_status: {}, open_threats_covered: open.reduce((n, a) => n + a.threat_count, 0) },
+    summary: {
+      total: actions.length,
+      by_status: {},
+      open_threats_covered: open.reduce((n, a) => n + a.threat_count, 0),
+    },
   };
 }
 
@@ -40,13 +44,23 @@ describe("ActionPlanPanel", () => {
   });
 
   it("lists open actions ranked, with what each covers, and offers the CSV", async () => {
-    fetchMock.mockResolvedValue(json(plan([action({}), action({ id: "ACT-2", text: "Rotate credentials.", threat_count: 1 })])));
+    fetchMock.mockResolvedValue(
+      json(plan([action({}), action({ id: "ACT-2", text: "Rotate credentials.", threat_count: 1 })])),
+    );
     render(<ActionPlanPanel applicationId="A" runId="R" />);
 
     expect(await screen.findByText("Add a default-deny NetworkPolicy.")).toBeInTheDocument();
     expect(screen.getByText("3 threats on 2 elements")).toBeInTheDocument();
-    expect(screen.getByText((_, el) => el?.tagName === "SPAN" && (el.textContent ?? "").startsWith("2 open actions covering 4 open threats"))).toBeInTheDocument();
-    expect(screen.getByText("Download checklist (CSV)")).toHaveAttribute("href", "/api/applications/A/runs/R/action-plan.csv");
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === "SPAN" && (el.textContent ?? "").startsWith("2 open actions covering 4 open threats"),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Download checklist (CSV)")).toHaveAttribute(
+      "href",
+      "/api/applications/A/runs/R/action-plan.csv",
+    );
   });
 
   it("shows only the top 10 until asked for all", async () => {
@@ -73,7 +87,11 @@ describe("ActionPlanPanel", () => {
     const [url, init] = fetchMock.mock.calls[1];
     expect(url).toBe("/api/applications/A/runs/R/action-plan/ACT-1/status");
     expect(JSON.parse((init as RequestInit).body as string)).toEqual({ status: "in_progress", note: "" });
-    await waitFor(() => expect(onLoaded).toHaveBeenLastCalledWith(expect.objectContaining({ actions: [expect.objectContaining({ status: "in_progress" })] })));
+    await waitFor(() =>
+      expect(onLoaded).toHaveBeenLastCalledWith(
+        expect.objectContaining({ actions: [expect.objectContaining({ status: "in_progress" })] }),
+      ),
+    );
   });
 
   it("asks for a reason before declining a fix, and will not save without one", async () => {
@@ -91,7 +109,10 @@ describe("ActionPlanPanel", () => {
     fireEvent.click(save);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string)).toEqual({ status: "wont_do", note: "Not our data" });
+    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string)).toEqual({
+      status: "wont_do",
+      note: "Not our data",
+    });
   });
 
   it("tucks done and declined actions away and says so when nothing is open", async () => {
@@ -106,7 +127,14 @@ describe("ActionPlanPanel", () => {
 
   it("shows how to verify and an example fix when an action's coverage is expanded", async () => {
     fetchMock.mockResolvedValue(
-      json(plan([action({ verification: ["kubectl get networkpolicy -n <ns> lists the policy."], fix_examples: ["kind: NetworkPolicy"] })])),
+      json(
+        plan([
+          action({
+            verification: ["kubectl get networkpolicy -n <ns> lists the policy."],
+            fix_examples: ["kind: NetworkPolicy"],
+          }),
+        ]),
+      ),
     );
     render(<ActionPlanPanel applicationId="A" runId="R" />);
 

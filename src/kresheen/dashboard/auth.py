@@ -60,6 +60,8 @@ def cookie_secure(request: Request) -> bool:
     if mode in ("never", "false", "0"):
         return False
     return request.url.scheme == "https"
+
+
 CSRF_HEADER_NAME = "X-CSRF-Token"
 _SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 
@@ -247,9 +249,7 @@ def require_cookie_session(request: Request, _session: Session = Depends(get_cur
         raise HTTPException(status_code=403, detail="Not available to API tokens")
 
 
-def get_current_user(
-    session: Session = Depends(get_current_session), repo: Repository = Depends(get_repo)
-) -> User:
+def get_current_user(session: Session = Depends(get_current_session), repo: Repository = Depends(get_repo)) -> User:
     """Depend on this instead of `get_current_session` when a route needs
     the actual account (e.g. to check `role`, or to attribute an
     Application's `owner_user_id`) rather than just proving a valid

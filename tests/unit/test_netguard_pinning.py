@@ -1,4 +1,5 @@
 """Security report DNS rebinding row: guarded_request resolves once and connects to the validated address."""
+
 import http.server
 import socket
 import threading

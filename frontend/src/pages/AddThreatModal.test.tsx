@@ -131,7 +131,9 @@ describe("AddThreatModal", () => {
     renderModal();
     await screen.findByLabelText("Element");
 
-    const options = within(screen.getByLabelText("Methodology")).getAllByRole("option").map((o) => o.textContent);
+    const options = within(screen.getByLabelText("Methodology"))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
     expect(options).toEqual(["STRIDE", "Custom"]);
   });
 

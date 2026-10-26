@@ -4,14 +4,7 @@ import { extensions } from "../../extensions";
 // URL-addressed tabs. Keep this list and
 // App.tsx's route in sync -- an unknown slug in the URL falls back to
 // "overview" (see isModelTabKey / ApplicationDetail.tsx).
-export const MODEL_TAB_SLUGS = [
-  "overview",
-  "diagram",
-  "threats",
-  "actions",
-  "findings",
-  "settings",
-] as const;
+export const MODEL_TAB_SLUGS = ["overview", "diagram", "threats", "actions", "findings", "settings"] as const;
 
 export type ModelTabKey = (typeof MODEL_TAB_SLUGS)[number];
 

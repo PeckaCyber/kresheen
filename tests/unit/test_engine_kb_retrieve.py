@@ -7,16 +7,30 @@ from kresheen.models.threat_kb import ThreatKBEntry
 
 def _node(**attributes) -> FactNode:
     return FactNode(
-        id="FACT-N-1", run_id="RUN-1", application_id="APP-1", node_type="process", name="web",
-        attributes=attributes, source_ref="test", discovered_at=datetime.now(UTC),
+        id="FACT-N-1",
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type="process",
+        name="web",
+        attributes=attributes,
+        source_ref="test",
+        discovered_at=datetime.now(UTC),
     )
 
 
-def _entry(entry_id: str, name: str, description: str = "", tags: list[str] | None = None, is_active: bool = True) -> ThreatKBEntry:
+def _entry(
+    entry_id: str, name: str, description: str = "", tags: list[str] | None = None, is_active: bool = True
+) -> ThreatKBEntry:
     now = datetime.now(UTC)
     return ThreatKBEntry(
-        id=entry_id, source="custom", name=name, description=description, tags=tags or [],
-        is_active=is_active, created_at=now, updated_at=now,
+        id=entry_id,
+        source="custom",
+        name=name,
+        description=description,
+        tags=tags or [],
+        is_active=is_active,
+        created_at=now,
+        updated_at=now,
     )
 
 

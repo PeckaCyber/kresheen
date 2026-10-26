@@ -1,7 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ThreatOut } from "../ThreatsPanel";
-import { defaultInspectorTab, ElementInspector, elementThreatCount, type InspectorElement, type ElementInspectorProps } from "./ElementInspector";
+import {
+  defaultInspectorTab,
+  ElementInspector,
+  elementThreatCount,
+  type InspectorElement,
+  type ElementInspectorProps,
+} from "./ElementInspector";
 
 function makeThreat(overrides: Partial<ThreatOut> = {}): ThreatOut {
   return {

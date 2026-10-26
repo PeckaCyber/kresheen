@@ -33,7 +33,8 @@ describe("AiAssistSection", () => {
         return jsonResponse(config);
       }
       if (path === "/api/agent-config") {
-        if (method === "PUT") config = { default_model: body.default_model, has_api_key: true, workspace_id: body.workspace_id };
+        if (method === "PUT")
+          config = { default_model: body.default_model, has_api_key: true, workspace_id: body.workspace_id };
         return jsonResponse(config);
       }
       return jsonResponse({}, 404);
@@ -136,7 +137,9 @@ describe("AiAssistSection", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await screen.findByText(/Key saved/);
-    const put = fetchMock.mock.calls.find(([p, i]) => p === "/api/agent-config" && (i as RequestInit)?.method === "PUT");
+    const put = fetchMock.mock.calls.find(
+      ([p, i]) => p === "/api/agent-config" && (i as RequestInit)?.method === "PUT",
+    );
     expect(JSON.parse((put![1] as RequestInit).body as string)).toEqual({
       api_key: "sk-ant-test-0000000000000000",
       default_model: "model-a",
@@ -155,12 +158,17 @@ describe("AiAssistSection", () => {
     fireEvent.click(screen.getByRole("button", { name: "Test key" }));
     await screen.findByRole("option", { name: "Model A" });
     const test = fetchMock.mock.calls.find(([p]) => p === "/api/agent-config/models");
-    expect(JSON.parse((test![1] as RequestInit).body as string)).toEqual({ api_key: "sk-ant-org-key", workspace_id: "wrkspc_01ab" });
+    expect(JSON.parse((test![1] as RequestInit).body as string)).toEqual({
+      api_key: "sk-ant-org-key",
+      workspace_id: "wrkspc_01ab",
+    });
 
     fireEvent.change(screen.getByLabelText("Model"), { target: { value: "model-a" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText(/Key saved/);
-    const put = fetchMock.mock.calls.find(([p, i]) => p === "/api/agent-config" && (i as RequestInit)?.method === "PUT");
+    const put = fetchMock.mock.calls.find(
+      ([p, i]) => p === "/api/agent-config" && (i as RequestInit)?.method === "PUT",
+    );
     expect(JSON.parse((put![1] as RequestInit).body as string).workspace_id).toBe("wrkspc_01ab");
     expect(screen.getByLabelText("Workspace ID (optional)")).toHaveValue("wrkspc_01ab");
   });

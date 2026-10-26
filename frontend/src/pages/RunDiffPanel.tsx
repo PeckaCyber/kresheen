@@ -42,7 +42,15 @@ function SeverityBadge({ severity }: { severity: string }) {
   return <RiskBadge level={severity}>{severity}</RiskBadge>;
 }
 
-function ComponentList({ title, entries, variant }: { title: string; entries: ComponentDiffOut[]; variant: "success" | "danger" }) {
+function ComponentList({
+  title,
+  entries,
+  variant,
+}: {
+  title: string;
+  entries: ComponentDiffOut[];
+  variant: "success" | "danger";
+}) {
   if (entries.length === 0) return null;
   return (
     <div className="mb-3">
@@ -59,7 +67,15 @@ function ComponentList({ title, entries, variant }: { title: string; entries: Co
   );
 }
 
-function FlowList({ title, entries, variant }: { title: string; entries: FlowDiffOut[]; variant: "success" | "danger" }) {
+function FlowList({
+  title,
+  entries,
+  variant,
+}: {
+  title: string;
+  entries: FlowDiffOut[];
+  variant: "success" | "danger";
+}) {
   if (entries.length === 0) return null;
   return (
     <div className="mb-3">
@@ -76,7 +92,15 @@ function FlowList({ title, entries, variant }: { title: string; entries: FlowDif
   );
 }
 
-function ThreatList({ title, entries, variant }: { title: string; entries: ThreatDiffOut[]; variant: "success" | "danger" }) {
+function ThreatList({
+  title,
+  entries,
+  variant,
+}: {
+  title: string;
+  entries: ThreatDiffOut[];
+  variant: "success" | "danger";
+}) {
   if (entries.length === 0) return null;
   return (
     <div className="mb-3">
@@ -100,7 +124,15 @@ function ThreatList({ title, entries, variant }: { title: string; entries: Threa
   );
 }
 
-function FindingList({ title, entries, variant }: { title: string; entries: FindingDiffOut[]; variant: "success" | "danger" }) {
+function FindingList({
+  title,
+  entries,
+  variant,
+}: {
+  title: string;
+  entries: FindingDiffOut[];
+  variant: "success" | "danger";
+}) {
   if (entries.length === 0) return null;
   return (
     <div className="mb-3">

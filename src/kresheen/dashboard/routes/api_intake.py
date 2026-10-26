@@ -72,7 +72,9 @@ def get_options() -> IntakeOptionsOut:
         authentication=_options(AUTHENTICATION),
         data=_options(DATA_KINDS),
         third_parties=_options(THIRD_PARTIES),
-        templates=[TemplateOut(id=t.id, title=t.title, description=t.description, answers=t.answers) for t in TEMPLATES],
+        templates=[
+            TemplateOut(id=t.id, title=t.title, description=t.description, answers=t.answers) for t in TEMPLATES
+        ],
     )
 
 
@@ -113,7 +115,10 @@ class DraftOut(BaseModel):
 
 @router.post("/draft", response_model=DraftOut, dependencies=[Depends(require_csrf)])
 def draft_from_description(
-    body: DraftRequest, request: Request, caller: AiCaller = Depends(require_ai_caller), repo: Repository = Depends(get_repo)
+    body: DraftRequest,
+    request: Request,
+    caller: AiCaller = Depends(require_ai_caller),
+    repo: Repository = Depends(get_repo),
 ) -> DraftOut:
     """Experimental AI assist: suggested intake answers from a prose description. A POST only because the text is
     large; it creates nothing. The user reviews the answers and submits the form as usual."""
@@ -122,7 +127,8 @@ def draft_from_description(
     if len(body.text) > INTAKE_DRAFT_TASK.max_input_chars:
         # Same answer run_ai_task would give, without spending a rate-limit slot or an audit row on it.
         raise HTTPException(
-            status_code=413, detail=f"The text is too long. The limit is {INTAKE_DRAFT_TASK.max_input_chars} characters."
+            status_code=413,
+            detail=f"The text is too long. The limit is {INTAKE_DRAFT_TASK.max_input_chars} characters.",
         )
     result = run_ai_task(request, repo, caller, INTAKE_DRAFT_TASK, body.text)
     draft = result.value

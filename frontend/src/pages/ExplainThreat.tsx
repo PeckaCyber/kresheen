@@ -69,7 +69,12 @@ export function ExplainThreat({ applicationId, runId, threatKey }: Props) {
 
   if (!available) return null;
 
-  const paragraphs = result ? result.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean) : [];
+  const paragraphs = result
+    ? result.text
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+    : [];
 
   return (
     <div className="mb-3" onClick={(e) => e.stopPropagation()}>

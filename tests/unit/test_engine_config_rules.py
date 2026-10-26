@@ -10,7 +10,9 @@ from kresheen.engine.threats.config_rules import (
 
 
 def _hits(rule_id: str, manifest: str) -> dict[str, list[str]]:
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": manifest})
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": manifest}
+    )
     return {h.target: h.evidence for h in CONFIG_RULES_BY_ID[rule_id].detect(FactContext(nodes, edges))}
 
 
@@ -65,20 +67,22 @@ def test_t01_flags_an_exposed_workload_without_auth_and_respects_declared_auth()
     exposed = _deployment("web") + _service("web", type_="LoadBalancer")
     assert "Deployment/web" in _hits("SC-T01", exposed)
     assert _hits("SC-T01", _deployment("web") + _service("web")) == {}  # ClusterIP is not exposed
-    declared = _deployment("web", container_extra="        envFrom: [{configMapRef: {name: web-cfg}}]") + _service(
-        "web", type_="LoadBalancer"
-    ) + _configmap("web-cfg", {"OIDC_ISSUER": "https://sso"})
+    declared = (
+        _deployment("web", container_extra="        envFrom: [{configMapRef: {name: web-cfg}}]")
+        + _service("web", type_="LoadBalancer")
+        + _configmap("web-cfg", {"OIDC_ISSUER": "https://sso"})
+    )
     assert _hits("SC-T01", declared) == {}
 
 
 def test_t01_treats_disable_auth_true_as_authentication_off_not_on():
-    manifest = _deployment(
-        "llm", container_extra='        env: [{name: DISABLE_AUTH, value: "true"}]'
-    ) + _service("llm", type_="NodePort")
+    manifest = _deployment("llm", container_extra='        env: [{name: DISABLE_AUTH, value: "true"}]') + _service(
+        "llm", type_="NodePort"
+    )
     assert "Deployment/llm" in _hits("SC-T01", manifest)
-    enabled = _deployment(
-        "llm", container_extra='        env: [{name: DISABLE_AUTH, value: "false"}]'
-    ) + _service("llm", type_="NodePort")
+    enabled = _deployment("llm", container_extra='        env: [{name: DISABLE_AUTH, value: "false"}]') + _service(
+        "llm", type_="NodePort"
+    )
     assert _hits("SC-T01", enabled) == {}
 
 
@@ -97,10 +101,14 @@ spec:
 
 
 def test_authenticating_workload_names_reflects_declared_auth_not_exposure():
-    declared = _deployment("web", container_extra="        envFrom: [{configMapRef: {name: web-cfg}}]") + _service(
-        "web", type_="LoadBalancer"
-    ) + _configmap("web-cfg", {"OIDC_ISSUER": "https://sso"})
-    nodes, edges = ManifestUploadIngestor().run(run_id="R", application_id="A", connection_details={"content": declared})
+    declared = (
+        _deployment("web", container_extra="        envFrom: [{configMapRef: {name: web-cfg}}]")
+        + _service("web", type_="LoadBalancer")
+        + _configmap("web-cfg", {"OIDC_ISSUER": "https://sso"})
+    )
+    nodes, edges = ManifestUploadIngestor().run(
+        run_id="R", application_id="A", connection_details={"content": declared}
+    )
     assert authenticating_workload_names(FactContext(nodes, edges)) == {"Deployment/web"}
 
     # Not exposed and no auth declared either: absence, not a false "no auth".
@@ -142,8 +150,14 @@ def test_non_kubernetes_facts_are_ignored_by_every_rule():
 
     def fact(node_type, name, **attributes):
         return FactNode(
-            id=f"N-{name}", run_id="R", application_id="A", node_type=node_type, name=name,
-            attributes=attributes, source_ref="manifest_upload:terraform", discovered_at=datetime.now(UTC),
+            id=f"N-{name}",
+            run_id="R",
+            application_id="A",
+            node_type=node_type,
+            name=name,
+            attributes=attributes,
+            source_ref="manifest_upload:terraform",
+            discovered_at=datetime.now(UTC),
         )
 
     nodes = [

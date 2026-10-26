@@ -90,9 +90,7 @@ test("AI assist: turn on, add a key, draft the guided setup, explain a threat, t
   await expect(toggleAgain).not.toBeChecked();
   await expect(page.getByTestId("ai-key-section")).toHaveCount(0);
 
-  await expect
-    .poll(async () => (await (await page.request.get("/api/capabilities")).json()).ai.enabled)
-    .toBe(false);
+  await expect.poll(async () => (await (await page.request.get("/api/capabilities")).json()).ai.enabled).toBe(false);
   const guided = await openGuidedSetup(page);
   await expect(guided.getByRole("textbox", { name: "Name", exact: true })).toBeVisible();
   await expect(guided.getByTestId("intake-ai-box")).toHaveCount(0);

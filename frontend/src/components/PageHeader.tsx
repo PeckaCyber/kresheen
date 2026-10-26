@@ -28,7 +28,11 @@ export function PageHeader({
         <nav aria-label="Breadcrumb" className="pc-crumbs">
           {crumbs.map((crumb, index) => (
             <span key={`${crumb.label}-${index}`}>
-              {index > 0 && <span className="pc-crumb-sep" aria-hidden="true">/</span>}
+              {index > 0 && (
+                <span className="pc-crumb-sep" aria-hidden="true">
+                  /
+                </span>
+              )}
               {crumb.to ? <Link to={crumb.to}>{crumb.label}</Link> : <span>{crumb.label}</span>}
             </span>
           ))}

@@ -40,9 +40,7 @@ def _layer_properties(file_stated: dict[str, dict], owner_stated: dict[str, dict
     return {key: {**file_stated.get(key, {}), **owner_stated.get(key, {})} for key in keys}
 
 
-def merge_run_dfd(
-    application_id: str, run_id: str, repo: Repository, diagram_id: str | None = None
-) -> MergedDfd:
+def merge_run_dfd(application_id: str, run_id: str, repo: Repository, diagram_id: str | None = None) -> MergedDfd:
     """Resolves one run's DFD the way the user sees it: this run's
     auto-generated assets and flows, plus the Application's manual assets,
     manual flows, and trust-boundary overrides, matched by component *name*.
@@ -69,9 +67,7 @@ def merge_run_dfd(
     layout_by_key: dict[str, DiagramElementLayout] = {}
     if diagram_id is not None:
         layout_by_key = {layout.element_key: layout for layout in repo.list_diagram_element_layouts(diagram_id)}
-        all_assets = [
-            asset for asset in all_assets if not _hidden(layout_by_key, f"{asset.type.value}:{asset.name}")
-        ]
+        all_assets = [asset for asset in all_assets if not _hidden(layout_by_key, f"{asset.type.value}:{asset.name}")]
 
     manual_asset_ids = {asset.id for asset in all_assets if asset.source == "manual"}
     name_to_id: dict[str, str] = {}
@@ -137,13 +133,17 @@ def merge_run_dfd(
     # a Threagile protocol). Asset and flow ids are their facts' ids, so this is a direct lookup.
     file_stated: dict[str, dict] = {}
     node_stated: dict[str, dict] = {
-        n.id: n.attributes["stated_properties"] for n in repo.list_fact_nodes_for_run(run_id) if n.attributes.get("stated_properties")
+        n.id: n.attributes["stated_properties"]
+        for n in repo.list_fact_nodes_for_run(run_id)
+        if n.attributes.get("stated_properties")
     }
     for asset in run_assets:
         if asset.id in node_stated:
             file_stated[f"{asset.type.value}:{asset.name}"] = dict(node_stated[asset.id])
     edge_stated: dict[str, dict] = {
-        e.id: e.attributes["stated_properties"] for e in repo.list_fact_edges_for_run(run_id) if e.attributes.get("stated_properties")
+        e.id: e.attributes["stated_properties"]
+        for e in repo.list_fact_edges_for_run(run_id)
+        if e.attributes.get("stated_properties")
     }
     for flow in flows:
         if flow.id in edge_stated and flow.source_asset_id in valid_ids and flow.target_asset_id in valid_ids:

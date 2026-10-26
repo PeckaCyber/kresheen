@@ -34,7 +34,9 @@ def acceptable(expression: str) -> bool:
 
 
 def licences(artifact: dict) -> list[str]:
-    return sorted({entry.get("spdxExpression") or entry.get("value") or "" for entry in artifact.get("licenses", [])} - {""})
+    return sorted(
+        {entry.get("spdxExpression") or entry.get("value") or "" for entry in artifact.get("licenses", [])} - {""}
+    )
 
 
 def main(paths: list[str]) -> int:

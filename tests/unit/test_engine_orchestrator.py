@@ -31,14 +31,19 @@ def _repo(tmp_path) -> SQLRepository:
 def test_execute_run_end_to_end_with_a_manifest_upload_source(tmp_path):
     repo = _repo(tmp_path)
     ds = DataSourceConfig(
-        id="DS-1", application_id="APP-1", type="manifest_upload",
+        id="DS-1",
+        application_id="APP-1",
+        type="manifest_upload",
         connection_details={"content": _ONE_DATA_STORE_MANIFEST},
         created_at=datetime.now(UTC),
     )
     repo.save_data_source(ds)
     run = ThreatModelRun(
-        id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1",
-        data_source_config_ids=["DS-1"], started_at=datetime.now(UTC),
+        id="RUN-1",
+        application_id="APP-1",
+        triggered_by_user_id="USER-1",
+        data_source_config_ids=["DS-1"],
+        started_at=datetime.now(UTC),
     )
     repo.save_run(run)
 
@@ -60,13 +65,19 @@ def test_execute_run_marks_failed_and_reraises_on_ingestor_error(tmp_path, monke
     repo = _repo(tmp_path)
     repo.save_data_source(
         DataSourceConfig(
-            id="DS-1", application_id="APP-1", type="manifest_upload",
-            connection_details={"content": _ONE_DATA_STORE_MANIFEST}, created_at=datetime.now(UTC),
+            id="DS-1",
+            application_id="APP-1",
+            type="manifest_upload",
+            connection_details={"content": _ONE_DATA_STORE_MANIFEST},
+            created_at=datetime.now(UTC),
         )
     )
     run = ThreatModelRun(
-        id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1",
-        data_source_config_ids=["DS-1"], started_at=datetime.now(UTC),
+        id="RUN-1",
+        application_id="APP-1",
+        triggered_by_user_id="USER-1",
+        data_source_config_ids=["DS-1"],
+        started_at=datetime.now(UTC),
     )
     repo.save_run(run)
 
@@ -87,14 +98,20 @@ def test_failed_run_names_the_data_source_by_filename_without_paths_or_tokens(tm
     repo = _repo(tmp_path)
     repo.save_data_source(
         DataSourceConfig(
-            id="DS-1", application_id="APP-1", type="manifest_upload",
-            connection_details={"content": "x", "filename": "bad-deploy.yaml"}, created_at=datetime.now(UTC),
+            id="DS-1",
+            application_id="APP-1",
+            type="manifest_upload",
+            connection_details={"content": "x", "filename": "bad-deploy.yaml"},
+            created_at=datetime.now(UTC),
         )
     )
     repo.save_run(
         ThreatModelRun(
-            id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1",
-            data_source_config_ids=["DS-1"], started_at=datetime.now(UTC),
+            id="RUN-1",
+            application_id="APP-1",
+            triggered_by_user_id="USER-1",
+            data_source_config_ids=["DS-1"],
+            started_at=datetime.now(UTC),
         )
     )
 
@@ -110,15 +127,18 @@ def test_failed_run_names_the_data_source_by_filename_without_paths_or_tokens(tm
 
 
 def test_execute_run_skips_unregistered_data_source_type(tmp_path):
-    """"container_image" is a valid schema value (DataSourceConfig.type) but has no
+    """ "container_image" is a valid schema value (DataSourceConfig.type) but has no
     entry in `_INGESTORS` -- the orchestrator should skip it (with a warning), not crash."""
     repo = _repo(tmp_path)
     repo.save_data_source(
         DataSourceConfig(id="DS-1", application_id="APP-1", type="container_image", created_at=datetime.now(UTC))
     )
     run = ThreatModelRun(
-        id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1",
-        data_source_config_ids=["DS-1"], started_at=datetime.now(UTC),
+        id="RUN-1",
+        application_id="APP-1",
+        triggered_by_user_id="USER-1",
+        data_source_config_ids=["DS-1"],
+        started_at=datetime.now(UTC),
     )
     repo.save_run(run)
 

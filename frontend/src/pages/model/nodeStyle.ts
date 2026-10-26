@@ -18,20 +18,20 @@ export interface NodeAppearance {
  * @param openThreatCount - Total count of open threats when worst is HIGH/CRITICAL, else 0
  * @returns Styling: neutral fill, ring + badge only for HIGH/CRITICAL threats
  */
-export function nodeAppearance(
-  worst: string | null,
-  openThreatCount: number,
-): NodeAppearance {
+export function nodeAppearance(worst: string | null, openThreatCount: number): NodeAppearance {
   const isHighOrCritical = worst === "critical" || worst === "high";
 
   return {
     fill: "var(--pc-panel-2)",
     text: "var(--bs-body-color)",
     ring: isHighOrCritical && worst ? severityColor(worst) : "var(--pc-border)",
-    badge: isHighOrCritical && openThreatCount > 0 ? {
-      label: `${worst} · ${openThreatCount} threat${openThreatCount === 1 ? "" : "s"}`,
-      color: severityColor(worst),
-    } : null,
+    badge:
+      isHighOrCritical && openThreatCount > 0
+        ? {
+            label: `${worst} · ${openThreatCount} threat${openThreatCount === 1 ? "" : "s"}`,
+            color: severityColor(worst),
+          }
+        : null,
   };
 }
 

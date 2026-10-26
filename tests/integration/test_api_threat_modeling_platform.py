@@ -25,7 +25,13 @@ def _login(client: TestClient, email: str) -> str:
 def _owner_client(tmp_path) -> tuple[TestClient, str]:
     client, repo, _ = _client_and_repo(tmp_path)
     repo.save_user(
-        User(id="USER-owner", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-owner",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     return client, _login(client, _OWNER_EMAIL)
 
@@ -33,7 +39,13 @@ def _owner_client(tmp_path) -> tuple[TestClient, str]:
 def _member_client(tmp_path) -> tuple[TestClient, str]:
     client, repo, _ = _client_and_repo(tmp_path)
     repo.save_user(
-        User(id="USER-member", email=_MEMBER_EMAIL, password_hash=hash_password(_PASSWORD), role="member", created_at=datetime.now(UTC))
+        User(
+            id="USER-member",
+            email=_MEMBER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="member",
+            created_at=datetime.now(UTC),
+        )
     )
     return client, _login(client, _MEMBER_EMAIL)
 
@@ -82,13 +94,25 @@ def test_predefined_rules_are_listed_generically_and_require_login(tmp_path):
 
 def test_curated_feed_entries_are_hidden(tmp_path):
     client, repo, _ = _client_and_repo(tmp_path)
-    repo.save_user(User(id="USER-1", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(
+            id="USER-1",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
+    )
     _login(client, _OWNER_EMAIL)
     now = datetime.now(UTC)
     from kresheen.models.threat_kb import ThreatKBEntry
 
     repo.save_kb_entries(
-        [ThreatKBEntry(id="KB-1", source="kresheen_curated", name="Curated", description="d", created_at=now, updated_at=now)]
+        [
+            ThreatKBEntry(
+                id="KB-1", source="kresheen_curated", name="Curated", description="d", created_at=now, updated_at=now
+            )
+        ]
     )
 
     response = client.get("/api/threat-kb")
@@ -98,12 +122,22 @@ def test_curated_feed_entries_are_hidden(tmp_path):
 
 def test_cannot_delete_a_non_custom_entry(tmp_path):
     client, repo, _ = _client_and_repo(tmp_path)
-    repo.save_user(User(id="USER-1", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(
+            id="USER-1",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
+    )
     csrf = _login(client, _OWNER_EMAIL)
     now = datetime.now(UTC)
     from kresheen.models.threat_kb import ThreatKBEntry
 
-    repo.save_kb_entries([ThreatKBEntry(id="KB-1", source="mitre_attack", name="T1", description="d", created_at=now, updated_at=now)])
+    repo.save_kb_entries(
+        [ThreatKBEntry(id="KB-1", source="mitre_attack", name="T1", description="d", created_at=now, updated_at=now)]
+    )
 
     response = client.delete("/api/threat-kb/KB-1", headers={"X-CSRF-Token": csrf})
 
@@ -130,7 +164,13 @@ def _ai_owner_client(tmp_path, models: list[str] | None = None) -> tuple[TestCli
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id="USER-owner", email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id="USER-owner",
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     provider = FakeProvider(models=[ModelInfo(m, m) for m in (models or [])])
     client = TestClient(create_app(db_url=db_url, llm_provider=provider))
@@ -151,7 +191,7 @@ def test_get_agent_config_defaults_when_unset(tmp_path):
 
 
 def test_save_agent_config_with_no_model_and_no_key_is_valid(tmp_path):
-    """"None" (rule-based only) is a permanent, valid choice -- no key required."""
+    """ "None" (rule-based only) is a permanent, valid choice -- no key required."""
     client, csrf = _ai_owner_client(tmp_path)
 
     response = client.put("/api/agent-config", json={"default_model": None}, headers={"X-CSRF-Token": csrf})

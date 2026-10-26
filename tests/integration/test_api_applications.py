@@ -17,8 +17,11 @@ def _logged_in_client(tmp_path) -> tuple[TestClient, str]:
     repo = SQLRepository(db_url)
     repo.save_user(
         User(
-            id="USER-test", email=_TEST_EMAIL, password_hash=hash_password(_TEST_PASSWORD),
-            role="owner", created_at=datetime.now(UTC),
+            id="USER-test",
+            email=_TEST_EMAIL,
+            password_hash=hash_password(_TEST_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
         )
     )
     client = TestClient(create_app(db_url=db_url))
@@ -99,9 +102,7 @@ def test_update_application_metadata_requires_csrf_and_404s_for_unknown_applicat
     no_csrf = client.patch(f"/api/applications/{application['id']}/metadata", json={"name": "x"})
     assert no_csrf.status_code == 403
 
-    unknown = client.patch(
-        "/api/applications/nope/metadata", json={"name": "x"}, headers={"X-CSRF-Token": csrf}
-    )
+    unknown = client.patch("/api/applications/nope/metadata", json={"name": "x"}, headers={"X-CSRF-Token": csrf})
     assert unknown.status_code == 404
 
 
@@ -341,18 +342,14 @@ def test_full_run_lifecycle_with_github_source_produces_an_sbom_and_a_vulnerabil
 
     from tests.conftest import build_tarball_bytes
 
-    fixture = json.loads(
-        (Path(__file__).parent.parent / "fixtures" / "grype" / "sample_cyclonedx.json").read_text()
-    )
+    fixture = json.loads((Path(__file__).parent.parent / "fixtures" / "grype" / "sample_cyclonedx.json").read_text())
     tarball = build_tarball_bytes({"package.json": "{}", "package-lock.json": "{}"})
 
     client, csrf = _logged_in_client(tmp_path)
     application = client.post("/api/applications", json={"name": "GitHub App"}, headers={"X-CSRF-Token": csrf}).json()
 
     with responses.RequestsMock() as rsps:
-        rsps.add(
-            responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200
-        )
+        rsps.add(responses.GET, "https://api.github.com/repos/acme/widget/tarball", body=tarball, status=200)
 
         client.post(
             f"/api/applications/{application['id']}/data-sources",
@@ -622,14 +619,18 @@ def test_move_manual_asset_updates_position_and_rejects_non_manual_ids(tmp_path)
         headers=headers,
     ).json()
 
-    moved = client.patch(f"{base}/manual-assets/{asset['id']}", json={"position_x": 300, "position_y": 400}, headers=headers)
+    moved = client.patch(
+        f"{base}/manual-assets/{asset['id']}", json={"position_x": 300, "position_y": 400}, headers=headers
+    )
     assert moved.status_code == 200
     dfd = _completed_run_dfd(client, csrf, application["id"])
     node = next(n for n in dfd["nodes"] if n["id"] == asset["id"])
     assert (node["position_x"], node["position_y"]) == (300, 400)
 
     auto_node = next(n for n in dfd["nodes"] if not n["is_manual"])
-    rejected = client.patch(f"{base}/manual-assets/{auto_node['id']}", json={"position_x": 1, "position_y": 1}, headers=headers)
+    rejected = client.patch(
+        f"{base}/manual-assets/{auto_node['id']}", json={"position_x": 1, "position_y": 1}, headers=headers
+    )
     assert rejected.status_code == 404
 
 
@@ -642,7 +643,11 @@ def test_manual_asset_can_be_restored_under_its_original_id_and_flows_reattach(t
     base = f"/api/applications/{application['id']}"
     a = client.post(f"{base}/manual-assets", json={"name": "A", "type": "process"}, headers=headers).json()
     b = client.post(f"{base}/manual-assets", json={"name": "B", "type": "process"}, headers=headers).json()
-    client.post(f"{base}/manual-flows", json={"source_ref": f"asset:{a['id']}", "target_ref": f"asset:{b['id']}"}, headers=headers)
+    client.post(
+        f"{base}/manual-flows",
+        json={"source_ref": f"asset:{a['id']}", "target_ref": f"asset:{b['id']}"},
+        headers=headers,
+    )
 
     assert client.delete(f"{base}/manual-assets/{a['id']}", headers=headers).status_code == 204
     assert _completed_run_dfd(client, csrf, application["id"])["edges"] == [] or all(
@@ -665,12 +670,18 @@ def test_client_supplied_ids_are_validated_and_cannot_overwrite_existing_rows(tm
     base = f"/api/applications/{application['id']}"
     existing = client.post(f"{base}/manual-assets", json={"name": "A", "type": "process"}, headers=headers).json()
 
-    collision = client.post(f"{base}/manual-assets", json={"id": existing["id"], "name": "X", "type": "process"}, headers=headers)
-    bad_shape = client.post(f"{base}/manual-assets", json={"id": "not-a-manual-id", "name": "X", "type": "process"}, headers=headers)
+    collision = client.post(
+        f"{base}/manual-assets", json={"id": existing["id"], "name": "X", "type": "process"}, headers=headers
+    )
+    bad_shape = client.post(
+        f"{base}/manual-assets", json={"id": "not-a-manual-id", "name": "X", "type": "process"}, headers=headers
+    )
     assert collision.status_code == 409
     assert bad_shape.status_code == 422
 
-    flow = client.post(f"{base}/manual-flows", json={"source_ref": "name:a", "target_ref": "name:b"}, headers=headers).json()
+    flow = client.post(
+        f"{base}/manual-flows", json={"source_ref": "name:a", "target_ref": "name:b"}, headers=headers
+    ).json()
     flow_collision = client.post(
         f"{base}/manual-flows", json={"id": flow["id"], "source_ref": "name:x", "target_ref": "name:y"}, headers=headers
     )
@@ -700,7 +711,12 @@ def test_threats_are_generated_for_dfd_components_with_mitigations(tmp_path):
     body = response.json()
     # One k8s Deployment -> a process -> all six STRIDE categories.
     assert {t["category"] for t in body["threats"]} == {
-        "Spoofing", "Tampering", "Repudiation", "InformationDisclosure", "DenialOfService", "ElevationOfPrivilege",
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "InformationDisclosure",
+        "DenialOfService",
+        "ElevationOfPrivilege",
     }
     assert all(t["mitigations"] and t["status"] == "open" for t in body["threats"])
     assert body["summary"]["total"] == len(body["threats"])
@@ -845,11 +861,15 @@ def test_threat_status_rejects_unknown_key_missing_csrf_and_bad_status(tmp_path)
     url = f"{_threats_url(application, run)}/status"
     key = client.get(_threats_url(application, run)).json()["threats"][0]["key"]
 
-    assert client.put(url, json={"threat_key": "NOPE|x", "status": "accepted"},
-                      headers={"X-CSRF-Token": csrf}).status_code == 404
+    assert (
+        client.put(url, json={"threat_key": "NOPE|x", "status": "accepted"}, headers={"X-CSRF-Token": csrf}).status_code
+        == 404
+    )
     assert client.put(url, json={"threat_key": key, "status": "accepted"}).status_code == 403
-    assert client.put(url, json={"threat_key": key, "status": "wontfix"},
-                      headers={"X-CSRF-Token": csrf}).status_code == 422
+    assert (
+        client.put(url, json={"threat_key": key, "status": "wontfix"}, headers={"X-CSRF-Token": csrf}).status_code
+        == 422
+    )
 
 
 def test_threats_404_for_a_run_of_a_different_application(tmp_path):
@@ -872,29 +892,74 @@ def test_threats_skip_scanned_files_and_repo_hub_grouping_edges(tmp_path):
     application = client.post("/api/applications", json={"name": "Repo App"}, headers={"X-CSRF-Token": csrf}).json()
     repo = SQLRepository(f"sqlite:///{tmp_path}/test.db")
     now = datetime.now(UTC)
-    repo.save_run(ThreatModelRun(
-        id="RUN-x", application_id=application["id"], triggered_by_user_id="USER-test",
-        status="completed", started_at=now,
-    ))
+    repo.save_run(
+        ThreatModelRun(
+            id="RUN-x",
+            application_id=application["id"],
+            triggered_by_user_id="USER-test",
+            status="completed",
+            started_at=now,
+        )
+    )
 
     def fact(node_id, node_type, name, source_ref):
-        return FactNode(id=node_id, run_id="RUN-x", application_id=application["id"], node_type=node_type,
-                        name=name, source_ref=source_ref, discovered_at=now)
+        return FactNode(
+            id=node_id,
+            run_id="RUN-x",
+            application_id=application["id"],
+            node_type=node_type,
+            name=name,
+            source_ref=source_ref,
+            discovered_at=now,
+        )
 
-    repo.save_fact_nodes([
-        fact("N-hub", "external_entity", "org/repo", "github_repository"),
-        fact("N-file", "code_artifact", "go.sum", "github_repository"),
-        fact("N-svc", "process", "billing-svc", "manifest_upload:k8s"),
-    ])
-    repo.replace_assets_for_run("RUN-x", [
-        Asset(id="N-hub", name="org/repo", type=AssetType.EXTERNAL_ENTITY, source="threat_model_run", run_id="RUN-x", created_at=now),
-        Asset(id="N-file", name="go.sum", type=AssetType.PROCESS, source="threat_model_run", run_id="RUN-x", created_at=now),
-        Asset(id="N-svc", name="billing-svc", type=AssetType.PROCESS, source="threat_model_run", run_id="RUN-x", created_at=now),
-    ])
-    repo.replace_asset_flows_for_run("RUN-x", [
-        AssetFlow(id="E-1", source_asset_id="N-hub", target_asset_id="N-file", label="discovered_in", run_id="RUN-x"),
-        AssetFlow(id="E-2", source_asset_id="N-hub", target_asset_id="N-svc", label="discovered_in", run_id="RUN-x"),
-    ])
+    repo.save_fact_nodes(
+        [
+            fact("N-hub", "external_entity", "org/repo", "github_repository"),
+            fact("N-file", "code_artifact", "go.sum", "github_repository"),
+            fact("N-svc", "process", "billing-svc", "manifest_upload:k8s"),
+        ]
+    )
+    repo.replace_assets_for_run(
+        "RUN-x",
+        [
+            Asset(
+                id="N-hub",
+                name="org/repo",
+                type=AssetType.EXTERNAL_ENTITY,
+                source="threat_model_run",
+                run_id="RUN-x",
+                created_at=now,
+            ),
+            Asset(
+                id="N-file",
+                name="go.sum",
+                type=AssetType.PROCESS,
+                source="threat_model_run",
+                run_id="RUN-x",
+                created_at=now,
+            ),
+            Asset(
+                id="N-svc",
+                name="billing-svc",
+                type=AssetType.PROCESS,
+                source="threat_model_run",
+                run_id="RUN-x",
+                created_at=now,
+            ),
+        ],
+    )
+    repo.replace_asset_flows_for_run(
+        "RUN-x",
+        [
+            AssetFlow(
+                id="E-1", source_asset_id="N-hub", target_asset_id="N-file", label="discovered_in", run_id="RUN-x"
+            ),
+            AssetFlow(
+                id="E-2", source_asset_id="N-hub", target_asset_id="N-svc", label="discovered_in", run_id="RUN-x"
+            ),
+        ],
+    )
 
     threats = client.get(f"/api/applications/{application['id']}/runs/RUN-x/threats").json()["threats"]
 
@@ -915,10 +980,18 @@ def test_custom_kb_entry_with_applies_to_generates_threats_and_reference_only_do
     headers = {"X-CSRF-Token": csrf}
     process_name = next(iter(_component_ids(client, application, run)))
 
-    applied = client.post("/api/threat-kb", headers=headers, json={
-        "name": "Badge cloning at {name}", "description": "d", "applies_to": "process",
-        "severity": "critical", "stride": "Spoofing", "mitigations": ["Rotate badges."],
-    }).json()
+    applied = client.post(
+        "/api/threat-kb",
+        headers=headers,
+        json={
+            "name": "Badge cloning at {name}",
+            "description": "d",
+            "applies_to": "process",
+            "severity": "critical",
+            "stride": "Spoofing",
+            "mitigations": ["Rotate badges."],
+        },
+    ).json()
     client.post("/api/threat-kb", headers=headers, json={"name": "Just a note", "description": "d"})
 
     threats = client.get(_threats_url(application, run)).json()["threats"]
@@ -934,8 +1007,11 @@ def test_custom_kb_entry_with_applies_to_generates_threats_and_reference_only_do
     assert custom[0]["risk_score"] == max(t["risk_score"] for t in threats)
 
     # Status works on a custom-rule threat like any other.
-    put = client.put(f"{_threats_url(application, run)}/status", headers=headers,
-                     json={"threat_key": custom[0]["key"], "status": "accepted", "note": "known"})
+    put = client.put(
+        f"{_threats_url(application, run)}/status",
+        headers=headers,
+        json={"threat_key": custom[0]["key"], "status": "accepted", "note": "known"},
+    )
     assert put.status_code == 200
 
     # Deleting the entry removes its threats.
@@ -962,27 +1038,50 @@ def test_manual_threat_attaches_to_component_and_flow_survives_rerun_and_deletes
     headers = {"X-CSRF-Token": csrf}
     app_url = f"/api/applications/{application['id']}"
     process_name, process_id = next(iter(_component_ids(client, application, run_1).items()))
-    db = client.post(f"{app_url}/manual-assets", headers=headers,
-                     json={"name": "Orders DB", "type": "data_store", "trust_boundary": "internal"}).json()
-    client.post(f"{app_url}/manual-flows", headers=headers,
-                json={"source_ref": f"name:{process_name}", "target_ref": f"asset:{db['id']}"})
+    db = client.post(
+        f"{app_url}/manual-assets",
+        headers=headers,
+        json={"name": "Orders DB", "type": "data_store", "trust_boundary": "internal"},
+    ).json()
+    client.post(
+        f"{app_url}/manual-flows",
+        headers=headers,
+        json={"source_ref": f"name:{process_name}", "target_ref": f"asset:{db['id']}"},
+    )
     flow_id = client.get(f"{app_url}/runs/{run_1['id']}/dfd").json()["edges"][0]["id"]
 
-    on_component = client.post(f"{_threats_url(application, run_1)[:-len('/threats')]}/manual-threats", headers=headers, json={
-        "element_kind": "component", "element_id": process_id, "title": "Insider exports data",
-        "severity": "high", "category": "InformationDisclosure", "mitigations": ["DLP on egress."],
-    })
+    on_component = client.post(
+        f"{_threats_url(application, run_1)[: -len('/threats')]}/manual-threats",
+        headers=headers,
+        json={
+            "element_kind": "component",
+            "element_id": process_id,
+            "title": "Insider exports data",
+            "severity": "high",
+            "category": "InformationDisclosure",
+            "mitigations": ["DLP on egress."],
+        },
+    )
     assert on_component.status_code == 200
     created = on_component.json()
     assert created["origin"] == "manual" and created["element_name"] == process_name
-    on_flow = client.post(f"{_threats_url(application, run_1)[:-len('/threats')]}/manual-threats", headers=headers, json={
-        "element_kind": "flow", "element_id": flow_id, "title": "Replay of order messages",
-    })
+    on_flow = client.post(
+        f"{_threats_url(application, run_1)[: -len('/threats')]}/manual-threats",
+        headers=headers,
+        json={
+            "element_kind": "flow",
+            "element_id": flow_id,
+            "title": "Replay of order messages",
+        },
+    )
     assert on_flow.json()["element_type"] == "data_flow"
     assert on_flow.json()["category"] is None
 
-    client.put(f"{_threats_url(application, run_1)}/status", headers=headers,
-               json={"threat_key": created["key"], "status": "mitigated", "note": "DLP deployed"})
+    client.put(
+        f"{_threats_url(application, run_1)}/status",
+        headers=headers,
+        json={"threat_key": created["key"], "status": "mitigated", "note": "DLP deployed"},
+    )
 
     run_2 = client.post(f"{app_url}/runs", headers=headers).json()
     body = client.get(_threats_url(application, run_2)).json()
@@ -1012,8 +1111,12 @@ def test_manual_threat_rejects_unknown_element_kb_entry_missing_csrf_and_foreign
 
     created = client.post(url, headers=headers, json=good).json()
     other = client.post("/api/applications", json={"name": "Other"}, headers=headers).json()
-    assert client.delete(f"/api/applications/{other['id']}/manual-threats/{created['manual_threat_id']}",
-                         headers=headers).status_code == 404
+    assert (
+        client.delete(
+            f"/api/applications/{other['id']}/manual-threats/{created['manual_threat_id']}", headers=headers
+        ).status_code
+        == 404
+    )
 
 
 def test_threats_carry_likelihood_evidence_and_a_risk_summary(tmp_path):
@@ -1023,7 +1126,10 @@ def test_threats_carry_likelihood_evidence_and_a_risk_summary(tmp_path):
     body = client.get(_threats_url(application, run)).json()
     threats = body["threats"]
 
-    assert all({"likelihood", "likelihood_factors", "evidence", "evidence_total", "risk", "risk_score"} <= t.keys() for t in threats)
+    assert all(
+        {"likelihood", "likelihood_factors", "evidence", "evidence_total", "risk", "risk_score"} <= t.keys()
+        for t in threats
+    )
     assert all(t["risk"] in ("critical", "high", "medium", "low") for t in threats)
     scores = [t["risk_score"] for t in threats]
     assert scores == sorted(scores, reverse=True)  # ranked by risk

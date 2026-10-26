@@ -114,6 +114,7 @@ def create_app(
         # in the server log; the client gets a short JSON body and no internals.
         logging.getLogger(__name__).exception("Unhandled error on %s %s", request.method, request.url.path)
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
     app.state.login_throttle = LoginThrottle()
     app.state.run_gate = RunGate()
     try:  # a run left non-terminal by a crash or kill would otherwise show "in progress" forever
@@ -151,7 +152,9 @@ def create_app(
     # Every method: an unknown `/api/*` path is a JSON 404 whether or not the SPA catch-all below exists, never
     # a 405 that hints the path is served for some other method.
     @app.api_route(
-        "/api/{rest:path}", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], include_in_schema=False
+        "/api/{rest:path}",
+        methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        include_in_schema=False,
     )
     def api_not_found(rest: str) -> None:
         raise HTTPException(status_code=404, detail="Not found")

@@ -22,4 +22,8 @@ SECURITY_ACTIONS: frozenset[str] = frozenset(
 
 
 def is_security_action(action: str) -> bool:
-    return action in SECURITY_ACTIONS or action.startswith(SECURITY_PREFIXES) or action in get_registry().security_actions()
+    return (
+        action in SECURITY_ACTIONS
+        or action.startswith(SECURITY_PREFIXES)
+        or action in get_registry().security_actions()
+    )

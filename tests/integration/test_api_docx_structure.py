@@ -14,9 +14,13 @@ PW = "correct-password-1"  # nosec: test fixture
 
 def test_docx_keeps_its_structure_with_the_fast_paragraph_path(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
-    SQLRepository(url).save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    SQLRepository(url).save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url))
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
     ids = c.post("/api/applications/sample").json()
     r = c.get(f"/api/applications/{ids['application_id']}/runs/{ids['run_id']}/report.docx")
     assert r.status_code == 200

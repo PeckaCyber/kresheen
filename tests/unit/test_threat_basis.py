@@ -6,8 +6,16 @@ from kresheen.models.threat import Threat
 
 def _threat(**overrides) -> Threat:
     fields = {
-        "key": "k", "rule_id": "PROC-S-01", "element_kind": "component", "element_id": "1", "element_name": "API",
-        "element_type": "process", "title": "t", "description": "d", "severity": "high", "mitigations": ["m"],
+        "key": "k",
+        "rule_id": "PROC-S-01",
+        "element_kind": "component",
+        "element_id": "1",
+        "element_name": "API",
+        "element_type": "process",
+        "title": "t",
+        "description": "d",
+        "severity": "high",
+        "mitigations": ["m"],
     }
     fields.update(overrides)
     return Threat(**fields)

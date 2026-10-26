@@ -29,9 +29,7 @@ def version_key(v: str) -> tuple[int, int, int]:
 
 
 def git(*args: str) -> str:
-    return subprocess.run(
-        ["git", *args], check=True, capture_output=True, text=True, cwd=ROOT
-    ).stdout.strip()
+    return subprocess.run(["git", *args], check=True, capture_output=True, text=True, cwd=ROOT).stdout.strip()
 
 
 def project_version() -> str:
@@ -94,9 +92,7 @@ def audit_findings(pip_path: str, npm_path: str) -> dict[tuple[str, str], dict]:
     npm = json.loads(Path(npm_path).read_text() or "{}")
     for name, v in npm.get("vulnerabilities", {}).items():
         for via in v.get("via", []):
-            if isinstance(
-                via, dict
-            ):  # a string means "vulnerable through that package", reported under its own name
+            if isinstance(via, dict):  # a string means "vulnerable through that package", reported under its own name
                 adv = via.get("url", "").rsplit("/", 1)[-1] or str(via.get("source"))
                 out[(adv, name)] = {
                     "id": adv,

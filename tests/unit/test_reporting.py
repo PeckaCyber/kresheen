@@ -42,15 +42,29 @@ HOSTILE = '<img src=x onerror=alert(1)> & "quoted"'
 
 def _component(id_, name, *, type_="process", boundary=None, manual=False, x=None, y=None, **kw):
     return ReportComponent(
-        id=id_, name=name, type=type_, trust_boundary=boundary, worst_severity=kw.pop("worst_severity", None),
-        open_finding_count=kw.pop("open_finding_count", 0), is_manual=manual, position_x=x, position_y=y, **kw,
+        id=id_,
+        name=name,
+        type=type_,
+        trust_boundary=boundary,
+        worst_severity=kw.pop("worst_severity", None),
+        open_finding_count=kw.pop("open_finding_count", 0),
+        is_manual=manual,
+        position_x=x,
+        position_y=y,
+        **kw,
     )
 
 
 def _flow(source, target, label=None, **kw):
     return ReportFlow(
-        id=f"F-{source.id}-{target.id}", source_id=source.id, target_id=target.id, source_name=source.name,
-        target_name=target.name, label=label, is_manual=kw.pop("is_manual", False), **kw,
+        id=f"F-{source.id}-{target.id}",
+        source_id=source.id,
+        target_id=target.id,
+        source_name=source.name,
+        target_name=target.name,
+        label=label,
+        is_manual=kw.pop("is_manual", False),
+        **kw,
     )
 
 
@@ -106,7 +120,7 @@ def test_svg_marks_out_of_scope_and_severity_and_edges_use_node_borders():
 
     assert "#dc3545" in svg  # critical fill
     assert "api (3)" in svg
-    assert "out of scope" in svg and "opacity=\"0.45\"" in svg
+    assert "out of scope" in svg and 'opacity="0.45"' in svg
     assert "marker-end" in svg and ">HTTP<" in svg
 
 
@@ -121,8 +135,15 @@ def test_svg_of_an_empty_model_says_so_and_is_valid():
 def test_svg_skips_flows_whose_endpoint_is_missing_and_wraps_long_names():
     a = _component("A", "x" * 80)
 
-    svg = render_svg([a], [ReportFlow(id="F", source_id="A", target_id="GONE", source_name="x", target_name="?",
-                                      label=None, is_manual=False)], [])
+    svg = render_svg(
+        [a],
+        [
+            ReportFlow(
+                id="F", source_id="A", target_id="GONE", source_name="x", target_name="?", label=None, is_manual=False
+            )
+        ],
+        [],
+    )
 
     assert "marker-end" not in svg
     root = ET.fromstring(svg.split("?>\n", 1)[1])
@@ -177,25 +198,47 @@ def _repo_with_run(tmp_path, details):
     repo = SQLRepository(f"sqlite:///{tmp_path}/r.db")
     now = datetime.now(UTC)
     repo.save_application(Application(id="APP-1", name="Shop", owner_user_id="U", created_at=now, updated_at=now))
-    repo.save_data_source(DataSourceConfig(
-        id="DS-1", application_id="APP-1", type="github_repository", connection_details=details,
-        created_at=now,
-    ))
-    repo.save_data_source(DataSourceConfig(
-        id="DS-2", application_id="APP-1", type="manifest_upload",
-        connection_details={"filename": "deploy.yaml", "content": "SECRET-CONTENT"}, created_at=now,
-    ))
-    repo.save_run(ThreatModelRun(
-        id="RUN-1", application_id="APP-1", triggered_by_user_id="U", data_source_config_ids=["DS-1", "DS-2"],
-        status="completed", started_at=now, completed_at=now,
-    ))
+    repo.save_data_source(
+        DataSourceConfig(
+            id="DS-1",
+            application_id="APP-1",
+            type="github_repository",
+            connection_details=details,
+            created_at=now,
+        )
+    )
+    repo.save_data_source(
+        DataSourceConfig(
+            id="DS-2",
+            application_id="APP-1",
+            type="manifest_upload",
+            connection_details={"filename": "deploy.yaml", "content": "SECRET-CONTENT"},
+            created_at=now,
+        )
+    )
+    repo.save_run(
+        ThreatModelRun(
+            id="RUN-1",
+            application_id="APP-1",
+            triggered_by_user_id="U",
+            data_source_config_ids=["DS-1", "DS-2"],
+            status="completed",
+            started_at=now,
+            completed_at=now,
+        )
+    )
     return repo
 
 
 def test_report_lists_sources_by_type_and_safe_label_never_credentials_or_content(tmp_path):
-    repo = _repo_with_run(tmp_path, {
-        "repo_url": "https://user:ghp_SECRET@github.com/org/repo", "github_token": "ghp_SECRET", "ref": "main",
-    })
+    repo = _repo_with_run(
+        tmp_path,
+        {
+            "repo_url": "https://user:ghp_SECRET@github.com/org/repo",
+            "github_token": "ghp_SECRET",
+            "ref": "main",
+        },
+    )
 
     report = build_report("APP-1", "RUN-1", repo)
     everything = render_html(report) + threats_csv(report) + report.model_dump_json()
@@ -213,14 +256,28 @@ def test_report_includes_model_metadata_in_html_and_docx(tmp_path):
     reviewer, contributors flow from Application through to both renderers."""
     repo = SQLRepository(f"sqlite:///{tmp_path}/r.db")
     now = datetime.now(UTC)
-    repo.save_application(Application(
-        id="APP-1", name="Shop", owner_user_id="U", created_at=now, updated_at=now,
-        owner="Jane Owner", reviewer="Pat Reviewer", contributors=["Alex", HOSTILE],
-    ))
-    repo.save_run(ThreatModelRun(
-        id="RUN-1", application_id="APP-1", triggered_by_user_id="U", status="completed",
-        started_at=now, completed_at=now,
-    ))
+    repo.save_application(
+        Application(
+            id="APP-1",
+            name="Shop",
+            owner_user_id="U",
+            created_at=now,
+            updated_at=now,
+            owner="Jane Owner",
+            reviewer="Pat Reviewer",
+            contributors=["Alex", HOSTILE],
+        )
+    )
+    repo.save_run(
+        ThreatModelRun(
+            id="RUN-1",
+            application_id="APP-1",
+            triggered_by_user_id="U",
+            status="completed",
+            started_at=now,
+            completed_at=now,
+        )
+    )
 
     report = build_report("APP-1", "RUN-1", repo)
 
@@ -249,8 +306,10 @@ def test_build_report_rejects_unknown_application_and_foreign_run(tmp_path):
 
 
 def test_statements_use_the_spec_labels_and_skip_out_of_scope():
-    lines = statements_for("data_store", {"is_encrypted": False, "stores_credentials": True, "out_of_scope": True,
-                                          "out_of_scope_reason": "vendor"})
+    lines = statements_for(
+        "data_store",
+        {"is_encrypted": False, "stores_credentials": True, "out_of_scope": True, "out_of_scope_reason": "vendor"},
+    )
 
     assert lines == ["Encrypted at rest: No", "Stores credentials: Yes"]
     assert statements_for("data_flow", {"protocol": "gRPC"}) == ["Protocol: gRPC"]
@@ -261,7 +320,10 @@ def test_statements_use_the_spec_labels_and_skip_out_of_scope():
 
 def test_sbom_rows_resolve_package_severity_and_order_worst_first():
     sbom = {
-        "components": [{"bom-ref": "r1", "name": "lodash", "version": "4.17.20"}, {"bom-ref": "r2", "name": "left-pad"}],
+        "components": [
+            {"bom-ref": "r1", "name": "lodash", "version": "4.17.20"},
+            {"bom-ref": "r2", "name": "left-pad"},
+        ],
         "vulnerabilities": [
             {"id": "CVE-2", "ratings": [{"score": 1}, {"severity": "low"}], "affects": [{"ref": "r2"}]},
             {"id": "CVE-1", "ratings": [{"severity": "critical"}], "affects": [{"ref": "r1"}]},
@@ -275,8 +337,10 @@ def test_sbom_rows_resolve_package_severity_and_order_worst_first():
         {"id": "CVE-1", "severity": "critical", "package": "lodash@4.17.20"},
         {"id": "CVE-2", "severity": "low", "package": "left-pad"},
     ]
-    assert sbom_vulnerability_rows(None) == [] and len(sbom_vulnerability_rows(
-        {"vulnerabilities": [{"id": str(i)} for i in range(80)]}, limit=50)) == 50
+    assert (
+        sbom_vulnerability_rows(None) == []
+        and len(sbom_vulnerability_rows({"vulnerabilities": [{"id": str(i)} for i in range(80)]}, limit=50)) == 50
+    )
 
 
 # -- DOCX / HTML ----------------------------------------------------------------
@@ -297,9 +361,14 @@ def test_docx_handles_control_characters_and_hostile_text(tmp_path):
 
 
 def test_pdf_is_well_formed_and_never_carries_credentials(tmp_path):
-    repo = _repo_with_run(tmp_path, {
-        "repo_url": "https://user:ghp_SECRET@github.com/org/repo", "github_token": "ghp_SECRET", "ref": "main",
-    })
+    repo = _repo_with_run(
+        tmp_path,
+        {
+            "repo_url": "https://user:ghp_SECRET@github.com/org/repo",
+            "github_token": "ghp_SECRET",
+            "ref": "main",
+        },
+    )
     report = build_report("APP-1", "RUN-1", repo)
 
     data = render_pdf(report)
@@ -325,8 +394,14 @@ def _finding(id_, severity, title="Vulnerable dependency", element="api"):
     from kresheen.reporting.model import ReportFinding
 
     return ReportFinding(
-        id=id_, title=title, severity=severity, status="open", domain="vulnerability",
-        source_tool="grype", element=element, description="A vulnerable package version is in use.",
+        id=id_,
+        title=title,
+        severity=severity,
+        status="open",
+        domain="vulnerability",
+        source_tool="grype",
+        element=element,
+        description="A vulnerable package version is in use.",
         discovered_at=datetime.now(UTC),
     )
 
@@ -360,15 +435,45 @@ def test_build_threat_dragon_model_places_components_flows_and_boundaries(tmp_pa
     repo = _repo_with_run(tmp_path, {})
     application = repo.get_application("APP-1")
     components = [
-        ReportComponent(id="C1", name="api", type="process", trust_boundary="prod", worst_severity=None,
-                         open_finding_count=0, is_manual=False),
-        ReportComponent(id="C2", name="db", type="data_store", trust_boundary="prod", worst_severity=None,
-                         open_finding_count=0, is_manual=False),
-        ReportComponent(id="C3", name=HOSTILE, type="external_entity", trust_boundary=None, worst_severity=None,
-                         open_finding_count=0, is_manual=False),
+        ReportComponent(
+            id="C1",
+            name="api",
+            type="process",
+            trust_boundary="prod",
+            worst_severity=None,
+            open_finding_count=0,
+            is_manual=False,
+        ),
+        ReportComponent(
+            id="C2",
+            name="db",
+            type="data_store",
+            trust_boundary="prod",
+            worst_severity=None,
+            open_finding_count=0,
+            is_manual=False,
+        ),
+        ReportComponent(
+            id="C3",
+            name=HOSTILE,
+            type="external_entity",
+            trust_boundary=None,
+            worst_severity=None,
+            open_finding_count=0,
+            is_manual=False,
+        ),
     ]
-    flows = [ReportFlow(id="F1", source_id="C3", target_id="C1", source_name="ext", target_name="api",
-                         label="request", is_manual=False)]
+    flows = [
+        ReportFlow(
+            id="F1",
+            source_id="C3",
+            target_id="C1",
+            source_name="ext",
+            target_name="api",
+            label="request",
+            is_manual=False,
+        )
+    ]
     boundaries = [ReportBoundary(name="prod", position_x=10.0, position_y=20.0)]
 
     model = build_threat_dragon_model(application, components, flows, boundaries)

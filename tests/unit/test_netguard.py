@@ -1,4 +1,5 @@
 """Outbound URL guard."""
+
 import pytest
 
 from kresheen.netguard import OutboundBlocked, check_outbound_url
@@ -7,10 +8,27 @@ from kresheen.netguard import OutboundBlocked, check_outbound_url
 @pytest.mark.parametrize(
     "url",
     [
-        "http://127.0.0.1:9100", "http://localhost:9100", "http://[::1]:9100", "http://2130706433:9100", "http://0x7f.1/",
-        "http://017700000001/", "http://169.254.169.254/latest", "http://[::ffff:127.0.0.1]/", "http://10.0.0.5", "http://192.168.1.10",
-        "http://172.16.0.1", "http://0.0.0.0", "http://[fe80::1]/", "file:///etc/passwd", "ftp://example.com", "gopher://x",
-        "http://example.com@127.0.0.1:9100", "http://", "https://", "http://[::1", "http://127.0.0.1:99999",
+        "http://127.0.0.1:9100",
+        "http://localhost:9100",
+        "http://[::1]:9100",
+        "http://2130706433:9100",
+        "http://0x7f.1/",
+        "http://017700000001/",
+        "http://169.254.169.254/latest",
+        "http://[::ffff:127.0.0.1]/",
+        "http://10.0.0.5",
+        "http://192.168.1.10",
+        "http://172.16.0.1",
+        "http://0.0.0.0",
+        "http://[fe80::1]/",
+        "file:///etc/passwd",
+        "ftp://example.com",
+        "gopher://x",
+        "http://example.com@127.0.0.1:9100",
+        "http://",
+        "https://",
+        "http://[::1",
+        "http://127.0.0.1:99999",
     ],
 )
 def test_internal_and_odd_urls_are_refused(url):

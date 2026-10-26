@@ -34,7 +34,9 @@ _MAX_LEN = 300
 def safe_run_error(exc: BaseException) -> str:
     """A message safe to store and show: no SQL, parameters, or server paths. Details stay in the server log."""
     if isinstance(exc, SQLAlchemyError):
-        return "A database error interrupted this run. Please run it again; if it keeps happening, check the server log."
+        return (
+            "A database error interrupted this run. Please run it again; if it keeps happening, check the server log."
+        )
     if isinstance(exc, MemoryError):
         return "The input was too large to process."
     if isinstance(exc, RecursionError):

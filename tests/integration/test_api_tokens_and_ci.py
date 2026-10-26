@@ -73,7 +73,9 @@ def test_create_token_requires_csrf(tmp_path):
 def test_source_ref_rejects_traversal(tmp_path):
     client, csrf = _logged_in_client(tmp_path)
     app = client.post("/api/applications", json={"name": "A"}, headers={"X-CSRF-Token": csrf}).json()
-    bad = client.post(f"/api/applications/{app['id']}/runs", json={"source_ref": "../../x"}, headers={"X-CSRF-Token": csrf})
+    bad = client.post(
+        f"/api/applications/{app['id']}/runs", json={"source_ref": "../../x"}, headers={"X-CSRF-Token": csrf}
+    )
     assert bad.status_code == 422
 
 
@@ -97,7 +99,11 @@ def test_diff_marks_new_boundary_crossing_flow(tmp_path, monkeypatch):
     first = client.post(f"{base}/runs", json={}, headers=h).json()
     user = client.post(f"{base}/manual-assets", json={"name": "Customer", "type": "external_entity"}, headers=h).json()
     api = client.post(f"{base}/manual-assets", json={"name": "API", "type": "process"}, headers=h).json()
-    client.post(f"{base}/manual-flows", json={"source_ref": f"asset:{user['id']}", "target_ref": f"asset:{api['id']}", "label": "x"}, headers=h)
+    client.post(
+        f"{base}/manual-flows",
+        json={"source_ref": f"asset:{user['id']}", "target_ref": f"asset:{api['id']}", "label": "x"},
+        headers=h,
+    )
     second = client.post(f"{base}/runs", json={}, headers=h).json()
     _pretend_customer_to_api_flow_is_new(monkeypatch)
 
@@ -126,7 +132,11 @@ def test_ci_command_fails_the_gate_on_new_boundary_crossing_then_passes_when_rel
     client.post(f"{base}/runs", json={}, headers=h)  # baseline
     user = client.post(f"{base}/manual-assets", json={"name": "Customer", "type": "external_entity"}, headers=h).json()
     api = client.post(f"{base}/manual-assets", json={"name": "API", "type": "process"}, headers=h).json()
-    client.post(f"{base}/manual-flows", json={"source_ref": f"asset:{user['id']}", "target_ref": f"asset:{api['id']}", "label": "x"}, headers=h)
+    client.post(
+        f"{base}/manual-flows",
+        json={"source_ref": f"asset:{user['id']}", "target_ref": f"asset:{api['id']}", "label": "x"},
+        headers=h,
+    )
     _route_requests_to(monkeypatch, _bearer_client(client, secret))
     _pretend_customer_to_api_flow_is_new(monkeypatch)
 
@@ -157,7 +167,11 @@ def test_expiry_defaults_to_90_days_and_never_needs_an_explicit_null(tmp_path):
     expires = datetime.fromisoformat(omitted["expires_at"])
     assert timedelta(days=89, hours=23) < expires - datetime.now(UTC) <= timedelta(days=90)
     chosen = client.post("/api/tokens", json={"name": "b", "expires_in_days": 30}, headers=headers).json()
-    assert timedelta(days=29, hours=23) < datetime.fromisoformat(chosen["expires_at"]) - datetime.now(UTC) <= timedelta(days=30)
+    assert (
+        timedelta(days=29, hours=23)
+        < datetime.fromisoformat(chosen["expires_at"]) - datetime.now(UTC)
+        <= timedelta(days=30)
+    )
     never = client.post("/api/tokens", json={"name": "c", "expires_in_days": None}, headers=headers).json()
     assert never["expires_at"] is None
     assert client.post("/api/tokens", json={"name": "d", "expires_in_days": 0}, headers=headers).status_code == 422

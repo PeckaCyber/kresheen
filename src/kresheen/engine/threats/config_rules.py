@@ -106,7 +106,8 @@ class FactContext:
     def config_stores(self, workload: FactNode) -> list[FactNode]:
         refs = set(workload.attributes.get("configmap_refs", []))
         return [
-            s for s in self.stores
+            s
+            for s in self.stores
             if s.attributes["kind"] == "ConfigMap"
             and s.attributes["namespace"] == workload.attributes["namespace"]
             and unqualified_name(s).split("/", 1)[1] in refs
@@ -154,7 +155,6 @@ def is_ml_inference(w: FactNode) -> bool:
     return any(k in text for k in keywords)
 
 
-
 _AUTH_KEY_RE = re.compile(r"auth|oidc|ldap|oauth|saml|htpasswd", re.IGNORECASE)
 _NEGATED_AUTH_KEY_RE = re.compile(r"DISABLE|SKIP|NO[_-]|WITHOUT|INSECURE|ANONYMOUS", re.IGNORECASE)
 DISABLED_VALUES = {"none", "false", "disabled", "off", "no", "0", ""}
@@ -183,8 +183,10 @@ def is_exposed(ctx: FactContext, w: FactNode) -> list[FactNode]:
     published = [s for s in services if s.attributes.get("service_type") in ("LoadBalancer", "NodePort")]
     names = {s.name.split("/", 1)[1] for s in services}
     published += [
-        n for n in ctx.nodes
-        if n.node_type == "ingress" and n.attributes["namespace"] == w.attributes["namespace"]
+        n
+        for n in ctx.nodes
+        if n.node_type == "ingress"
+        and n.attributes["namespace"] == w.attributes["namespace"]
         and names & set(n.attributes.get("backend_services", []))
     ]
     return published
@@ -258,47 +260,79 @@ def _detect_t02(ctx: FactContext) -> list[Hit]:
                 if w.attributes.get("service_account") == subject["name"] and (
                     w.attributes["namespace"] == subject.get("namespace", w.attributes["namespace"])
                 ):
-                    hits.append(Hit("component", w.name, [f"{b.name} grants cluster-admin to ServiceAccount {subject['name']}"]))
+                    hits.append(
+                        Hit("component", w.name, [f"{b.name} grants cluster-admin to ServiceAccount {subject['name']}"])
+                    )
     return hits
 
 
 def _detect_t08(ctx: FactContext) -> list[Hit]:
     return [
-        Hit("component", s.name, [f"credential-like keys held in a ConfigMap: {', '.join(sorted(s.attributes['secret_keys']))}"])
+        Hit(
+            "component",
+            s.name,
+            [f"credential-like keys held in a ConfigMap: {', '.join(sorted(s.attributes['secret_keys']))}"],
+        )
         for s in ctx.stores
         if s.attributes["kind"] == "ConfigMap" and s.attributes.get("secret_keys")
     ]
 
 
-
 CONFIG_RULES: tuple[ConfigRule, ...] = (
-    ConfigRule("SC-T01", "T01", "process", "Spoofing",
-               "{name} is reachable from the internet with no declared authentication",
-               "{name} is published outside the cluster (LoadBalancer/NodePort) and its manifests declare no authentication, so anyone who can reach it can use it.",
-               "high",
-               ("Put an authenticating proxy or ingress with SSO in front, or enable the application's own authentication.",
-                "Restrict source addresses with a NetworkPolicy or load-balancer allow-list.",
-                "Use an internal (ClusterIP) service and reach it through a VPN or bastion."),
-               ("CWE-306",), ("T1190",),
-               "A workload is exposed by a LoadBalancer or NodePort Service and no authentication setting is declared", _detect_t01),
-    ConfigRule("SC-T02", "T02", "process", "ElevationOfPrivilege",
-               "{name} runs with cluster-admin rights",
-               "The ServiceAccount used by {name} is bound to cluster-admin, so a compromise of this workload is a compromise of the whole cluster.",
-               "critical",
-               ("Replace the binding with a namespaced Role that grants only the verbs and resources needed.",
-                "Bind the ServiceAccount only in the namespaces it must manage.",
-                "Audit ServiceAccount permissions regularly (kubectl auth can-i --list)."),
-               ("CWE-250", "CWE-269"), ("T1078",),
-               "A ServiceAccount used by a workload is bound to the cluster-admin ClusterRole", _detect_t02),
-    ConfigRule("SC-T08", "T08", "data_store", "InformationDisclosure",
-               "Credentials are stored in ConfigMap {name}",
-               "{name} holds credential-like values. ConfigMaps are not encrypted at rest and are readable by anyone with read access to the namespace.",
-               "high",
-               ("Move the values into Kubernetes Secrets (with encryption at rest) or an external secret manager.",
-                "Rotate every credential that has been stored in the ConfigMap.",
-                "Restrict read access to Secrets with RBAC."),
-               ("CWE-256", "CWE-798"), ("T1552",),
-               "A ConfigMap key names a credential (password, token, secret, API key) or a value embeds credentials in a URL", _detect_t08),
+    ConfigRule(
+        "SC-T01",
+        "T01",
+        "process",
+        "Spoofing",
+        "{name} is reachable from the internet with no declared authentication",
+        "{name} is published outside the cluster (LoadBalancer/NodePort) and its manifests declare no authentication, so anyone who can reach it can use it.",
+        "high",
+        (
+            "Put an authenticating proxy or ingress with SSO in front, or enable the application's own authentication.",
+            "Restrict source addresses with a NetworkPolicy or load-balancer allow-list.",
+            "Use an internal (ClusterIP) service and reach it through a VPN or bastion.",
+        ),
+        ("CWE-306",),
+        ("T1190",),
+        "A workload is exposed by a LoadBalancer or NodePort Service and no authentication setting is declared",
+        _detect_t01,
+    ),
+    ConfigRule(
+        "SC-T02",
+        "T02",
+        "process",
+        "ElevationOfPrivilege",
+        "{name} runs with cluster-admin rights",
+        "The ServiceAccount used by {name} is bound to cluster-admin, so a compromise of this workload is a compromise of the whole cluster.",
+        "critical",
+        (
+            "Replace the binding with a namespaced Role that grants only the verbs and resources needed.",
+            "Bind the ServiceAccount only in the namespaces it must manage.",
+            "Audit ServiceAccount permissions regularly (kubectl auth can-i --list).",
+        ),
+        ("CWE-250", "CWE-269"),
+        ("T1078",),
+        "A ServiceAccount used by a workload is bound to the cluster-admin ClusterRole",
+        _detect_t02,
+    ),
+    ConfigRule(
+        "SC-T08",
+        "T08",
+        "data_store",
+        "InformationDisclosure",
+        "Credentials are stored in ConfigMap {name}",
+        "{name} holds credential-like values. ConfigMaps are not encrypted at rest and are readable by anyone with read access to the namespace.",
+        "high",
+        (
+            "Move the values into Kubernetes Secrets (with encryption at rest) or an external secret manager.",
+            "Rotate every credential that has been stored in the ConfigMap.",
+            "Restrict read access to Secrets with RBAC.",
+        ),
+        ("CWE-256", "CWE-798"),
+        ("T1552",),
+        "A ConfigMap key names a credential (password, token, secret, API key) or a value embeds credentials in a URL",
+        _detect_t08,
+    ),
 )
 
 # AWS/Terraform sample rules live in their own module. It imports ConfigRule/Hit/FactContext

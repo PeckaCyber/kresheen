@@ -29,7 +29,8 @@ describe("Login providers", () => {
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
         if (url.endsWith("/api/auth/me")) return jsonResponse({ detail: "Not authenticated" }, 401);
-        if (url.endsWith("/api/capabilities")) return jsonResponse({ plugins: [], features: [], auth_providers: providers }, 200);
+        if (url.endsWith("/api/capabilities"))
+          return jsonResponse({ plugins: [], features: [], auth_providers: providers }, 200);
         return jsonResponse({ detail: "not found" }, 404);
       }),
     );
@@ -106,10 +107,7 @@ describe("Login", () => {
       const url = String(input);
       if (url.endsWith("/api/auth/me")) return jsonResponse({ detail: "Not authenticated" }, 401);
       if (url.endsWith("/api/auth/login")) {
-        return jsonResponse(
-          { csrf_token: "test-csrf", expires_at: "2026-01-01T00:00:00Z", role: "owner" },
-          200,
-        );
+        return jsonResponse({ csrf_token: "test-csrf", expires_at: "2026-01-01T00:00:00Z", role: "owner" }, 200);
       }
       void init;
       return jsonResponse({ detail: "not found" }, 404);
@@ -140,8 +138,10 @@ describe("Signed out by timeout", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith("/api/auth/me")) return jsonResponse({ csrf_token: "t", expires_at: "x", role: "owner", email: "a@x.test" }, 200);
-        if (url.endsWith("/api/capabilities")) return jsonResponse({ plugins: [], features: [], auth_providers: [] }, 200);
+        if (url.endsWith("/api/auth/me"))
+          return jsonResponse({ csrf_token: "t", expires_at: "x", role: "owner", email: "a@x.test" }, 200);
+        if (url.endsWith("/api/capabilities"))
+          return jsonResponse({ plugins: [], features: [], auth_providers: [] }, 200);
         return jsonResponse({ detail: "Signed out after a period of inactivity" }, 401);
       }),
     );

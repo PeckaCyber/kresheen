@@ -107,7 +107,9 @@ def _compute_rollup(applications: list[Application], repo: Repository) -> Rollup
             if summary is not None:
                 open_threats += summary.by_status.get("open", 0)
                 for risk, count in summary.open_by_risk.items():
-                    if count and (worst_risk is None or _SEVERITY_RANK.get(risk, 9) < _SEVERITY_RANK.get(worst_risk, 9)):
+                    if count and (
+                        worst_risk is None or _SEVERITY_RANK.get(risk, 9) < _SEVERITY_RANK.get(worst_risk, 9)
+                    ):
                         worst_risk = risk
             for severity, count in run.finding_counts_by_severity.items():
                 if not count:
@@ -174,9 +176,7 @@ def _to_out(
 @router.get("", response_model=GroupListOut)
 def list_groups(user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)) -> GroupListOut:
     by_group = _applications_by_group(repo)
-    groups = sorted(
-        (g for g in repo.list_groups() if can_view_group(user, g, repo)), key=lambda g: g.name.casefold()
-    )
+    groups = sorted((g for g in repo.list_groups() if can_view_group(user, g, repo)), key=lambda g: g.name.casefold())
     group_outs = [_to_out(g, by_group, repo, user) for g in groups]
     ungrouped = _compute_rollup(by_group.get(None, []), repo)
     return GroupListOut(
@@ -228,9 +228,7 @@ def update_group(
 
 
 @router.delete("/{group_id}", status_code=204, dependencies=[Depends(require_csrf)])
-def delete_group(
-    group_id: str, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)
-) -> None:
+def delete_group(group_id: str, user: User = Depends(get_current_user), repo: Repository = Depends(get_repo)) -> None:
     """Deleting a group never deletes its applications -- they move to the
     virtual Ungrouped bucket."""
     _get_group_or_404(group_id, repo)

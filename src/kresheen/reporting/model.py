@@ -142,7 +142,9 @@ class ThreatModelReport(BaseModel):
 
     @property
     def open_actions(self) -> list[ActionOut]:
-        return [a for a in (self.action_plan.actions if self.action_plan else []) if a.status in ("todo", "in_progress")]
+        return [
+            a for a in (self.action_plan.actions if self.action_plan else []) if a.status in ("todo", "in_progress")
+        ]
 
     @property
     def closed_action_count(self) -> int:

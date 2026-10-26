@@ -125,7 +125,12 @@ def render_docx(report: ThreatModelReport) -> bytes:
     if report.reviewer:
         meta.append(["Reviewer", report.reviewer])
     if report.reviewed_at:
-        meta.append(["Marked reviewed", report.reviewed_at.strftime("%Y-%m-%d") + (f" by {report.reviewed_by}" if report.reviewed_by else "")])
+        meta.append(
+            [
+                "Marked reviewed",
+                report.reviewed_at.strftime("%Y-%m-%d") + (f" by {report.reviewed_by}" if report.reviewed_by else ""),
+            ]
+        )
     if report.contributors:
         meta.append(["Contributors", ", ".join(report.contributors)])
     _table(document, ["Field", "Value"], meta)
@@ -185,7 +190,10 @@ def render_docx(report: ThreatModelReport) -> bytes:
             ],
         )
         if len(report.open_actions) > PLAN_REPORT_LIMIT:
-            _para(document, f"{len(report.open_actions) - PLAN_REPORT_LIMIT} more actions are in the action plan CSV export.")
+            _para(
+                document,
+                f"{len(report.open_actions) - PLAN_REPORT_LIMIT} more actions are in the action plan CSV export.",
+            )
     else:
         _para(document, "No open actions: every threat is mitigated, accepted or not applicable.")
     if report.closed_action_count:
@@ -216,7 +224,10 @@ def render_docx(report: ThreatModelReport) -> bytes:
     _table(
         document,
         ["From", "To", "Label", "Source"],
-        [[f.source_name, f.target_name, f.label or "", "added by hand" if f.is_manual else "scanned"] for f in report.data_flows],
+        [
+            [f.source_name, f.target_name, f.label or "", "added by hand" if f.is_manual else "scanned"]
+            for f in report.data_flows
+        ],
     )
 
     _heading(document, "Assumptions and scope", level=1)
@@ -310,7 +321,11 @@ def render_docx(report: ThreatModelReport) -> bytes:
         for text in extra.paragraphs:
             _para(document, clean_text(text))
         for extra_table in extra.tables:
-            _table(document, [clean_text(h) for h in extra_table.headers], [[clean_text(c) for c in row] for row in extra_table.rows])
+            _table(
+                document,
+                [clean_text(h) for h in extra_table.headers],
+                [[clean_text(c) for c in row] for row in extra_table.rows],
+            )
 
     _heading(document, f"Findings ({len(report.findings)})", level=1)
     if report.findings:
@@ -333,7 +348,11 @@ def render_docx(report: ThreatModelReport) -> bytes:
         _para(document, text)
         rows = sbom_vulnerability_rows(report.sbom)
         if rows:
-            _table(document, ["Vulnerability", "Severity", "Package"], [[r["id"], r["severity"], r["package"]] for r in rows])
+            _table(
+                document,
+                ["Vulnerability", "Severity", "Package"],
+                [[r["id"], r["severity"], r["package"]] for r in rows],
+            )
 
     buffer = io.BytesIO()
     document.save(buffer)

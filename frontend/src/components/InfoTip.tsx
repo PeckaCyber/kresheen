@@ -12,11 +12,7 @@ export function InfoTip({ text, children }: InfoTipProps) {
   }
 
   return (
-    <OverlayTrigger
-      placement="top"
-      trigger={["hover", "focus"]}
-      overlay={<Tooltip>{text}</Tooltip>}
-    >
+    <OverlayTrigger placement="top" trigger={["hover", "focus"]} overlay={<Tooltip>{text}</Tooltip>}>
       <span tabIndex={0} role="button" style={{ cursor: "default" }}>
         {children}
       </span>

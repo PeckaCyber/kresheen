@@ -100,9 +100,7 @@ def wait_fix(since: str, timeout_minutes: int) -> int:
                 ".workflow_runs[]",
             )
             if runs and all(r["status"] == "completed" for r in runs):
-                print(
-                    "security-nightly finished without a fix PR: nothing fixable (no fixed version, or blocked)."
-                )
+                print("security-nightly finished without a fix PR: nothing fixable (no fixed version, or blocked).")
                 return 2
             print("Waiting for security-nightly to open the fix PR", flush=True)
         if time.time() > deadline:

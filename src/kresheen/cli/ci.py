@@ -71,9 +71,7 @@ def run_ci(
         raise CiError(f"Run {run['id']} ended as {run['status']}: {run.get('error_message') or 'no detail'}")
 
     params = {"against": baseline_id} if baseline_id else None
-    diff = RunDiffOut.model_validate(
-        _request("GET", f"{app_url}/runs/{run['id']}/diff", token, params=params).json()
-    )
+    diff = RunDiffOut.model_validate(_request("GET", f"{app_url}/runs/{run['id']}/diff", token, params=params).json())
     run_url = f"{server}/applications/{app['id']}/runs/{run['id']}"
     result = evaluate_gate(diff, options, run_url=run_url)
     return result.passed, result.markdown, diff
@@ -124,8 +122,13 @@ def _post_github_comment(markdown: str) -> None:
     show_default=True,
     help="Fail when a new flow crosses a trust boundary.",
 )
-@click.option("--output", "output_path", type=click.Path(dir_okay=False, path_type=Path), default=None,
-              help="Also write the markdown report here.")
+@click.option(
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Also write the markdown report here.",
+)
 @click.option("--github-comment", is_flag=True, help="Post/update the report as a PR comment (GitHub Actions).")
 def ci(
     server: str,
@@ -138,7 +141,9 @@ def ci(
     github_comment: bool,
 ) -> None:
     """Run the model, diff against the last completed run, and gate."""
-    options = GateOptions(fail_on=None if fail_on == "none" else fail_on, fail_on_boundary_crossing=fail_on_boundary_crossing)
+    options = GateOptions(
+        fail_on=None if fail_on == "none" else fail_on, fail_on_boundary_crossing=fail_on_boundary_crossing
+    )
     try:
         passed, markdown, _ = run_ci(
             server=server, token=token, application=application, source_ref=source_ref, options=options

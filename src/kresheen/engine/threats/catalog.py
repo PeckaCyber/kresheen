@@ -395,8 +395,7 @@ RULES: tuple[ThreatRule, ...] = (
         category="DenialOfService",
         title="The channel {name} can be flooded or disrupted",
         description=(
-            "An attacker can saturate or interrupt this flow, so the components on either end cannot "
-            "communicate."
+            "An attacker can saturate or interrupt this flow, so the components on either end cannot communicate."
         ),
         severity="low",
         mitigations=(

@@ -18,7 +18,9 @@ class Usage:
     output_tokens: int
 
 
-ProviderErrorKind = Literal["auth", "rate_limit", "overloaded", "timeout", "bad_request", "workspace", "workspace_invalid", "unavailable"]
+ProviderErrorKind = Literal[
+    "auth", "rate_limit", "overloaded", "timeout", "bad_request", "workspace", "workspace_invalid", "unavailable"
+]
 
 
 class ProviderError(Exception):

@@ -17,13 +17,17 @@ K8S = "apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: web, namespace: p
 def _setup(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     return url, repo
 
 
 def _client(url):
     c = TestClient(create_app(db_url=url))
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
     return c
 
 
@@ -31,8 +35,14 @@ def test_run_left_non_terminal_by_a_crash_is_failed_at_startup(tmp_path):
     url, repo = _setup(tmp_path)
     c = _client(url)
     aid = c.post("/api/applications", json={"name": "a"}).json()["id"]
-    stale = ThreatModelRun(id="RUN-stuck", application_id=aid, triggered_by_user_id="U1", data_source_config_ids=[],
-                           status="ingesting", started_at=datetime.now(UTC) - timedelta(hours=2))
+    stale = ThreatModelRun(
+        id="RUN-stuck",
+        application_id=aid,
+        triggered_by_user_id="U1",
+        data_source_config_ids=[],
+        status="ingesting",
+        started_at=datetime.now(UTC) - timedelta(hours=2),
+    )
     repo.save_run(stale)
     c2 = _client(url)  # a new app on the same database = the server restarting
     run = c2.get(f"/api/applications/{aid}/runs/RUN-stuck").json()
@@ -43,8 +53,16 @@ def test_stuck_run_is_also_fixed_when_read_without_a_restart(tmp_path):
     url, repo = _setup(tmp_path)
     c = _client(url)
     aid = c.post("/api/applications", json={"name": "a"}).json()["id"]
-    repo.save_run(ThreatModelRun(id="RUN-stuck", application_id=aid, triggered_by_user_id="U1", data_source_config_ids=[],
-                                 status="reasoning", started_at=datetime.now(UTC) - timedelta(hours=2)))
+    repo.save_run(
+        ThreatModelRun(
+            id="RUN-stuck",
+            application_id=aid,
+            triggered_by_user_id="U1",
+            data_source_config_ids=[],
+            status="reasoning",
+            started_at=datetime.now(UTC) - timedelta(hours=2),
+        )
+    )
     assert [r["status"] for r in c.get(f"/api/applications/{aid}/runs").json()] == ["failed"]
     assert repo.get_run("RUN-stuck").status == "failed"  # persisted, not just displayed
 
@@ -53,9 +71,16 @@ def test_database_failure_during_a_run_is_recorded_without_leaking_sql(tmp_path,
     url, _repo = _setup(tmp_path)
     c = _client(url)
     aid = c.post("/api/applications", json={"name": "a"}).json()["id"]
-    c.post(f"/api/applications/{aid}/data-sources", json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}})
+    c.post(
+        f"/api/applications/{aid}/data-sources",
+        json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}},
+    )
     app_repo = c.app.state.repo
-    boom = OperationalError("INSERT INTO fact_nodes (id, run_id, data) VALUES (?, ?, ?)", ("FACT-N-secret",), Exception("database is locked"))
+    boom = OperationalError(
+        "INSERT INTO fact_nodes (id, run_id, data) VALUES (?, ?, ?)",
+        ("FACT-N-secret",),
+        Exception("database is locked"),
+    )
     monkeypatch.setattr(app_repo, "save_fact_nodes", lambda _n: (_ for _ in ()).throw(boom))
     run = c.post(f"/api/applications/{aid}/runs", json={}).json()
     assert run["status"] == "failed"
@@ -70,7 +95,10 @@ def test_too_many_queued_runs_get_429(tmp_path, monkeypatch):
     ids = []
     for i in range(4):
         aid = c.post("/api/applications", json={"name": f"a{i}"}).json()["id"]
-        c.post(f"/api/applications/{aid}/data-sources", json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}})
+        c.post(
+            f"/api/applications/{aid}/data-sources",
+            json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}},
+        )
         ids.append(aid)
     gate = threading.Event()
     app_repo = c.app.state.repo
@@ -85,6 +113,7 @@ def test_too_many_queued_runs_get_429(tmp_path, monkeypatch):
     for t in threads:
         t.start()
     import time
+
     time.sleep(1.5)
     gate.set()
     for t in threads:
@@ -99,8 +128,15 @@ def test_concurrent_sqlite_writers_do_not_hit_database_is_locked(tmp_path):
     def writer(n):
         try:
             for i in range(40):
-                repo.save_run(ThreatModelRun(id=f"RUN-{n}-{i}", application_id="A", triggered_by_user_id="U", data_source_config_ids=[],
-                                             started_at=datetime.now(UTC)))
+                repo.save_run(
+                    ThreatModelRun(
+                        id=f"RUN-{n}-{i}",
+                        application_id="A",
+                        triggered_by_user_id="U",
+                        data_source_config_ids=[],
+                        started_at=datetime.now(UTC),
+                    )
+                )
         except Exception as exc:  # noqa: BLE001
             errors.append(str(exc))
 

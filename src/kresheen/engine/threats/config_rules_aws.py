@@ -57,8 +57,11 @@ def public_bucket_hits(ctx: FactContext, *, ml: bool | None = None) -> list[Hit]
     hits = []
     for policy in ctx.tf("aws_s3_bucket_policy"):
         anonymous = [
-            st for st in policy.attributes.get("policy_statements", [])
-            if st["effect"] == "Allow" and "*" in st["principals"] and not st["has_condition"]
+            st
+            for st in policy.attributes.get("policy_statements", [])
+            if st["effect"] == "Allow"
+            and "*" in st["principals"]
+            and not st["has_condition"]
             and any(a == "*" or a.lower().startswith("s3:") for a in st["actions"])
         ]
         if anonymous and (ml is None or _is_ml_bucket(policy, ctx) == ml):
@@ -66,12 +69,23 @@ def public_bucket_hits(ctx: FactContext, *, ml: bool | None = None) -> list[Hit]
             hits.append(Hit("component", policy.name, [f"bucket policy allows Principal * to {', '.join(actions)}"]))
     for block in ctx.tf("aws_s3_bucket_public_access_block"):
         cfg = config_of(block)
-        off = [f for f in ("block_public_acls", "block_public_policy", "ignore_public_acls", "restrict_public_buckets")
-               if cfg.get(f) is False]
+        off = [
+            f
+            for f in ("block_public_acls", "block_public_policy", "ignore_public_acls", "restrict_public_buckets")
+            if cfg.get(f) is False
+        ]
         if off and (ml is None or _is_ml_bucket(block, ctx) == ml):
-            hits.append(Hit("component", block.name, [f"public access is not blocked ({', '.join(f'{f} = false' for f in off)})"]))
+            hits.append(
+                Hit(
+                    "component",
+                    block.name,
+                    [f"public access is not blocked ({', '.join(f'{f} = false' for f in off)})"],
+                )
+            )
     for bucket in ctx.tf("aws_s3_bucket"):
-        if str(config_of(bucket).get("acl", "")).startswith("public-read") and (ml is None or _is_ml_bucket(bucket, ctx) == ml):
+        if str(config_of(bucket).get("acl", "")).startswith("public-read") and (
+            ml is None or _is_ml_bucket(bucket, ctx) == ml
+        ):
             hits.append(Hit("component", bucket.name, [f"acl = {config_of(bucket)['acl']}"]))
     return hits
 
@@ -80,23 +94,40 @@ def _detect_public_bucket(ctx: FactContext) -> list[Hit]:
     return public_bucket_hits(ctx)
 
 
-
 AWS_CONFIG_RULES: tuple[ConfigRule, ...] = (
-    ConfigRule("SC-AWS-T01R", "T01", "data_store", "Spoofing",
-               "Database {name} is publicly accessible",
-               "publicly_accessible is true, so the database endpoint resolves to a public address and depends only on its security group and credentials.",
-               "high",
-               ("Set publicly_accessible = false and place the database in a private subnet.",
-                "Reach it through the application tier, a bastion or a VPN."),
-               ("CWE-306",), ("T1190",),
-               "An RDS instance sets publicly_accessible = true", _detect_public_database),
-    ConfigRule("SC-AWS-T05", "T05", "data_store", "Spoofing",
-               "{name} allows anonymous access to a bucket",
-               "The bucket's policy grants access to Principal * or its public-access block is switched off, so anyone on the internet may be able to read (and possibly list) its contents without authenticating.",
-               "high",
-               ("Enable all four S3 Block Public Access settings on the bucket and the account.",
-                "Remove Principal * statements; serve public content through CloudFront with origin access control.",
-                "Grant access to named principals only."),
-               ("CWE-732", "CWE-284"), ("T1530",),
-               "A bucket policy allows Principal *, a public-access block has a flag false, or a bucket ACL is public-read", _detect_public_bucket),
+    ConfigRule(
+        "SC-AWS-T01R",
+        "T01",
+        "data_store",
+        "Spoofing",
+        "Database {name} is publicly accessible",
+        "publicly_accessible is true, so the database endpoint resolves to a public address and depends only on its security group and credentials.",
+        "high",
+        (
+            "Set publicly_accessible = false and place the database in a private subnet.",
+            "Reach it through the application tier, a bastion or a VPN.",
+        ),
+        ("CWE-306",),
+        ("T1190",),
+        "An RDS instance sets publicly_accessible = true",
+        _detect_public_database,
+    ),
+    ConfigRule(
+        "SC-AWS-T05",
+        "T05",
+        "data_store",
+        "Spoofing",
+        "{name} allows anonymous access to a bucket",
+        "The bucket's policy grants access to Principal * or its public-access block is switched off, so anyone on the internet may be able to read (and possibly list) its contents without authenticating.",
+        "high",
+        (
+            "Enable all four S3 Block Public Access settings on the bucket and the account.",
+            "Remove Principal * statements; serve public content through CloudFront with origin access control.",
+            "Grant access to named principals only.",
+        ),
+        ("CWE-732", "CWE-284"),
+        ("T1530",),
+        "A bucket policy allows Principal *, a public-access block has a flag false, or a bucket ACL is public-read",
+        _detect_public_bucket,
+    ),
 )

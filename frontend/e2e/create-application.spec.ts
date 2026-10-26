@@ -34,7 +34,9 @@ async function createModel(page: Page, name: string, manifest = MANIFEST_WITH_ON
   }
   const run = await (await page.request.post(`/api/applications/${app.id}/runs`, { headers, data: {} })).json();
   await expect
-    .poll(async () => (await (await page.request.get(`/api/applications/${app.id}/runs/${run.id}`)).json()).status, { timeout: 30000 })
+    .poll(async () => (await (await page.request.get(`/api/applications/${app.id}/runs/${run.id}`)).json()).status, {
+      timeout: 30000,
+    })
     .toBe("completed");
   return { appId: app.id as string, runId: run.id as string };
 }
@@ -71,9 +73,11 @@ test("create a model with a manifest through the wizard, execute, and view the D
 
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Name").fill("Playwright Test App");
-  await dialog
-    .getByLabel(/Manifest files/)
-    .setInputFiles({ name: "deployment.yaml", mimeType: "application/x-yaml", buffer: Buffer.from(MANIFEST_WITH_ONE_FINDING) });
+  await dialog.getByLabel(/Manifest files/).setInputFiles({
+    name: "deployment.yaml",
+    mimeType: "application/x-yaml",
+    buffer: Buffer.from(MANIFEST_WITH_ONE_FINDING),
+  });
   await dialog.locator("button[type=submit]").click();
 
   await expect(page).toHaveURL(/\/applications\/APP-[a-f0-9]+\/runs\/RUN-[a-f0-9]+/);
@@ -82,7 +86,9 @@ test("create a model with a manifest through the wizard, execute, and view the D
   await expect(page.locator(".react-flow__node").first()).toBeVisible();
 
   await page.getByTestId("model-tab-findings").click();
-  await expect(page.getByRole("region", { name: "Findings" }).getByRole("row", { name: /host network namespace/ })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Findings" }).getByRole("row", { name: /host network namespace/ }),
+  ).toBeVisible();
 
   // Returning to the diagram after another tab must still render it (React Flow resize handling).
   await page.getByTestId("model-tab-diagram").click();
@@ -125,7 +131,9 @@ test("threats: a custom threat that applies to every process generates, and a th
   await page.getByLabel("Suggested mitigations (one per line)").fill("Rotate badges");
   await page.getByRole("button", { name: "Save" }).click();
   await page.getByLabel("Filter by source").selectOption("custom");
-  await expect(page.getByRole("row", { name: new RegExp(stamp) }).getByRole("cell", { name: /^Process/ })).toBeVisible();
+  await expect(
+    page.getByRole("row", { name: new RegExp(stamp) }).getByRole("cell", { name: /^Process/ }),
+  ).toBeVisible();
 
   await openRun(page, "Playwright Custom Threat App", "threats");
   await expect(page.getByText(new RegExp(`Badge cloning ${stamp} at `))).toBeVisible();
@@ -483,7 +491,10 @@ test("properties: stating a fact adds a threat, Unknown removes it, and out of s
 test("export: every export link serves the right type with the session, and names the model", async ({ page }) => {
   const { appId, runId } = await createModel(page, "Export Test App", "");
   const headers = await csrfHeaders(page);
-  await page.request.post(`/api/applications/${appId}/manual-assets`, { headers, data: { name: "Gateway", type: "process" } });
+  await page.request.post(`/api/applications/${appId}/manual-assets`, {
+    headers,
+    data: { name: "Gateway", type: "process" },
+  });
   await page.goto(`/applications/${appId}/runs/${runId}/overview`);
 
   await page.getByRole("button", { name: "Export" }).click();

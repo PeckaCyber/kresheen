@@ -6,7 +6,13 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
-const existing = { id: "TOKEN-1", name: "old", prefix: "pck_abcd", created_at: "2026-09-24T00:00:00Z", last_used_at: null };
+const existing = {
+  id: "TOKEN-1",
+  name: "old",
+  prefix: "pck_abcd",
+  created_at: "2026-09-24T00:00:00Z",
+  last_used_at: null,
+};
 
 describe("ApiTokensSection", () => {
   const fetchMock = vi.fn();
@@ -68,20 +74,28 @@ describe("ApiTokensSection", () => {
     expect(screen.getByLabelText("Token expiry")).toHaveValue("90");
     expect(screen.queryByText(/never expires stays valid/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Create token" }));
-    await vi.waitFor(() => expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ name: "ci", expires_in_days: 90 }));
+    await vi.waitFor(() =>
+      expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ name: "ci", expires_in_days: 90 }),
+    );
 
     await screen.findByTestId("new-token-secret");
     fireEvent.change(screen.getByLabelText("Token name"), { target: { value: "plain" } });
     fireEvent.change(screen.getByLabelText("Token expiry"), { target: { value: "never" } });
     expect(screen.getByText(/never expires stays valid/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Create token" }));
-    await vi.waitFor(() => expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({ name: "plain", expires_in_days: null }));
+    await vi.waitFor(() =>
+      expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({ name: "plain", expires_in_days: null }),
+    );
   });
 
   it("shows when a token expires and flags an expired one", async () => {
     const future = new Date(Date.now() + 5 * 86400000).toISOString();
     fetchMock.mockResolvedValueOnce(
-      jsonResponse([{ ...existing, id: "A", name: "soon", expires_at: future }, { ...existing, id: "B", name: "gone", expires_at: "2020-01-01T00:00:00Z" }, existing]),
+      jsonResponse([
+        { ...existing, id: "A", name: "soon", expires_at: future },
+        { ...existing, id: "B", name: "gone", expires_at: "2020-01-01T00:00:00Z" },
+        existing,
+      ]),
     );
     render(<ApiTokensSection />);
     fireEvent.click(screen.getByRole("button", { name: /API tokens/ }));

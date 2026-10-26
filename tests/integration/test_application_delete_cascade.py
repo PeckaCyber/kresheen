@@ -13,20 +13,37 @@ K8S = "apiVersion: apps/v1\nkind: Deployment\nmetadata: {name: web, namespace: p
 
 def _counts(repo):
     with repo.engine.connect() as conn:
-        return {t: conn.exec_driver_sql(f"select count(*) from {t}").scalar() for t in
-                ("fact_nodes", "fact_edges", "assets", "asset_flows", "threat_snapshots", "threat_model_runs", "applications")}
+        return {
+            t: conn.exec_driver_sql(f"select count(*) from {t}").scalar()
+            for t in (
+                "fact_nodes",
+                "fact_edges",
+                "assets",
+                "asset_flows",
+                "threat_snapshots",
+                "threat_model_runs",
+                "applications",
+            )
+        }
 
 
 def test_deleting_an_application_removes_everything_it_produced_and_leaves_others_alone(tmp_path):
     url = f"sqlite:///{tmp_path}/t.db"
     repo = SQLRepository(url)
-    repo.save_user(User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC)))
+    repo.save_user(
+        User(id="U1", email="o@x.test", password_hash=hash_password(PW), role="owner", created_at=datetime.now(UTC))
+    )
     c = TestClient(create_app(db_url=url))
-    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()["csrf_token"]
+    c.headers["X-CSRF-Token"] = c.post("/api/auth/login", json={"email": "o@x.test", "password": PW}).json()[
+        "csrf_token"
+    ]
 
     def build(name):
         aid = c.post("/api/applications", json={"name": name}).json()["id"]
-        c.post(f"/api/applications/{aid}/data-sources", json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}})
+        c.post(
+            f"/api/applications/{aid}/data-sources",
+            json={"type": "manifest_upload", "connection_details": {"content": K8S, "filename": "m.yaml"}},
+        )
         c.post(f"/api/applications/{aid}/manual-assets", json={"name": f"hand-{name}", "type": "process"})
         run = c.post(f"/api/applications/{aid}/runs", json={}).json()
         c.post(f"/api/applications/{aid}/runs", json={})  # a second run, so two runs' facts exist

@@ -32,9 +32,7 @@ class SourceIngestor(ABC):
         shape, regardless of how different the raw source formats are (see
         engine/facts/graph.py)."""
 
-    def run(
-        self, *, run_id: str, application_id: str, **kwargs
-    ) -> tuple[list[FactNode], list[FactEdge]]:
+    def run(self, *, run_id: str, application_id: str, **kwargs) -> tuple[list[FactNode], list[FactEdge]]:
         raw = self.fetch(**kwargs)
         records = self.parse(raw)
         return self.normalize(records, run_id=run_id, application_id=application_id)

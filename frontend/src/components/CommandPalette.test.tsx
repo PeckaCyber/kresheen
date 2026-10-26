@@ -17,7 +17,10 @@ function renderPalette() {
 
 describe("CommandPalette", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn(() => jsonResponse([])));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => jsonResponse([])),
+    );
   });
 
   it("opens on Ctrl+K", async () => {

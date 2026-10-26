@@ -144,7 +144,10 @@ def validate_github_details(details: dict) -> None:
             raise ValueError(f"Not a valid GitHub owner/repository name: {part!r}")
     ref = details.get("ref")
     if ref and (
-        not isinstance(ref, str) or not _GIT_REF_RE.fullmatch(ref) or ".." in ref.split("/") or ref.startswith(("-", "/"))
+        not isinstance(ref, str)
+        or not _GIT_REF_RE.fullmatch(ref)
+        or ".." in ref.split("/")
+        or ref.startswith(("-", "/"))
     ):
         raise ValueError("Not a valid git ref (use a branch, tag or commit SHA)")
 
@@ -392,6 +395,7 @@ def _run_grype_scan(directory: Path, notes: list[str] | None = None) -> tuple[di
     A skipped scan must never read as "no vulnerabilities": the reason is appended to `notes`, which the
     caller turns into a warning on the source's result.
     """
+
     def skipped(reason: str) -> None:
         if notes is not None:
             notes.append(reason)
@@ -596,9 +600,10 @@ class GithubRepositoryIngestor(SourceIngestor):
         tarball_fd, tarball_path = tempfile.mkstemp(suffix=".tar.gz")
         extract_dir = tempfile.mkdtemp(prefix="kresheen-ghrepo-")
         try:
-            with os.fdopen(tarball_fd, "wb") as tarball_file, requests.get(
-                url, headers=headers, stream=True, timeout=_TARBALL_DOWNLOAD_TIMEOUT_SECONDS
-            ) as response:
+            with (
+                os.fdopen(tarball_fd, "wb") as tarball_file,
+                requests.get(url, headers=headers, stream=True, timeout=_TARBALL_DOWNLOAD_TIMEOUT_SECONDS) as response,
+            ):
                 response.raise_for_status()
                 total = 0
                 for chunk in response.iter_content(chunk_size=_DOWNLOAD_CHUNK_SIZE):
@@ -618,7 +623,9 @@ class GithubRepositoryIngestor(SourceIngestor):
             scan_notes: list[str] = []
             grype_result = _run_grype_scan(root, scan_notes)
             if grype_result is None and not scan_notes:
-                scan_notes.append("The vulnerability scan did not run, so dependencies were not checked for known vulnerabilities.")
+                scan_notes.append(
+                    "The vulnerability scan did not run, so dependencies were not checked for known vulnerabilities."
+                )
             sbom_document, grype_native_matches = grype_result if grype_result else (None, None)
             k8s_records, k8s_stats = _collect_k8s_records(root)
             return {

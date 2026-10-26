@@ -82,10 +82,19 @@ def login(
     wait = throttle.retry_after(body.email, ip)
     if wait is not None:  # before any hashing: a blocked attempt costs almost nothing
         if throttle.note_block(body.email, ip):
-            record_event(repo, action="auth.login_throttled", user_email=body.email[:200], status_code=429, client_ip=ip,
-                         subject={"retry_after_seconds": str(wait)})
-        raise HTTPException(status_code=429, detail="Too many failed sign-in attempts; try again later",
-                            headers={"Retry-After": str(wait)})
+            record_event(
+                repo,
+                action="auth.login_throttled",
+                user_email=body.email[:200],
+                status_code=429,
+                client_ip=ip,
+                subject={"retry_after_seconds": str(wait)},
+            )
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed sign-in attempts; try again later",
+            headers={"Retry-After": str(wait)},
+        )
     user = repo.get_user_by_email(body.email)
     if user is None or not user.is_active:
         verify_against_dummy(body.password)  # same work as a real check: no timing difference by account
@@ -94,17 +103,22 @@ def login(
         authenticated = user if verify_password(body.password, user.password_hash) else None
     if authenticated is None:
         throttle.record_failure(body.email, ip)
-        record_event(
-            repo, action="auth.login_failed", user_email=body.email[:200], status_code=401, client_ip=ip
-        )
+        record_event(repo, action="auth.login_failed", user_email=body.email[:200], status_code=401, client_ip=ip)
         raise HTTPException(status_code=401, detail="Invalid email or password")
     user = authenticated
     # A plugin that bars password sign-in (SSO-only mode) is asked only after the password has been verified,
     # so the 403 reveals nothing to someone who does not already hold the password (an unknown address and a wrong
     # password both get a 401).
     if not get_registry().password_login_allowed(user):
-        record_event(repo, action="auth.login_failed", user_id=user.id, user_email=user.email,
-                     subject={"reason": "password_login_disabled"}, status_code=403, client_ip=ip)
+        record_event(
+            repo,
+            action="auth.login_failed",
+            user_id=user.id,
+            user_email=user.email,
+            subject={"reason": "password_login_disabled"},
+            status_code=403,
+            client_ip=ip,
+        )
         raise HTTPException(status_code=403, detail="Password login is disabled; use single sign-on")
     throttle.record_success(body.email, ip)
 
@@ -127,8 +141,12 @@ def logout(request: Request, response: Response, repo: Repository = Depends(get_
             user = repo.get_user(session.user_id)
             redirect = get_registry().logout_redirect(session, user)
             record_event(
-                repo, action="auth.logout", user_id=session.user_id, user_email=user.email if user else None,
-                status_code=200, client_ip=request.client.host if request.client else None,
+                repo,
+                action="auth.logout",
+                user_id=session.user_id,
+                user_email=user.email if user else None,
+                status_code=200,
+                client_ip=request.client.host if request.client else None,
             )
         repo.delete_session(session_id)
     response.delete_cookie(SESSION_COOKIE_NAME)
@@ -164,8 +182,12 @@ def change_password(
         )
     if not verify_password(body.current_password, user.password_hash):
         record_event(
-            repo, action="auth.change_password_failed", user_id=user.id, user_email=user.email,
-            status_code=401, client_ip=ip,
+            repo,
+            action="auth.change_password_failed",
+            user_id=user.id,
+            user_email=user.email,
+            status_code=401,
+            client_ip=ip,
         )
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
@@ -179,7 +201,12 @@ def change_password(
     for api_token in revoked_tokens:
         repo.delete_api_token(api_token.id)
     record_event(
-        repo, action="auth.change_password", user_id=user.id, user_email=user.email, status_code=200, client_ip=ip,
+        repo,
+        action="auth.change_password",
+        user_id=user.id,
+        user_email=user.email,
+        status_code=200,
+        client_ip=ip,
         subject={"api_tokens_revoked": str(len(revoked_tokens))},
     )
     return {"ok": True}

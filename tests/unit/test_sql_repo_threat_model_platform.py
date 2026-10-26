@@ -29,9 +29,7 @@ def _now():
 
 def test_save_and_get_application_roundtrips(tmp_path):
     repo = _repo(tmp_path)
-    application = Application(
-        id="APP-1", name="Test App", owner_user_id="USER-1", created_at=_now(), updated_at=_now()
-    )
+    application = Application(id="APP-1", name="Test App", owner_user_id="USER-1", created_at=_now(), updated_at=_now())
 
     repo.save_application(application)
 
@@ -48,13 +46,11 @@ def test_get_application_returns_none_for_unknown_id(tmp_path):
 def test_delete_application_removes_it_and_its_data_sources_and_runs(tmp_path):
     repo = _repo(tmp_path)
     now = _now()
-    repo.save_application(Application(id="APP-1", name="Test App", owner_user_id="USER-1", created_at=now, updated_at=now))
-    repo.save_data_source(
-        DataSourceConfig(id="DS-1", application_id="APP-1", type="manifest_upload", created_at=now)
+    repo.save_application(
+        Application(id="APP-1", name="Test App", owner_user_id="USER-1", created_at=now, updated_at=now)
     )
-    repo.save_run(
-        ThreatModelRun(id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1", started_at=now)
-    )
+    repo.save_data_source(DataSourceConfig(id="DS-1", application_id="APP-1", type="manifest_upload", created_at=now))
+    repo.save_run(ThreatModelRun(id="RUN-1", application_id="APP-1", triggered_by_user_id="USER-1", started_at=now))
 
     repo.delete_application("APP-1")
 
@@ -69,7 +65,11 @@ def test_delete_application_removes_it_and_its_data_sources_and_runs(tmp_path):
 def test_save_and_list_data_sources_for_application(tmp_path):
     repo = _repo(tmp_path)
     ds = DataSourceConfig(
-        id="DS-1", application_id="APP-1", type="manifest_upload", connection_details={"content": "{}"}, created_at=_now()
+        id="DS-1",
+        application_id="APP-1",
+        type="manifest_upload",
+        connection_details={"content": "{}"},
+        created_at=_now(),
     )
 
     repo.save_data_source(ds)
@@ -81,7 +81,9 @@ def test_save_and_list_data_sources_for_application(tmp_path):
 
 def test_delete_data_source_removes_it(tmp_path):
     repo = _repo(tmp_path)
-    repo.save_data_source(DataSourceConfig(id="DS-1", application_id="APP-1", type="manifest_upload", created_at=_now()))
+    repo.save_data_source(
+        DataSourceConfig(id="DS-1", application_id="APP-1", type="manifest_upload", created_at=_now())
+    )
 
     repo.delete_data_source("DS-1")
 
@@ -111,9 +113,7 @@ def test_list_runs_for_application_orders_chronologically_regardless_of_insertio
     newest = ThreatModelRun(
         id="RUN-newest", application_id="APP-1", triggered_by_user_id="USER-1", started_at=base + timedelta(hours=2)
     )
-    oldest = ThreatModelRun(
-        id="RUN-oldest", application_id="APP-1", triggered_by_user_id="USER-1", started_at=base
-    )
+    oldest = ThreatModelRun(id="RUN-oldest", application_id="APP-1", triggered_by_user_id="USER-1", started_at=base)
     middle = ThreatModelRun(
         id="RUN-middle", application_id="APP-1", triggered_by_user_id="USER-1", started_at=base + timedelta(hours=1)
     )
@@ -131,16 +131,30 @@ def test_list_runs_for_application_orders_chronologically_regardless_of_insertio
 def test_save_and_list_fact_nodes_and_edges_for_run(tmp_path):
     repo = _repo(tmp_path)
     node_a = FactNode(
-        id="FACT-N-a", run_id="RUN-1", application_id="APP-1", node_type="process", name="a",
-        source_ref="test", discovered_at=_now(),
+        id="FACT-N-a",
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type="process",
+        name="a",
+        source_ref="test",
+        discovered_at=_now(),
     )
     node_b = FactNode(
-        id="FACT-N-b", run_id="RUN-1", application_id="APP-1", node_type="data_store", name="b",
-        source_ref="test", discovered_at=_now(),
+        id="FACT-N-b",
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type="data_store",
+        name="b",
+        source_ref="test",
+        discovered_at=_now(),
     )
     edge = FactEdge(
-        id="FACT-E-1", run_id="RUN-1", application_id="APP-1", source_node_id="FACT-N-a",
-        target_node_id="FACT-N-b", edge_type="data_flow",
+        id="FACT-E-1",
+        run_id="RUN-1",
+        application_id="APP-1",
+        source_node_id="FACT-N-a",
+        target_node_id="FACT-N-b",
+        edge_type="data_flow",
     )
 
     repo.save_fact_nodes([node_a, node_b])
@@ -154,12 +168,24 @@ def test_save_and_list_fact_nodes_and_edges_for_run(tmp_path):
 def test_findings_filter_by_run_id(tmp_path):
     repo = _repo(tmp_path)
     in_run = Finding.create(
-        domain=Domain.THREAT_MODEL, source_tool="kresheen", title="t1", description="d",
-        severity=Severity.HIGH, asset_id="a", run_id="RUN-1", evidence=Evidence(),
+        domain=Domain.THREAT_MODEL,
+        source_tool="kresheen",
+        title="t1",
+        description="d",
+        severity=Severity.HIGH,
+        asset_id="a",
+        run_id="RUN-1",
+        evidence=Evidence(),
     )
     other_run = Finding.create(
-        domain=Domain.THREAT_MODEL, source_tool="kresheen", title="t2", description="d",
-        severity=Severity.HIGH, asset_id="a", run_id="RUN-2", evidence=Evidence(),
+        domain=Domain.THREAT_MODEL,
+        source_tool="kresheen",
+        title="t2",
+        description="d",
+        severity=Severity.HIGH,
+        asset_id="a",
+        run_id="RUN-2",
+        evidence=Evidence(),
     )
     repo.save_findings([in_run, other_run])
 
@@ -204,10 +230,17 @@ def test_save_and_list_kb_entries_filters_by_source(tmp_path):
     repo = _repo(tmp_path)
     now = _now()
     attack = ThreatKBEntry(
-        id="KB-1", source="mitre_attack", external_id="T1190", name="Exploit Public-Facing Application",
-        description="d", created_at=now, updated_at=now,
+        id="KB-1",
+        source="mitre_attack",
+        external_id="T1190",
+        name="Exploit Public-Facing Application",
+        description="d",
+        created_at=now,
+        updated_at=now,
     )
-    cwe = ThreatKBEntry(id="KB-2", source="cwe", external_id="CWE-79", name="XSS", description="d", created_at=now, updated_at=now)
+    cwe = ThreatKBEntry(
+        id="KB-2", source="cwe", external_id="CWE-79", name="XSS", description="d", created_at=now, updated_at=now
+    )
 
     repo.save_kb_entries([attack, cwe])
 
@@ -219,7 +252,9 @@ def test_save_and_list_kb_entries_filters_by_source(tmp_path):
 def test_delete_kb_entry_removes_it(tmp_path):
     repo = _repo(tmp_path)
     now = _now()
-    repo.save_kb_entries([ThreatKBEntry(id="KB-1", source="custom", name="n", description="d", created_at=now, updated_at=now)])
+    repo.save_kb_entries(
+        [ThreatKBEntry(id="KB-1", source="custom", name="n", description="d", created_at=now, updated_at=now)]
+    )
 
     repo.delete_kb_entry("KB-1")
 
@@ -233,8 +268,12 @@ def test_save_and_get_agent_config_by_scope(tmp_path):
     repo = _repo(tmp_path)
     now = _now()
     config = AgentConfig(
-        id="AGENT-1", scope="user", scope_id="USER-1", api_key_ref="SECRET-1",
-        created_at=now, updated_at=now,
+        id="AGENT-1",
+        scope="user",
+        scope_id="USER-1",
+        api_key_ref="SECRET-1",
+        created_at=now,
+        updated_at=now,
     )
 
     repo.save_agent_config(config)

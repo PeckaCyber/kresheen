@@ -153,7 +153,11 @@ export function ElementInspector({
               </Badge>
             )}
             {dieScore !== null && (
-              <Badge bg="info" className="ms-2" title="Distributed / Immutable / Ephemeral resilience properties stated">
+              <Badge
+                bg="info"
+                className="ms-2"
+                title="Distributed / Immutable / Ephemeral resilience properties stated"
+              >
                 Resilience (DIE): {dieScore}/3
               </Badge>
             )}

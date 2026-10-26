@@ -37,9 +37,7 @@ def _keywords_from_node(node: FactNode) -> set[str]:
     return words
 
 
-def score_kb_entries(
-    node: FactNode, entries: list[ThreatKBEntry], *, top_n: int = 5
-) -> list[ThreatKBEntry]:
+def score_kb_entries(node: FactNode, entries: list[ThreatKBEntry], *, top_n: int = 5) -> list[ThreatKBEntry]:
     """Keyword/tag-overlap scoring against `node`'s own live attributes --
     no vector DB, no embeddings, keeping the core
     light. Returns up to `top_n` entries, highest overlap first; ties keep

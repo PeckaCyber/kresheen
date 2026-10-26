@@ -57,12 +57,5 @@ export function ModelHeader({
     { label: appName ?? "..." },
   ];
 
-  return (
-    <PageHeader
-      title={appName ?? "Loading..."}
-      crumbs={crumbs}
-      actions={actions}
-      compact={compact}
-    />
-  );
+  return <PageHeader title={appName ?? "Loading..."} crumbs={crumbs} actions={actions} compact={compact} />;
 }

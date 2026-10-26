@@ -82,7 +82,9 @@ def persist_manual_model(
                 updated_at=now,
             )
         )
-        _save_properties(repo, application.id, owner_user_id, f"flow:{flow.source}->{flow.target}", flow.properties, now)
+        _save_properties(
+            repo, application.id, owner_user_id, f"flow:{flow.source}->{flow.target}", flow.properties, now
+        )
 
 
 def _save_properties(

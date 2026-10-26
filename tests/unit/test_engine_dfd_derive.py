@@ -7,8 +7,14 @@ from kresheen.models.facts import FactEdge, FactNode
 
 def _node(node_id: str, node_type: str, **attributes) -> FactNode:
     return FactNode(
-        id=node_id, run_id="RUN-1", application_id="APP-1", node_type=node_type, name=node_id,
-        attributes=attributes, source_ref="test", discovered_at=datetime.now(UTC),
+        id=node_id,
+        run_id="RUN-1",
+        application_id="APP-1",
+        node_type=node_type,
+        name=node_id,
+        attributes=attributes,
+        source_ref="test",
+        discovered_at=datetime.now(UTC),
     )
 
 
@@ -59,8 +65,13 @@ def test_derive_dfd_carries_trust_boundary_attribute_through():
 def test_derive_dfd_maps_edges_to_asset_flows():
     nodes = [_node("n1", "process"), _node("n2", "process")]
     edge = FactEdge(
-        id="e1", run_id="RUN-1", application_id="APP-1", source_node_id="n1", target_node_id="n2",
-        edge_type="routes_to", label="custom label",
+        id="e1",
+        run_id="RUN-1",
+        application_id="APP-1",
+        source_node_id="n1",
+        target_node_id="n2",
+        edge_type="routes_to",
+        label="custom label",
     )
 
     _, flows = derive_dfd(nodes, [edge])
@@ -75,7 +86,11 @@ def test_derive_dfd_maps_edges_to_asset_flows():
 def test_derive_dfd_edge_label_falls_back_to_edge_type():
     nodes = [_node("n1", "process"), _node("n2", "process")]
     edge = FactEdge(
-        id="e1", run_id="RUN-1", application_id="APP-1", source_node_id="n1", target_node_id="n2",
+        id="e1",
+        run_id="RUN-1",
+        application_id="APP-1",
+        source_node_id="n1",
+        target_node_id="n2",
         edge_type="routes_to",
     )
 
@@ -91,7 +106,11 @@ def test_derive_dfd_drops_edges_to_excluded_nodes():
     dangling AssetFlow pointing at an Asset that was never created."""
     nodes = [_node("n1", "external_entity"), _node("n2", "vulnerability")]
     edge = FactEdge(
-        id="e1", run_id="RUN-1", application_id="APP-1", source_node_id="n1", target_node_id="n2",
+        id="e1",
+        run_id="RUN-1",
+        application_id="APP-1",
+        source_node_id="n1",
+        target_node_id="n2",
         edge_type="discovered_in",
     )
 

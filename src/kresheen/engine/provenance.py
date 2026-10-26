@@ -44,7 +44,10 @@ def rule_catalog_version() -> str:
     """A stable hash over the built-in rule catalogs' content (STRIDE and any plugin methodology). Deterministic
     across processes (field order is fixed, not dict/set iteration order)."""
     parts = [
-        "|".join(str(v) for v in (r.id, r.severity, r.condition, r.boundary_hint, r.when, r.title, r.description, r.cwe, r.attack))
+        "|".join(
+            str(v)
+            for v in (r.id, r.severity, r.condition, r.boundary_hint, r.when, r.title, r.description, r.cwe, r.attack)
+        )
         for r in methodology_rules()
     ]
     parts += [
@@ -69,7 +72,8 @@ def _redact(details: dict) -> dict:
 def input_digest(data_source: DataSourceConfig) -> str:
     payload = json.dumps(
         {"type": data_source.type, "details": _redact(data_source.connection_details or {})},
-        sort_keys=True, default=str,
+        sort_keys=True,
+        default=str,
     )
     return hashlib.sha256(payload.encode()).hexdigest()[:_DIGEST_LEN]
 

@@ -30,7 +30,9 @@ INTAKE_REPLY = {
     "third_parties": ["payments"],
     "has_admin": True,
 }
-EXPLAIN_REPLY = {"text": "This threat means an attacker could abuse this part of the system. The mitigation reduces that risk."}
+EXPLAIN_REPLY = {
+    "text": "This threat means an attacker could abuse this part of the system. The mitigation reduces that risk."
+}
 
 _replies = {"intake": INTAKE_REPLY, "explain": EXPLAIN_REPLY}
 
@@ -46,7 +48,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path.split("?")[0].rstrip("/") == "/v1/models":
-            model = {"type": "model", "id": MODEL_ID, "display_name": "Stub model", "created_at": "2026-01-01T00:00:00Z"}
+            model = {
+                "type": "model",
+                "id": MODEL_ID,
+                "display_name": "Stub model",
+                "created_at": "2026-01-01T00:00:00Z",
+            }
             self._send(200, {"data": [model], "has_more": False, "first_id": MODEL_ID, "last_id": MODEL_ID})
         else:
             self._send(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})

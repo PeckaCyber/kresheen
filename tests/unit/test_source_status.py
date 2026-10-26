@@ -8,8 +8,13 @@ from kresheen.models.facts import FactNode
 
 def _node(node_type: str) -> FactNode:
     return FactNode(
-        id="N", run_id="R", application_id="A", node_type=node_type, name="x",
-        source_ref="t", discovered_at=datetime.now(UTC),
+        id="N",
+        run_id="R",
+        application_id="A",
+        node_type=node_type,
+        name="x",
+        source_ref="t",
+        discovered_at=datetime.now(UTC),
     )
 
 

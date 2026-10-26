@@ -63,7 +63,9 @@ def test_only_boundary_crossing_flows_and_reachable_processes_are_asked_about():
     b = DfdElement("b", "B", "process", trust_boundary="x")
     out = assess_completeness([a, b], [DfdFlow("f", "a", "b")], [])
     assert not any(i.check == "encrypted_in_transit" for i in out.items)
-    assert {(i.check, i.element_name) for i in out.items if i.check == "authenticates_callers"} == {("authenticates_callers", "B")}
+    assert {(i.check, i.element_name) for i in out.items if i.check == "authenticates_callers"} == {
+        ("authenticates_callers", "B")
+    }
 
 
 def test_out_of_scope_elements_are_not_asked_about():

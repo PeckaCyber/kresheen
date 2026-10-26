@@ -57,11 +57,23 @@ class Option:
 
 
 SYSTEM_TYPES = (
-    Option("web_app", "A web application", "Browsers talk to a web front end backed by an application server and a database."),
+    Option(
+        "web_app",
+        "A web application",
+        "Browsers talk to a web front end backed by an application server and a database.",
+    ),
     Option("api_backend", "An API or mobile backend", "Clients call an API gateway and service backed by a database."),
-    Option("kubernetes_microservices", "Microservices on Kubernetes", "An ingress in front of services running in a cluster, backed by a database."),
+    Option(
+        "kubernetes_microservices",
+        "Microservices on Kubernetes",
+        "An ingress in front of services running in a cluster, backed by a database.",
+    ),
     Option("data_pipeline", "A data pipeline", "Data is ingested, processed and stored in a warehouse."),
-    Option("ai_rag_app", "An AI or chat assistant over your documents", "A chat front end, an orchestrator, a document store, a vector database and a model."),
+    Option(
+        "ai_rag_app",
+        "An AI or chat assistant over your documents",
+        "A chat front end, an orchestrator, a document store, a vector database and a model.",
+    ),
 )
 USER_GROUPS = (
     Option("public", "Anyone on the internet", "Anonymous visitors."),
@@ -90,7 +102,12 @@ THIRD_PARTIES = (
 )
 
 _CLASSIFICATION = {"personal": "PII", "health": "PHI", "payment": "PCI", "credentials": "Credentials"}
-_USER_NAMES = {"public": "Anonymous visitor", "customers": "Customer", "staff": "Staff member", "partners": "Partner system"}
+_USER_NAMES = {
+    "public": "Anonymous visitor",
+    "customers": "Customer",
+    "staff": "Staff member",
+    "partners": "Partner system",
+}
 _USER_BOUNDARY = {"public": "Internet", "customers": "Internet", "staff": "Corporate network", "partners": "Internet"}
 _THIRD_PARTY_NAMES = {
     "payments": "Payment provider",
@@ -186,18 +203,31 @@ def build_intake_model(answers: IntakeAnswers) -> IntakeModel:
     components.append(ComponentSpec(entry_name, _P, "DMZ", entry_facts))
     components.append(ComponentSpec(backend_name, _P, backend_boundary, dict(auth_fact)))
     components.append(ComponentSpec(store_name, _D, "Data", store_facts()))
-    flows.append(FlowSpec(entry_name, backend_name, "gRPC/HTTP" if answers.system_type == "kubernetes_microservices" else "REST"))
+    flows.append(
+        FlowSpec(entry_name, backend_name, "gRPC/HTTP" if answers.system_type == "kubernetes_microservices" else "REST")
+    )
     store_flow_facts: dict[str, bool | str] = {"data_classification": classification} if classification else {}
     flows.append(
-        FlowSpec(backend_name, store_name, "writes" if answers.system_type == "data_pipeline" else "SQL", dict(store_flow_facts))
+        FlowSpec(
+            backend_name,
+            store_name,
+            "writes" if answers.system_type == "data_pipeline" else "SQL",
+            dict(store_flow_facts),
+        )
     )
     primary_store = store_name
 
     if answers.system_type == "ai_rag_app":
-        components.append(ComponentSpec("Vector database", _D, "Data", _stated(store_facts({"is_ai_ml_component": True}), "data_store")))
+        components.append(
+            ComponentSpec(
+                "Vector database", _D, "Data", _stated(store_facts({"is_ai_ml_component": True}), "data_store")
+            )
+        )
         flows.append(FlowSpec(backend_name, "Vector database", "similarity search", dict(store_flow_facts)))
         if "llm_api" not in third_parties:
-            components.append(ComponentSpec("Model server", _P, "Application", _stated({"is_ai_ml_component": True}, "process")))
+            components.append(
+                ComponentSpec("Model server", _P, "Application", _stated({"is_ai_ml_component": True}, "process"))
+            )
             flows.append(FlowSpec(backend_name, "Model server", "prompts and responses"))
 
     for kind in third_parties:
@@ -217,7 +247,9 @@ def build_intake_model(answers: IntakeAnswers) -> IntakeModel:
 
 
 def _summary(answers: IntakeAnswers) -> str:
-    labels = {o.id: o.label for group in (SYSTEM_TYPES, USER_GROUPS, AUTHENTICATION, DATA_KINDS, THIRD_PARTIES) for o in group}
+    labels = {
+        o.id: o.label for group in (SYSTEM_TYPES, USER_GROUPS, AUTHENTICATION, DATA_KINDS, THIRD_PARTIES) for o in group
+    }
     parts = [
         f"Started from the guided intake: {labels[answers.system_type].lower()}",
         "used by " + ", ".join(labels[u].lower() for u in answers.users),
@@ -262,33 +294,81 @@ class Template:
 # Canned answers, nothing more: picking one prefills the wizard, which the user then adjusts.
 TEMPLATES = (
     Template(
-        "customer_web_app", "Customer-facing web app",
+        "customer_web_app",
+        "Customer-facing web app",
         "A web application where customers log in and their personal data is stored in a database.",
-        {"system_type": "web_app", "users": ["customers"], "authentication": "password", "data": ["personal"], "third_parties": ["email"], "has_admin": False},
+        {
+            "system_type": "web_app",
+            "users": ["customers"],
+            "authentication": "password",
+            "data": ["personal"],
+            "third_parties": ["email"],
+            "has_admin": False,
+        },
     ),
     Template(
-        "web_shop", "Web shop with card payments",
+        "web_shop",
+        "Web shop with card payments",
         "A storefront taking card payments through a provider, with an admin panel for staff.",
-        {"system_type": "web_app", "users": ["customers"], "authentication": "password", "data": ["personal", "payment"], "third_parties": ["payments", "email"], "has_admin": True},
+        {
+            "system_type": "web_app",
+            "users": ["customers"],
+            "authentication": "password",
+            "data": ["personal", "payment"],
+            "third_parties": ["payments", "email"],
+            "has_admin": True,
+        },
     ),
     Template(
-        "partner_api", "API for partners",
+        "partner_api",
+        "API for partners",
         "An API that partner systems call with API keys.",
-        {"system_type": "api_backend", "users": ["partners"], "authentication": "api_keys", "data": ["personal"], "third_parties": [], "has_admin": False},
+        {
+            "system_type": "api_backend",
+            "users": ["partners"],
+            "authentication": "api_keys",
+            "data": ["personal"],
+            "third_parties": [],
+            "has_admin": False,
+        },
     ),
     Template(
-        "k8s_platform", "Microservices on Kubernetes",
+        "k8s_platform",
+        "Microservices on Kubernetes",
         "Services behind an ingress in a cluster, with single sign-on and an admin console.",
-        {"system_type": "kubernetes_microservices", "users": ["customers", "staff"], "authentication": "sso", "data": ["personal"], "third_parties": [], "has_admin": True},
+        {
+            "system_type": "kubernetes_microservices",
+            "users": ["customers", "staff"],
+            "authentication": "sso",
+            "data": ["personal"],
+            "third_parties": [],
+            "has_admin": True,
+        },
     ),
     Template(
-        "internal_pipeline", "Internal data pipeline",
+        "internal_pipeline",
+        "Internal data pipeline",
         "Staff-fed data ingested, processed and stored in a warehouse.",
-        {"system_type": "data_pipeline", "users": ["staff"], "authentication": "sso", "data": ["personal"], "third_parties": [], "has_admin": False},
+        {
+            "system_type": "data_pipeline",
+            "users": ["staff"],
+            "authentication": "sso",
+            "data": ["personal"],
+            "third_parties": [],
+            "has_admin": False,
+        },
     ),
     Template(
-        "ai_assistant", "AI assistant over your documents",
+        "ai_assistant",
+        "AI assistant over your documents",
         "A chat assistant that answers from your documents using a hosted LLM.",
-        {"system_type": "ai_rag_app", "users": ["customers"], "authentication": "password", "data": ["personal"], "third_parties": ["llm_api"], "has_admin": False},
+        {
+            "system_type": "ai_rag_app",
+            "users": ["customers"],
+            "authentication": "password",
+            "data": ["personal"],
+            "third_parties": ["llm_api"],
+            "has_admin": False,
+        },
     ),
 )

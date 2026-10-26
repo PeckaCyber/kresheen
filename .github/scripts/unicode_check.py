@@ -27,9 +27,9 @@ def suspicious(ch: str) -> bool:
 
 
 def scan(root: Path) -> list[str]:
-    names = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True
-    ).stdout.split(b"\0")
+    names = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True, check=True).stdout.split(
+        b"\0"
+    )
     found = []
     for name in filter(None, names):
         path = root / name.decode()

@@ -77,7 +77,9 @@ describe("DataSourcesPanel", () => {
       .mockResolvedValueOnce(jsonResponse([])) // initial load
       .mockResolvedValueOnce(jsonResponse({ id: "DS-2", type: "github_repository" })) // POST
       .mockResolvedValueOnce(
-        jsonResponse([{ id: "DS-2", type: "github_repository", connection_details: {}, created_at: "2026-09-22T10:00:00Z" }]),
+        jsonResponse([
+          { id: "DS-2", type: "github_repository", connection_details: {}, created_at: "2026-09-22T10:00:00Z" },
+        ]),
       ); // reload
 
     render(<DataSourcesPanel applicationId="APP-1" onChanged={onChanged} />);
@@ -100,7 +102,12 @@ describe("DataSourcesPanel", () => {
     fetchMock
       .mockResolvedValueOnce(
         jsonResponse([
-          { id: "DS-1", type: "manifest_upload", connection_details: { filename: "manifest.yaml" }, created_at: "2026-09-20T10:00:00Z" },
+          {
+            id: "DS-1",
+            type: "manifest_upload",
+            connection_details: { filename: "manifest.yaml" },
+            created_at: "2026-09-20T10:00:00Z",
+          },
         ]),
       )
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
@@ -153,14 +160,26 @@ describe("DataSourcesPanel", () => {
   it("shows no warning for a fully analysed source", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse([
-        { id: "DS-1", type: "manifest_upload", connection_details: { filename: "m.yaml" }, created_at: "2026-09-20T10:00:00Z" },
+        {
+          id: "DS-1",
+          type: "manifest_upload",
+          connection_details: { filename: "m.yaml" },
+          created_at: "2026-09-20T10:00:00Z",
+        },
       ]),
     );
     render(
       <DataSourcesPanel
         applicationId="APP-1"
         sourceResults={[
-          { data_source_id: "DS-1", type: "manifest_upload", status: "analysed", component_count: 2, vulnerability_count: 0, message: "" },
+          {
+            data_source_id: "DS-1",
+            type: "manifest_upload",
+            status: "analysed",
+            component_count: 2,
+            vulnerability_count: 0,
+            message: "",
+          },
         ]}
       />,
     );

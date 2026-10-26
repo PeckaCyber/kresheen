@@ -117,7 +117,9 @@ class DreadScore(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def average(self) -> float:
-        return (self.damage + self.reproducibility + self.exploitability + self.affected_users + self.discoverability) / 5
+        return (
+            self.damage + self.reproducibility + self.exploitability + self.affected_users + self.discoverability
+        ) / 5
 
 
 class ThreatStatusRecord(BaseModel):

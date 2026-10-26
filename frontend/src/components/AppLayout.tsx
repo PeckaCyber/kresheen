@@ -141,7 +141,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             aria-label="Search"
           >
             <i className="bi bi-search" aria-hidden="true" />
-            {!collapsed && <span className="small">Search  Ctrl K</span>}
+            {!collapsed && <span className="small">Search Ctrl K</span>}
           </button>
 
           <button
@@ -162,7 +162,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               size="sm"
               id="user-menu"
               className="w-100 d-flex align-items-center gap-2 text-truncate"
-              title={collapsed ? email ?? role ?? "Account" : undefined}
+              title={collapsed ? (email ?? role ?? "Account") : undefined}
             >
               <i className="bi bi-person-circle" aria-hidden="true" />
               {!collapsed && <span className="text-truncate">{email ?? role ?? "Account"}</span>}
@@ -170,7 +170,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Dropdown.Menu>
               <Dropdown.Header>Theme</Dropdown.Header>
               {THEME_OPTIONS.map((option) => (
-                <Dropdown.Item key={option.value} onClick={() => chooseTheme(option.value)} active={theme === option.value}>
+                <Dropdown.Item
+                  key={option.value}
+                  onClick={() => chooseTheme(option.value)}
+                  active={theme === option.value}
+                >
                   <i className={`bi ${option.icon} me-2`} aria-hidden="true" />
                   {option.label}
                   {theme === option.value && <i className="bi bi-check2 ms-2" aria-hidden="true" />}

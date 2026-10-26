@@ -39,7 +39,9 @@ def load_kev(path: str) -> set[str]:
         with open(path) as f:
             return {v["cveID"] for v in json.load(f)["vulnerabilities"]}
     except (OSError, ValueError, KeyError, TypeError) as exc:
-        print(f"::warning::CISA KEV feed unreadable ({exc}); the minimum age applies to every package.", file=sys.stderr)
+        print(
+            f"::warning::CISA KEV feed unreadable ({exc}); the minimum age applies to every package.", file=sys.stderr
+        )
         return set()
 
 

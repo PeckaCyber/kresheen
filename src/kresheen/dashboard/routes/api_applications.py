@@ -62,10 +62,13 @@ from kresheen.storage.repository import Repository
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/applications", tags=["applications"], dependencies=[Depends(get_current_session), Depends(authorize_application)]
+    prefix="/api/applications",
+    tags=["applications"],
+    dependencies=[Depends(get_current_session), Depends(authorize_application)],
 )
 
 UNGROUPED = "ungrouped"
+
 
 class CreateApplicationRequest(BaseModel):
     name: str
@@ -262,7 +265,9 @@ def list_applications(
     applications with no group. Omitted = every application."""
     groups = {g.id: g for g in repo.list_groups()}
     applications = [
-        a for a in repo.list_applications() if can_view_group(user, groups.get(a.group_id) if a.group_id else None, repo)
+        a
+        for a in repo.list_applications()
+        if can_view_group(user, groups.get(a.group_id) if a.group_id else None, repo)
     ]
     if group_id is None:
         return applications
@@ -347,9 +352,7 @@ def set_reviewed(
     return application
 
 
-@router.patch(
-    "/{application_id}/metadata", response_model=Application, dependencies=[Depends(require_csrf)]
-)
+@router.patch("/{application_id}/metadata", response_model=Application, dependencies=[Depends(require_csrf)])
 def update_application_metadata(
     application_id: str, body: UpdateApplicationMetadataRequest, repo: Repository = Depends(get_repo)
 ) -> Application:
@@ -544,9 +547,7 @@ def remove_data_source_token(
     status_code=204,
     dependencies=[Depends(require_csrf)],
 )
-def delete_data_source(
-    application_id: str, data_source_id: str, repo: Repository = Depends(get_repo)
-) -> None:
+def delete_data_source(application_id: str, data_source_id: str, repo: Repository = Depends(get_repo)) -> None:
     _get_application_or_404(application_id, repo)
     data_source = repo.get_data_source(data_source_id)
     repo.delete_data_source(data_source_id)
@@ -691,9 +692,7 @@ def list_diagrams(application_id: str, repo: Repository = Depends(get_repo)) -> 
 
 
 @router.post("/{application_id}/diagrams", response_model=Diagram, dependencies=[Depends(require_csrf)])
-def create_diagram(
-    application_id: str, body: CreateDiagramRequest, repo: Repository = Depends(get_repo)
-) -> Diagram:
+def create_diagram(application_id: str, body: CreateDiagramRequest, repo: Repository = Depends(get_repo)) -> Diagram:
     _get_application_or_404(application_id, repo)
     name = body.name.strip()
     if not name:
@@ -704,9 +703,7 @@ def create_diagram(
     return diagram
 
 
-@router.patch(
-    "/{application_id}/diagrams/{diagram_id}", response_model=Diagram, dependencies=[Depends(require_csrf)]
-)
+@router.patch("/{application_id}/diagrams/{diagram_id}", response_model=Diagram, dependencies=[Depends(require_csrf)])
 def rename_diagram(
     application_id: str, diagram_id: str, body: UpdateDiagramRequest, repo: Repository = Depends(get_repo)
 ) -> Diagram:
@@ -720,9 +717,7 @@ def rename_diagram(
     return diagram
 
 
-@router.delete(
-    "/{application_id}/diagrams/{diagram_id}", status_code=204, dependencies=[Depends(require_csrf)]
-)
+@router.delete("/{application_id}/diagrams/{diagram_id}", status_code=204, dependencies=[Depends(require_csrf)])
 def delete_diagram(application_id: str, diagram_id: str, repo: Repository = Depends(get_repo)) -> None:
     """Removes this diagram and its own visual state only -- the shared
     Assets/ManualFlows/TrustBoundaryAssignments/threats it displayed are
@@ -764,9 +759,7 @@ def save_diagram_layout(
     same reason), and a flow key always contains `->`."""
     _get_application_or_404(application_id, repo)
     _get_diagram_or_404(application_id, diagram_id, repo)
-    existing = next(
-        (l for l in repo.list_diagram_element_layouts(diagram_id) if l.element_key == element_key), None
-    )
+    existing = next((l for l in repo.list_diagram_element_layouts(diagram_id) if l.element_key == element_key), None)
     layout = DiagramElementLayout(
         id=diagram_element_layout_id(diagram_id, element_key),
         diagram_id=diagram_id,
@@ -792,9 +785,7 @@ def delete_diagram_layout(
     default position" rather than being deleted from the diagram."""
     _get_application_or_404(application_id, repo)
     _get_diagram_or_404(application_id, diagram_id, repo)
-    existing = next(
-        (l for l in repo.list_diagram_element_layouts(diagram_id) if l.element_key == element_key), None
-    )
+    existing = next((l for l in repo.list_diagram_element_layouts(diagram_id) if l.element_key == element_key), None)
     if existing:
         repo.delete_diagram_element_layout(existing.id)
 
@@ -850,23 +841,16 @@ def get_run_diff(
             for e in diff.new_flows
         ],
         removed_flows=[
-            FlowDiffOut(key=e.key, source_name=e.source_name, target_name=e.target_name)
-            for e in diff.removed_flows
+            FlowDiffOut(key=e.key, source_name=e.source_name, target_name=e.target_name) for e in diff.removed_flows
         ],
         new_threats=[ThreatDiffOut(key=e.key, title=e.title, severity=e.severity) for e in diff.new_threats],
-        resolved_threats=[
-            ThreatDiffOut(key=e.key, title=e.title, severity=e.severity) for e in diff.resolved_threats
-        ],
-        new_findings=[
-            FindingDiffOut(title=e.title, severity=e.severity, domain=e.domain) for e in diff.new_findings
-        ],
+        resolved_threats=[ThreatDiffOut(key=e.key, title=e.title, severity=e.severity) for e in diff.resolved_threats],
+        new_findings=[FindingDiffOut(title=e.title, severity=e.severity, domain=e.domain) for e in diff.new_findings],
         resolved_findings=[
             FindingDiffOut(title=e.title, severity=e.severity, domain=e.domain) for e in diff.resolved_findings
         ],
         boundary_changes=[
-            BoundaryChangeOut(
-                name=e.name, type=e.type, from_boundary=e.from_boundary, to_boundary=e.to_boundary
-            )
+            BoundaryChangeOut(name=e.name, type=e.type, from_boundary=e.from_boundary, to_boundary=e.to_boundary)
             for e in diff.boundary_changes
         ],
     )
@@ -922,11 +906,7 @@ def save_trust_boundary(
 ) -> TrustBoundaryAssignment:
     _get_application_or_404(application_id, repo)
     existing = next(
-        (
-            a
-            for a in repo.list_trust_boundary_assignments(application_id)
-            if a.component_name == body.component_name
-        ),
+        (a for a in repo.list_trust_boundary_assignments(application_id) if a.component_name == body.component_name),
         None,
     )
     now = datetime.now(UTC)
@@ -947,9 +927,7 @@ def save_trust_boundary(
     status_code=204,
     dependencies=[Depends(require_csrf)],
 )
-def delete_trust_boundary(
-    application_id: str, component_name: str, repo: Repository = Depends(get_repo)
-) -> None:
+def delete_trust_boundary(application_id: str, component_name: str, repo: Repository = Depends(get_repo)) -> None:
     """Clears a component's boundary label. `component_name` is a query
     param, not a path segment -- a component name containing a `/` (e.g.
     "Deployment/web") breaks Starlette's default single-segment path
@@ -957,20 +935,14 @@ def delete_trust_boundary(
     path decoding), so a query param sidesteps that entirely."""
     _get_application_or_404(application_id, repo)
     existing = next(
-        (
-            a
-            for a in repo.list_trust_boundary_assignments(application_id)
-            if a.component_name == component_name
-        ),
+        (a for a in repo.list_trust_boundary_assignments(application_id) if a.component_name == component_name),
         None,
     )
     if existing:
         repo.delete_trust_boundary_assignment(existing.id)
 
 
-@router.post(
-    "/{application_id}/manual-assets", response_model=Asset, dependencies=[Depends(require_csrf)]
-)
+@router.post("/{application_id}/manual-assets", response_model=Asset, dependencies=[Depends(require_csrf)])
 def create_manual_asset(
     application_id: str, body: CreateManualAssetRequest, repo: Repository = Depends(get_repo)
 ) -> Asset:
@@ -1052,15 +1024,11 @@ def update_manual_asset(
     asset = asset.model_copy(update=updates)
     repo.save_asset(asset)
     if new_name != old_name:
-        rename_component_overlays(
-            repo, application_id, element_type=asset.type.value, old=old_name, new=new_name
-        )
+        rename_component_overlays(repo, application_id, element_type=asset.type.value, old=old_name, new=new_name)
     return asset
 
 
-@router.post(
-    "/{application_id}/manual-flows", response_model=ManualFlow, dependencies=[Depends(require_csrf)]
-)
+@router.post("/{application_id}/manual-flows", response_model=ManualFlow, dependencies=[Depends(require_csrf)])
 def create_manual_flow(
     application_id: str, body: CreateManualFlowRequest, repo: Repository = Depends(get_repo)
 ) -> ManualFlow:
@@ -1111,9 +1079,7 @@ def delete_manual_flow(application_id: str, flow_id: str, repo: Repository = Dep
 
 
 @router.get("/{application_id}/runs/{run_id}/findings", response_model=list[Finding])
-def get_run_findings(
-    application_id: str, run_id: str, repo: Repository = Depends(get_repo)
-) -> list[Finding]:
+def get_run_findings(application_id: str, run_id: str, repo: Repository = Depends(get_repo)) -> list[Finding]:
     _get_application_or_404(application_id, repo)
     return repo.list_findings(run_id=run_id)
 

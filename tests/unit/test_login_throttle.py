@@ -30,8 +30,15 @@ def test_account_key_is_case_and_whitespace_insensitive():
 
 def test_pair_delay_is_progressive_capped_and_per_account():
     clock = Clock()
-    t = LoginThrottle(max_per_account=100, max_per_ip=1000, window_seconds=900, free_failures=2,
-                      delay_base=1, delay_max=8, clock=clock)
+    t = LoginThrottle(
+        max_per_account=100,
+        max_per_ip=1000,
+        window_seconds=900,
+        free_failures=2,
+        delay_base=1,
+        delay_max=8,
+        clock=clock,
+    )
     ip, acct = "1.1.1.1", "a@x.test"
     waits = []
     for _ in range(7):

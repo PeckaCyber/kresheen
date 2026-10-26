@@ -75,12 +75,8 @@ def build_portfolio_summary(apps: list[ApplicationPortfolioData], now: datetime)
         open_by_risk=open_by_risk,
         open_by_category=open_by_category,
         open_action_count=sum(a.open_action_count or 0 for a in apps),
-        avg_completeness=round(sum(completeness_scores) / len(completeness_scores), 1)
-        if completeness_scores
-        else None,
+        avg_completeness=round(sum(completeness_scores) / len(completeness_scores), 1) if completeness_scores else None,
         stale_count=sum(1 for a in apps if a.stale),
         never_reviewed_count=never_reviewed,
         reviewed_over_90_days_count=over_90_days,
     )
-
-

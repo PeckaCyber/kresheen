@@ -24,7 +24,16 @@ export default defineConfig({
   resolve: {
     alias: { "@kresheen/pro": proFrontend, "@core": path.resolve(here, "src") },
     // Plugin frontend files live outside this directory; make them use this project's copy of each library.
-    dedupe: ["react", "react-dom", "react-router-dom", "react-bootstrap", "@xyflow/react", "bootstrap-icons", "@testing-library/react", "@testing-library/jest-dom"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "react-bootstrap",
+      "@xyflow/react",
+      "bootstrap-icons",
+      "@testing-library/react",
+      "@testing-library/jest-dom",
+    ],
   },
   server: {
     fs: { allow: [here, ...(proDir ? [proDir] : []), ...(proTests ? [proTests] : [])] },

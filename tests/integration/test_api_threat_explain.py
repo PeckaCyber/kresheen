@@ -47,17 +47,23 @@ def _setup(tmp_path, monkeypatch, *, enable=True, key=True, plugins=None):
     repo = SQLRepository(db_url)
     for uid, role in (("U-owner", "owner"), ("U-member", "member")):
         repo.save_user(
-            User(id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC))
+            User(
+                id=uid, email=f"{uid}@x.test", password_hash=hash_password(_PW), role=role, created_at=datetime.now(UTC)
+            )
         )
     provider = FakeProvider(
-        models=[ModelInfo("claude-x", "Claude X")], responses={"ThreatExplanation": {"text": "It means X.\n\nIt matters.\n"}}
+        models=[ModelInfo("claude-x", "Claude X")],
+        responses={"ThreatExplanation": {"text": "It means X.\n\nIt matters.\n"}},
     )
     app = create_app(db_url=db_url, llm_provider=provider, plugins=plugins)
     owner = _login(app, "U-owner@x.test")
     if enable:
         assert owner.put("/api/settings/ai", json={"enabled": True}).status_code == 200
     if key:
-        assert owner.put("/api/agent-config", json={"api_key": "sk-ant-test", "default_model": "claude-x"}).status_code == 200
+        assert (
+            owner.put("/api/agent-config", json={"api_key": "sk-ant-test", "default_model": "claude-x"}).status_code
+            == 200
+        )
     sample = owner.post("/api/applications/sample").json()
     return app, owner, repo, provider, sample["application_id"], sample["run_id"]
 
@@ -157,7 +163,10 @@ def test_404_in_a_hidden_group_for_a_non_member_but_a_viewer_can_explain(tmp_pat
 
 def test_hostile_component_name_warns_once_and_stays_in_the_data_block(tmp_path, monkeypatch):
     _, owner, repo, provider, aid, rid = _setup(tmp_path, monkeypatch)
-    assert owner.post(f"/api/applications/{aid}/manual-assets", json={"name": _HOSTILE, "type": "process"}).status_code == 200
+    assert (
+        owner.post(f"/api/applications/{aid}/manual-assets", json={"name": _HOSTILE, "type": "process"}).status_code
+        == 200
+    )
     threats = [t for t in _threats(owner, aid, rid)["threats"] if t["element_name"] == _HOSTILE]
     assert threats
     before = _threats(owner, aid, rid)
@@ -193,7 +202,11 @@ def test_nothing_is_changed_or_stored(tmp_path, monkeypatch):
 
 def test_owner_stated_properties_are_in_the_content(tmp_path, monkeypatch):
     _, owner, _, provider, aid, rid = _setup(tmp_path, monkeypatch)
-    comp = next(t for t in _threats(owner, aid, rid)["threats"] if t["element_kind"] == "component" and t["element_type"] == "data_store")
+    comp = next(
+        t
+        for t in _threats(owner, aid, rid)["threats"]
+        if t["element_kind"] == "component" and t["element_type"] == "data_store"
+    )
     put = owner.put(
         f"/api/applications/{aid}/runs/{rid}/element-properties",
         json={"element_kind": "component", "element_id": comp["element_id"], "properties": {"is_encrypted": True}},
@@ -219,7 +232,11 @@ def test_provider_error_is_mapped_and_audited(tmp_path, monkeypatch):
 
 
 def _component_threat(owner, aid, rid):
-    comp = next(t for t in _threats(owner, aid, rid)["threats"] if t["element_kind"] == "component" and t["element_type"] == "data_store")
+    comp = next(
+        t
+        for t in _threats(owner, aid, rid)["threats"]
+        if t["element_kind"] == "component" and t["element_type"] == "data_store"
+    )
     return comp
 
 
@@ -278,7 +295,10 @@ def test_injection_in_trimmed_away_text_is_still_a_signal(tmp_path, monkeypatch)
 
 def test_always_sent_parts_over_the_cap_still_answer_too_long(tmp_path, monkeypatch):
     _, owner, _, provider, aid, rid = _setup(tmp_path, monkeypatch)
-    assert owner.post(f"/api/applications/{aid}/manual-assets", json={"name": "W" * 100, "type": "process"}).status_code == 200
+    assert (
+        owner.post(f"/api/applications/{aid}/manual-assets", json={"name": "W" * 100, "type": "process"}).status_code
+        == 200
+    )
     threat = next(t for t in _threats(owner, aid, rid)["threats"] if t["element_name"] == "W" * 100)
     small = dataclasses.replace(THREAT_EXPLAIN_TASK, max_input_chars=100)
     monkeypatch.setattr(api_threat_explain, "THREAT_EXPLAIN_TASK", small)

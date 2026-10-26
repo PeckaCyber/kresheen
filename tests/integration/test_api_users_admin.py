@@ -29,7 +29,13 @@ def _owner(tmp_path, user_id: str = "USER-owner") -> tuple[TestClient, SQLReposi
     db_url = f"sqlite:///{tmp_path}/test.db"
     repo = SQLRepository(db_url)
     repo.save_user(
-        User(id=user_id, email=_OWNER_EMAIL, password_hash=hash_password(_PASSWORD), role="owner", created_at=datetime.now(UTC))
+        User(
+            id=user_id,
+            email=_OWNER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="owner",
+            created_at=datetime.now(UTC),
+        )
     )
     client = TestClient(create_app(db_url=db_url))
     return client, repo, _login(client, _OWNER_EMAIL)
@@ -40,7 +46,13 @@ def _add_member(repo: SQLRepository) -> None:
     (that would replace the owner's session cookie with the member's, since
     a `TestClient`'s cookie jar holds one session per app)."""
     repo.save_user(
-        User(id="USER-member", email=_MEMBER_EMAIL, password_hash=hash_password(_PASSWORD), role="member", created_at=datetime.now(UTC))
+        User(
+            id="USER-member",
+            email=_MEMBER_EMAIL,
+            password_hash=hash_password(_PASSWORD),
+            role="member",
+            created_at=datetime.now(UTC),
+        )
     )
 
 
@@ -130,15 +142,11 @@ def test_owner_can_deactivate_and_reactivate_a_member(tmp_path):
     _add_member(repo)
     member = repo.get_user_by_email(_MEMBER_EMAIL)
 
-    deactivated = client.patch(
-        f"/api/users/{member.id}", json={"is_active": False}, headers={"X-CSRF-Token": csrf}
-    )
+    deactivated = client.patch(f"/api/users/{member.id}", json={"is_active": False}, headers={"X-CSRF-Token": csrf})
     assert deactivated.status_code == 200, deactivated.text
     assert deactivated.json()["is_active"] is False
 
-    reactivated = client.patch(
-        f"/api/users/{member.id}", json={"is_active": True}, headers={"X-CSRF-Token": csrf}
-    )
+    reactivated = client.patch(f"/api/users/{member.id}", json={"is_active": True}, headers={"X-CSRF-Token": csrf})
     assert reactivated.status_code == 200
     assert reactivated.json()["is_active"] is True
 
@@ -218,7 +226,10 @@ def test_cannot_demote_the_last_active_owner(tmp_path):
 def test_demoting_one_of_several_owners_is_allowed(tmp_path):
     client, repo, csrf = _owner(tmp_path)
     second = User(
-        id="USER-owner-2", email="owner2@example.com", password_hash=hash_password(_PASSWORD), role="owner",
+        id="USER-owner-2",
+        email="owner2@example.com",
+        password_hash=hash_password(_PASSWORD),
+        role="owner",
         created_at=datetime.now(UTC),
     )
     repo.save_user(second)

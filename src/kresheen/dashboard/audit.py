@@ -70,15 +70,23 @@ def record_event(
         # Two pools: routine writes are capped at max_entries(), security events at max_security_entries(),
         # so a member flooding harmless writes cannot evict the trail of a login attack or a token change.
         repo.trim_audit_events(max_entries(), security=False, names=SECURITY_ACTIONS, prefixes=SECURITY_PREFIXES)
-        repo.trim_audit_events(max_security_entries(), security=True, names=SECURITY_ACTIONS, prefixes=SECURITY_PREFIXES)
+        repo.trim_audit_events(
+            max_security_entries(), security=True, names=SECURITY_ACTIONS, prefixes=SECURITY_PREFIXES
+        )
     except Exception:
         logger.exception("Could not write audit event %s", action)
 
 
 def _notify_sinks(at, action, user, ip, status, via, detail, security) -> None:
     event = {
-        "at": at.isoformat(), "action": action, "user": user, "ip": ip, "status": status,
-        "via": "api_token" if via == "api_token" else "session", "detail": dict(detail), "security": security,
+        "at": at.isoformat(),
+        "action": action,
+        "user": user,
+        "ip": ip,
+        "status": status,
+        "via": "api_token" if via == "api_token" else "session",
+        "detail": dict(detail),
+        "security": security,
     }
     for sink in get_registry().audit_sinks():
         try:
@@ -168,8 +176,16 @@ def _invalidate_threat_cache(request: Request) -> None:
 
 
 _EXPORT_SUFFIXES = (
-    "/report.html", "/report.docx", "/report.pdf", "/findings.sarif", "/threatdragon.json", "/threats.csv",
-    "/action-plan.csv", "/findings.csv", "/dfd.svg", "/compliance/export",
+    "/report.html",
+    "/report.docx",
+    "/report.pdf",
+    "/findings.sarif",
+    "/threatdragon.json",
+    "/threats.csv",
+    "/action-plan.csv",
+    "/findings.csv",
+    "/dfd.svg",
+    "/compliance/export",
 )
 
 

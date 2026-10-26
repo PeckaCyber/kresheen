@@ -85,11 +85,7 @@ def build_action_plan(threats: list[ThreatOut], statuses: dict[str, ActionStatus
         matching_fixes = [t for t, _, index in unique.values() if _fix_index(t) == index]
         elements = sorted({t.element_name for t in member_threats}, key=str.lower)
         first_text = next(iter(unique.values()))[1]
-        text = (
-            first_text
-            if len(elements) == 1
-            else normalised_display(first_text, member_threats[0].element_name)
-        )
+        text = first_text if len(elements) == 1 else normalised_display(first_text, member_threats[0].element_name)
         action_id = action_id_for(normalised)
         worst_impact[action_id] = min(_RISK_ORDER.index(t.severity) for t in member_threats)
         record = statuses.get(action_id)
@@ -107,8 +103,12 @@ def build_action_plan(threats: list[ThreatOut], statuses: dict[str, ActionStatus
                 elements=elements[:_ELEMENT_CAP],
                 cwe_refs=sorted({cwe for t in member_threats for cwe in t.cwe_refs}),
                 # Observed (config-derived) threats first, so their specific commands lead.
-                verification=list(dict.fromkeys(v for t in ordered_by_tier(member_threats) for v in t.verification))[:_VERIFY_CAP],
-                fix_examples=list(dict.fromkeys(t.fix_example for t in ordered_by_tier(matching_fixes) if t.fix_example))[:_FIX_CAP],
+                verification=list(dict.fromkeys(v for t in ordered_by_tier(member_threats) for v in t.verification))[
+                    :_VERIFY_CAP
+                ],
+                fix_examples=list(
+                    dict.fromkeys(t.fix_example for t in ordered_by_tier(matching_fixes) if t.fix_example)
+                )[:_FIX_CAP],
                 threat_keys=sorted(t.key for t in member_threats),
                 status=record.status if record else "todo",
                 note=record.note if record else "",

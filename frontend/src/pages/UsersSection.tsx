@@ -91,8 +91,8 @@ export function UsersSection({ defaultOpen }: { defaultOpen?: boolean } = {}) {
       {created && (
         <Alert variant="warning">
           <div>
-            One-time password for <strong>{created.email}</strong>. Share this with the person; it will not be
-            shown again.
+            One-time password for <strong>{created.email}</strong>. Share this with the person; it will not be shown
+            again.
           </div>
           <div className="d-flex align-items-center gap-2 mt-2">
             <code className="user-select-all" data-testid="new-user-password">

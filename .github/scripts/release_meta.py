@@ -37,9 +37,7 @@ def chart_fields() -> dict[str, str]:
 
 def changelog_section(version: str) -> str | None:
     text = (ROOT / "CHANGELOG.md").read_text()
-    m = re.search(
-        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)", text, re.DOTALL | re.MULTILINE
-    )
+    m = re.search(rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)", text, re.DOTALL | re.MULTILINE)
     return m.group(1).strip() if m else None
 
 
@@ -51,9 +49,7 @@ def check(tag: str) -> int:
     chart = chart_fields()
     for key in ("version", "appVersion"):
         if chart.get(key) != version:
-            problems.append(
-                f"Chart.yaml {key} is {chart.get(key)!r}, pyproject.toml is {version!r}"
-            )
+            problems.append(f"Chart.yaml {key} is {chart.get(key)!r}, pyproject.toml is {version!r}")
     if tag:
         if tag != f"v{version}":
             problems.append(f"tag {tag!r} does not match pyproject.toml version {version!r}")
@@ -64,9 +60,7 @@ def check(tag: str) -> int:
             (ROOT / "CHANGELOG.md").read_text(),
             re.MULTILINE | re.IGNORECASE,
         ):
-            problems.append(
-                f"CHANGELOG.md still marks {version} as unreleased: put the release date in the heading"
-            )
+            problems.append(f"CHANGELOG.md still marks {version} as unreleased: put the release date in the heading")
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 1
@@ -108,10 +102,7 @@ def provenance(tag: str, prev: str, actor: str, bot: str, sha: str, run_url: str
         lines += [f"  - {s}" for s in subjects[:40]]
         if len(subjects) > 40:
             lines.append(f"  - ... and {len(subjects) - 40} more")
-        lines.append(
-            f"- Commits without a pull request: {len(direct)}"
-            + (" (check these)" if direct else "")
-        )
+        lines.append(f"- Commits without a pull request: {len(direct)}" + (" (check these)" if direct else ""))
     else:
         lines.append("- Changes: first release (no earlier release to compare with)")
     repo_url = run_url.split("/actions/")[0]

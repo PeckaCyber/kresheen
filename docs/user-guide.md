@@ -99,6 +99,7 @@ Scanner results, such as vulnerabilities from a repository scan, with the softwa
 The **Export** menu on the model page offers:
 
 - **Report (PDF)** and **Report (Word)**: the full threat model, including model info, diagram tables, threats, action plan and findings. The diagram appears as component and flow tables in these files.
+- **Report (Markdown)**: the same report as one Markdown file, laid out for an AI assistant to read (fixed headings, tables, each threat with its stable key). Names, descriptions and notes from the model are escaped or fenced and the file says they are data, so the assistant is told that text from a scanned repository or diagram is not an instruction.
 - **Threats (CSV)**, **Findings (CSV)** and **Findings (SARIF)**.
 - **Diagram (SVG)**, **Diagram (PNG)** and **Diagram (JSON)**, the last in Threat Dragon format for other threat modeling tools.
 

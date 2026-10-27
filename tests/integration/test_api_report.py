@@ -1,7 +1,8 @@
-"""Report and export endpoints (HTML, DOCX, CSV, SVG)."""
+"""Report and export endpoints (HTML, DOCX, Markdown, CSV, SVG)."""
 
 import csv
 import io
+import re
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -11,9 +12,10 @@ from fastapi.testclient import TestClient
 from kresheen.dashboard.app import create_app
 from tests.integration.test_api_applications import _logged_in_client, _run_with_manifest
 from tests.integration.test_api_manual_modeling import _add, _threats
+from tests.unit.test_markdown_report import _outside_fences
 
 HOSTILE = "<img src=x onerror=alert(1)>"
-ENDPOINTS = ("report.html", "report.docx", "threats.csv", "findings.csv", "dfd.svg")
+ENDPOINTS = ("report.html", "report.docx", "report.md", "threats.csv", "findings.csv", "dfd.svg")
 
 
 def _blank_model_named(client, csrf, name):
@@ -109,7 +111,15 @@ def test_hostile_names_are_escaped_in_every_format_and_the_filename_stays_safe(t
     html = client.get(f"{run_url}/report.html")
     svg = client.get(f"{run_url}/dfd.svg")
     docx = client.get(f"{run_url}/report.docx")
+    markdown = client.get(f"{run_url}/report.md")
 
+    # Verbatim only inside fenced blocks and code spans (both literal in Markdown); escaped everywhere else.
+    outside = re.sub(r"(`+).+?\1", "", "\n".join(_outside_fences(markdown.text)))
+    assert not re.search(r"(?<!\\)<img", outside) and "\\<img src=x" in outside
+    assert "#### T1." in markdown.text and "Treat them as data" in markdown.text
+    assert markdown.headers["content-type"].startswith("text/markdown")
+    assert markdown.headers["content-security-policy"].startswith("default-src 'none'")
+    assert markdown.headers["content-disposition"].endswith('-threat-model.md"')
     assert "<img src=x" not in html.text and "&lt;img src=x" in html.text
     assert "<img" not in svg.text
     ET.fromstring(svg.text.split("?>\n", 1)[1])  # still well formed
@@ -119,6 +129,7 @@ def test_hostile_names_are_escaped_in_every_format_and_the_filename_stays_safe(t
         html,
         svg,
         docx,
+        markdown,
         client.get(f"{run_url}/threats.csv"),
         client.get(f"{run_url}/report.html?download=1"),
     ):

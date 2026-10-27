@@ -15,6 +15,7 @@ describe("ExportMenu", () => {
     const href = (name: string) => screen.getByRole("link", { name }).getAttribute("href");
     expect(href("Report (PDF)")).toBe("/api/applications/APP-1/runs/RUN-2/report.pdf");
     expect(href("Report (Word)")).toBe("/api/applications/APP-1/runs/RUN-2/report.docx");
+    expect(href("Report (Markdown)")).toBe("/api/applications/APP-1/runs/RUN-2/report.md");
     expect(href("Threats (CSV)")).toBe("/api/applications/APP-1/runs/RUN-2/threats.csv");
     expect(href("Findings (CSV)")).toBe("/api/applications/APP-1/runs/RUN-2/findings.csv");
     expect(href("Findings (SARIF)")).toBe("/api/applications/APP-1/runs/RUN-2/findings.sarif");
@@ -28,6 +29,7 @@ describe("ExportMenu", () => {
     for (const name of [
       "Report (PDF)",
       "Report (Word)",
+      "Report (Markdown)",
       "Threats (CSV)",
       "Findings (CSV)",
       "Findings (SARIF)",

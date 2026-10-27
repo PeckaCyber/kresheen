@@ -1,4 +1,4 @@
-"""Exports for one run: an HTML report (print it for a PDF), a DOCX report, threat
+"""Exports for one run: an HTML report (print it for a PDF), DOCX, PDF and Markdown reports, threat
 and finding CSVs, and the diagram as SVG.
 
 GET-only, so a plain link or browser navigation works with the session cookie
@@ -31,6 +31,7 @@ from kresheen.reporting.csv_export import actions_csv, findings_csv, threats_csv
 from kresheen.reporting.dfd_svg import render_svg
 from kresheen.reporting.docx_report import render_docx
 from kresheen.reporting.html_report import render_html
+from kresheen.reporting.markdown_report import render_markdown
 from kresheen.reporting.model import ThreatModelReport, build_report, dfd_parts
 from kresheen.reporting.pdf_report import render_pdf
 from kresheen.reporting.sarif_export import build_sarif
@@ -148,6 +149,24 @@ def report_pdf(
         application_name=report.application_name,
         suffix="-threat-model.pdf",
         attachment=True,
+    )
+
+
+@router.get("/{application_id}/runs/{run_id}/report.md")
+def report_markdown(
+    application_id: str,
+    run_id: str,
+    diagram_id: str | None = None,
+    repo: Repository = Depends(get_repo),
+) -> Response:
+    report = _report(application_id, run_id, repo, diagram_id)
+    return _respond(
+        render_markdown(report),
+        "text/markdown; charset=utf-8",
+        application_name=report.application_name,
+        suffix="-threat-model.md",
+        attachment=True,
+        restrict_content=True,
     )
 
 

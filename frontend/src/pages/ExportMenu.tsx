@@ -51,6 +51,9 @@ export function ExportMenu({
         <Dropdown.Item href={`${base}/report.docx`} download>
           Report (Word)
         </Dropdown.Item>
+        <Dropdown.Item href={`${base}/report.md`} download>
+          Report (Markdown)
+        </Dropdown.Item>
         <Dropdown.Divider />
         <Dropdown.Item href={`${base}/threats.csv`} download>
           Threats (CSV)

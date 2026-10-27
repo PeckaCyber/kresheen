@@ -264,6 +264,10 @@ const SECTIONS: Section[] = [
                 <strong>Report (PDF)</strong> and <strong>Report (Word)</strong>: the full threat model.
               </li>
               <li>
+                <strong>Report (Markdown)</strong>: the same report as plain text, laid out to paste into or attach to
+                an AI assistant. Names and notes from your model are marked as data, not instructions.
+              </li>
+              <li>
                 <strong>Threats (CSV)</strong>, <strong>Findings (CSV)</strong> and <strong>Findings (SARIF)</strong>.
               </li>
               <li>

@@ -504,6 +504,7 @@ test("export: every export link serves the right type with the session, and name
   const expected: Record<string, string> = {
     "report.pdf": "application/pdf",
     "report.docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "report.md": "text/markdown",
     "threats.csv": "text/csv",
     "findings.csv": "text/csv",
     "findings.sarif": "json",
@@ -521,7 +522,7 @@ test("export: every export link serves the right type with the session, and name
       expect(response.headers()["content-security-policy"]).toContain("default-src 'none'");
       expect(await response.text()).toContain("Gateway");
     }
-    if (name === "threats.csv") expect(await response.text()).toContain("Gateway");
+    if (name === "threats.csv" || name === "report.md") expect(await response.text()).toContain("Gateway");
   }
 
   // The HTML report is not in the menu any more but the route still serves it, with its own strict CSP.

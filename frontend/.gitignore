@@ -5,3 +5,5 @@ dist-ssr
 test-results
 playwright-report
 coverage
+# TypeScript incremental build caches (tsc -b)
+*.tsbuildinfo

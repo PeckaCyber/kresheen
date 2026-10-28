@@ -32,3 +32,8 @@ ignore:
     package: { name: stdlib, location: /usr/local/bin/grype }
   - vulnerability: GO-2026-6617  # net/http HTTP/2 server HPACK race
     package: { name: stdlib, location: /usr/local/bin/grype }
+  # go-jose v4.1.5 in the bundled Grype binary: a crafted RSA JWK costs excess CPU to parse (CVE-2026-116587, fixed in
+  # 4.1.6). Grype only meets a JWK in registry or attestation responses, never in scanned content, and the worst
+  # case is a slow scan subprocess. Remove when a Grype release with go-jose 4.1.6 or later is pinned.
+  - vulnerability: GHSA-mgcc-cww5-fp2q
+    package: { name: github.com/go-jose/go-jose/v4, location: /usr/local/bin/grype }

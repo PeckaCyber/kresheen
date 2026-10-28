@@ -11,9 +11,14 @@
 #      uv.lock, Chart.yaml (version and appVersion) and adds a dated CHANGELOG "Security" entry listing the advisories.
 #   2. dependabot-automerge.yml turns on auto-merge for that PR (it is opened by the GitHub App). It merges once the
 #      required checks pass.
-#   3. tag  (push to main) For a merge commit of a `security-release` PR whose version has no tag yet: waits until
-#      `ci` and `codeql` are green on that commit, then creates the tag `v<version>`. The tag is created as the App, so
+#   3. tag  (push to main) For the merge commit of a release PR whose version has no tag yet: waits until `ci` and
+#      `codeql` are green on that commit, then creates the tag `v<version>`. The tag is created as the App, so
 #      release.yml starts (a tag made with GITHUB_TOKEN would not start it).
+#
+# Release PRs: a `security-release` PR from step 1, or a maintainer's release bump, a PR opened by a repository admin
+# whose merge commit raises the version in pyproject.toml to a stable X.Y.Z above every stable tag (the "Release X.Y.Z"
+# PR). A bump must also pass release_meta.py check (Chart.yaml agrees, the CHANGELOG section is dated); if it does
+# not, the job fails so the maintainer hears about it. Prereleases are still tagged by hand.
 #
 # Superseding a tag (workflow_dispatch with supersede=<tag>, started by audit-heal.yml): a release whose run stopped
 # at the dependency audit because a new advisory appeared leaves a tag with no GitHub release. Once the lock fix is
@@ -24,8 +29,9 @@
 #
 # Safety
 #   - A commit is tagged only after the required workflows are green on that exact commit.
-#   - Only a PR labelled `security-release` and opened by the App can lead to a tag. A tag that already exists is
-#     never moved or recreated, so a version is released once; a rerun finds nothing to do.
+#   - Only a PR labelled `security-release` and opened by the App, or a release bump opened by a repository admin, can
+#     lead to a tag; both must come from a branch of this repository. A tag that already exists is never moved or
+#     recreated, so a version is released once; a rerun finds nothing to do.
 #   - Everything is skipped, with a notice, until the App is configured (variable SECURITY_APP_ID, secret
 #     SECURITY_APP_PRIVATE_KEY).
 #   - If a push made by an auto-merge does not start CI (GITHUB_TOKEN rules), the wait step starts `ci` and `codeql`
@@ -223,8 +229,9 @@ jobs:
           permission-pull-requests: read
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
-      - name: Is this the merge of a security release PR?
+      - name: Is this the merge of a release PR?
         id: find
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
@@ -233,12 +240,29 @@ jobs:
           BOT_LOGIN: ${{ vars.SECURITY_BOT_LOGIN }}
         run: |
           echo "go=false" >> "$GITHUB_OUTPUT"
-          prs=$(gh api "repos/${GH_REPO}/commits/${SHA}/pulls" --jq '[.[] | select(.merged_at != null and .base.ref == "main" and any(.labels[]; .name == "security-release") and .user.login == env.BOT_LOGIN and .head.repo.full_name == env.GH_REPO)] | length')
-          if [ "$prs" = 0 ]; then echo "Not a security release merge."; exit 0; fi
-          version=$(python3 .github/scripts/release_meta.py check "" | sed -n 's/^version=//p')
+          pr=$(gh api "repos/${GH_REPO}/commits/${SHA}/pulls" --jq '[.[] | select(.merged_at != null and .base.ref == "main" and .head.repo.full_name == env.GH_REPO)] | first // empty')
+          if [ -z "$pr" ]; then echo "Not a pull request merge."; exit 0; fi
+          author=$(jq -r '.user.login' <<<"$pr")
+          if [ "$author" = "$BOT_LOGIN" ] && jq -e 'any(.labels[]; .name == "security-release")' <<<"$pr" >/dev/null; then
+            kind="security release"
+            version=$(python3 .github/scripts/release_meta.py check "" | sed -n 's/^version=//p')
+          else
+            git fetch --tags --force origin
+            version=$(python3 .github/scripts/security_release.py bumped | sed -n 's/^version=//p')
+            if [ -z "$version" ]; then echo "Not a release bump."; exit 0; fi
+            perm=$(gh api "repos/${GH_REPO}/collaborators/${author}/permission" --jq '.permission' 2>/dev/null || echo none)
+            if [ "$perm" != admin ]; then
+              echo "::warning::The version bump to ${version} came from ${author} (${perm}), not a repository admin; not tagging."
+              exit 0
+            fi
+            kind="release bump by ${author}"
+          fi
           if git ls-remote --exit-code --tags origin "refs/tags/v${version}" >/dev/null 2>&1; then
             echo "Tag v${version} already exists; nothing to do."; exit 0
           fi
+          # A bump with an undated CHANGELOG or a Chart.yaml that disagrees fails here, and the failed run emails.
+          python3 .github/scripts/release_meta.py check "v${version}" >/dev/null
+          echo "Tagging v${version} (${kind}) once the required workflows pass." >> "$GITHUB_STEP_SUMMARY"
           echo "go=true" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
       - name: Wait for the required workflows on this commit

@@ -8,7 +8,7 @@ release_meta.py provenance <tag> <previous tag or empty> <actor> <bot login> <sh
                                        print the release notes: a provenance block, then the CHANGELOG section
 
 The provenance block says why the release exists (who pushed the tag; for the security bot, the advisories it
-names), the commit, and every commit since the previous release, flagging any that did not come through a pull
+names, or that it tagged a merged release pull request), the commit, and every commit since the previous release, flagging any that did not come through a pull
 request. The maintainer reads it in the release email and follows the compromise runbook when it does not match.
 """
 
@@ -71,13 +71,20 @@ def check(tag: str) -> int:
 
 ADVISORY = re.compile(r"\b(?:CVE-\d{4}-\d{4,}|GHSA(?:-[0-9a-z]{4}){3})\b")
 PR_REF = re.compile(r"\(#\d+\)$")
+SECURITY_PR = re.compile(r"^Release v\S+ \(security\)")
 
 
 def provenance(tag: str, prev: str, actor: str, bot: str, sha: str, run_url: str, changelog: str) -> str:
     notes = Path(changelog).read_text().strip() if Path(changelog).exists() else ""
-    if bot and actor == bot:
+    subject = subprocess.run(
+        ["git", "log", "-1", "--format=%s", sha], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    if bot and actor == bot and SECURITY_PR.match(subject):
         ids = sorted(set(ADVISORY.findall(notes)))
         started = f"automatic security patch release by `{actor}`" + (f" for {', '.join(ids)}" if ids else "")
+    elif bot and actor == bot:
+        # security-release.yml also tags a maintainer's merged release bump once the required checks pass.
+        started = f"release pull request merged to main, tag `{tag}` created by `{actor}` after the required checks"
     else:
         started = f"tag `{tag}` pushed by `{actor}`"
     lines = [

@@ -17,7 +17,7 @@ For version `X.Y.Z` (tag `vX.Y.Z`):
 
 The chart runs the image with the same version by default.
 
-The provenance block at the top of the release notes says who started the release (the maintainer's tag push, or the automatic security patch with the advisories it fixes), the commit, and every commit since the previous release, flagging any that did not come through a pull request.
+The provenance block at the top of the release notes says who started the release (the maintainer's tag push, the maintainer's release pull request that the project's security App tagged once the required checks passed, or the automatic security patch with the advisories it fixes), the commit, and every commit since the previous release, flagging any that did not come through a pull request.
 
 Releases are immutable: once published, the tag cannot move and the assets cannot change. Only the maintainer and the project's security App may create release tags.
 

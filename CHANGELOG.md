@@ -6,10 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-28
+
 ### Added
 
 - Desktop installers for Windows (setup .exe and .zip), macOS (.dmg, Apple silicon and Intel) and Linux (.deb, .rpm, .tar.gz), attached to each release with a signed checksums file. They run Kresheen on your own computer only (127.0.0.1), with SQLite and Grype included, and need no Python, Docker or Kubernetes. Not code-signed yet. See [installation.md](docs/installation.md#desktop-app).
 - `kresheen desktop`, the command the installers start: a per-user data folder with a generated secret key, the browser opened for you, and on the first start a one-time setup link to create the owner account.
+- Export menu, **Report (Markdown)** (`GET /api/applications/{id}/runs/{run_id}/report.md`): the threat model report as one Markdown file laid out for an AI assistant to read. Text from the model (names, descriptions, notes) is escaped or fenced, and the file says it is data, not instructions. See [user-guide.md](docs/user-guide.md).
 
 ### Fixed
 
@@ -17,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A Kubernetes manifest with a field of the wrong type (a list where a mapping belongs, and so on) is refused with a message naming the document, instead of failing the run with an internal error. In a GitHub repository such a file is skipped and counted with the other unreadable files. A malformed Terraform plan is refused the same way.
 - Service selectors are compared as text, like pod labels, so a numeric selector value such as `version: 1` matches its pods.
 - A Threat Dragon file with a non-text shape or type, or a GitHub archive with a hard link to a missing file, no longer fails the run.
+- A GitHub archive with a link that replaces a directory an earlier entry created is refused before extraction. Python's tarfile could recurse on such a link until the run failed with an internal error (found by the new fuzz tests).
 
 ### Security
 

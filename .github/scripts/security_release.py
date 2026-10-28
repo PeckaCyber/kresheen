@@ -2,6 +2,8 @@
 """Helpers for security-release.yml.
 
 security_release.py plan                      print latest=, next=, commits_since=, pending= (for $GITHUB_OUTPUT)
+security_release.py bumped                    print version=X.Y.Z when HEAD is a release bump: it changes the project
+      version from its first parent's to a stable version above every stable tag. Prints nothing otherwise.
 security_release.py diff <released.json> <main.json> <fixed.json>
       Grype JSON of the released image and of an image built from main. Writes the High/Critical findings with a
       fix that the released image has and main no longer has, and prints count=N.
@@ -52,6 +54,22 @@ def plan() -> None:
     # A version above the latest tag at HEAD means a release bump is merged and only waits for its tag.
     print(f"pending={'true' if version_key(project_version()) > version_key(latest) else 'false'}")
     print(f"tag_exists={'true' if f'v{nxt}' in tags else 'false'}")
+
+
+def bumped() -> None:
+    now = project_version()
+    m = re.search(r'^version = "([^"]+)"', git("show", "HEAD^1:pyproject.toml"), re.MULTILINE)
+    before = m[1] if m else ""
+    tags = [t for t in git("tag", "-l", "v*").split() if STABLE.match(t)]
+    latest = max(tags, key=version_key) if tags else ""
+    if now == before:
+        print(f"Version {now} is unchanged; not a release bump.", file=sys.stderr)
+    elif not STABLE.match(f"v{now}"):
+        print(f"Version {now} is not a stable X.Y.Z version; tag prereleases by hand.", file=sys.stderr)
+    elif latest and version_key(now) <= version_key(latest):
+        print(f"Version {now} is not above the latest tag {latest}.", file=sys.stderr)
+    else:
+        print(f"version={now}")
 
 
 def findings(path: str) -> dict[tuple[str, str], dict]:
@@ -166,6 +184,8 @@ if __name__ == "__main__":
     a = sys.argv[1:]
     if a[:1] == ["plan"]:
         plan()
+    elif a[:1] == ["bumped"]:
+        bumped()
     elif a[:1] == ["diff"] and len(a) == 4:
         diff(*a[1:])
     elif a[:1] == ["advisories"] and len(a) == 6:

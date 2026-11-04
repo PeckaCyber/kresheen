@@ -224,6 +224,7 @@ def me(session: Session = Depends(get_current_session), user: User = Depends(get
 
 class SetupStatus(BaseModel):
     needed: bool
+    desktop: bool = False
 
 
 class SetupRequest(BaseModel):
@@ -245,8 +246,13 @@ def _setup_open(request: Request, repo: Repository) -> bool:
 
 @router.get("/setup", response_model=SetupStatus)
 def setup_status(request: Request, repo: Repository = Depends(get_repo)) -> SetupStatus:
-    """Whether the first-run setup page applies: only in a desktop install that has no account yet."""
-    return SetupStatus(needed=_setup_open(request, repo) and _is_loopback(request))
+    """Whether the first-run setup page applies (only in a desktop install that has no account yet), and whether this
+    is a desktop install at all (the sign-in page then shows how to recover an account). Both only for this machine."""
+    local = _is_loopback(request)
+    return SetupStatus(
+        needed=_setup_open(request, repo) and local,
+        desktop=bool(getattr(request.app.state, "desktop", False)) and local,
+    )
 
 
 @router.post("/setup", status_code=201)

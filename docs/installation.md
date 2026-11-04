@@ -35,7 +35,25 @@ What the desktop app does differently from a server install:
 - Everything is kept in one folder for your user: `%LOCALAPPDATA%\Kresheen` on Windows, `~/Library/Application Support/Kresheen` on macOS, `~/.local/share/kresheen` on Linux (set `KRESHEEN_HOME` to use another). It holds the database, the secret key that encrypts stored tokens (`secret.key`: back it up with the database) and Grype's vulnerability database. Uninstalling the app keeps this folder.
 - The installers are not code-signed yet. Windows SmartScreen shows "Windows protected your PC": choose More info, then Run anyway. On macOS, the first launch is blocked ("Apple could not verify"): choose Done, then open System Settings, Privacy & Security, and choose Open Anyway next to the Kresheen message. To check that a download is genuine, [verify it](releases.md#verify-the-desktop-installers) before running it.
 
-The same executable is the full command line too: for example `kresheen create-user --db sqlite:///<data folder>/kresheen.db --email ...` adds an account.
+The same executable is the full command line too. In the installed app, `create-user` and `reset-password` use the desktop database without a `--db` argument.
+
+### Signing in
+
+Kresheen creates your account only once. Uninstalling keeps your data folder, so after a reinstall the old account is still there and you land on the sign-in page, not the setup page. Sign in with the email and password you chose the first time. The console window shows the account emails each time Kresheen starts.
+
+### Forgot your password
+
+Close Kresheen first, then open a terminal and run the command for your system. Without `--email`, it lists the accounts:
+
+| System | Command |
+|---|---|
+| Windows | `& "$env:LOCALAPPDATA\Programs\Kresheen\kresheen.exe" reset-password` |
+| macOS | `/Applications/Kresheen.app/Contents/Resources/kresheen/kresheen reset-password` |
+| Linux | `kresheen reset-password` |
+
+To set a new password, add `--email you@example.com`. A random password is printed once; add `--password` to choose your own (at least 12 characters). The account is signed out everywhere and its API tokens are revoked. Then start Kresheen and sign in. If you installed somewhere else, use the path of your `kresheen` executable. If you set `KRESHEEN_HOME`, set it in the terminal too.
+
+To start over with a new account instead, close Kresheen and delete `kresheen.db`, `kresheen.db-shm` and `kresheen.db-wal` in the data folder. Keep `secret.key`. The next start shows the setup page. This deletes your threat models. The Windows uninstaller also offers to delete the whole data folder (it asks, and the default is to keep it; a silent uninstall always keeps it; it only knows the default folder, not `KRESHEEN_HOME`).
 
 ## Docker image
 

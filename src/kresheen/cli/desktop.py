@@ -162,16 +162,21 @@ def desktop(port: int, no_browser: bool):
 
     db_url = f"sqlite:///{(folder / 'kresheen.db').as_posix()}"
     # The token goes in the URL fragment: browsers never send a fragment to the server, so it stays out of logs.
-    setup_token = None if SQLRepository(db_url).list_users() else secrets.token_urlsafe(32)
+    users = SQLRepository(db_url).list_users()
+    setup_token = None if users else secrets.token_urlsafe(32)
     # Kept (owner-only) for a second launch while setup is pending; useless once an account exists.
     if setup_token:
         _write_private(folder / "setup-token", setup_token)
     else:
         (folder / "setup-token").unlink(missing_ok=True)
-    app = create_app(db_url=db_url, setup_token=setup_token)
+    app = create_app(db_url=db_url, setup_token=setup_token, desktop=True)
     start_warmup(app.state.repo)
     target = f"{base_url}/setup#token={setup_token}" if setup_token else base_url
     click.echo(f"Data folder: {folder}")
+    if users:
+        click.echo("Accounts: " + ", ".join(user.email for user in users))
+        program = f'"{sys.executable}"' if getattr(sys, "frozen", False) else "kresheen"
+        click.echo(f"Forgot your password? Close this window and run: {program} reset-password --email <email>")
     threading.Thread(target=_open_when_ready, args=(port, target, not no_browser), daemon=True).start()
     # No proxy headers: nothing sits in front of a desktop install, so the client address is always the real one.
     uvicorn.run(app, host=_HOST, port=port, proxy_headers=False, log_level="warning")

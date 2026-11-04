@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Alert, Button, Container, Form } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
 import { fetchCapabilities, type AuthProviderInfo } from "../api/capabilities";
+import { apiFetch } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
 export function Login() {
@@ -14,11 +15,16 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [providers, setProviders] = useState<AuthProviderInfo[]>([]);
+  const [desktop, setDesktop] = useState(false);
 
   useEffect(() => {
     fetchCapabilities()
       .then((caps) => setProviders(caps.auth_providers))
       .catch(() => setProviders([]));
+    // Only a desktop install on this computer says so; any failure just leaves the note out.
+    apiFetch<{ desktop?: boolean }>("/api/auth/setup")
+      .then((status) => setDesktop(status.desktop === true))
+      .catch(() => setDesktop(false));
   }, []);
 
   // A provider can say that passwords are refused for most users; the form then waits behind an owner link.
@@ -93,6 +99,20 @@ export function Login() {
             {submitting ? "Signing in..." : "Sign in"}
           </Button>
         </Form>
+      )}
+      {desktop && (
+        <p className="text-muted small mt-4 mb-0">
+          This is Kresheen on this computer. Sign in with the account you created the first time you started it. If you
+          forgot the password, or are not sure which account it was, run <code>kresheen reset-password</code> (see{" "}
+          <a
+            href="https://github.com/PeckaCyber/kresheen/blob/main/docs/installation.md#forgot-your-password"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Forgot your password
+          </a>
+          ).
+        </p>
       )}
     </Container>
   );

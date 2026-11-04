@@ -132,6 +132,48 @@ describe("Login", () => {
   });
 });
 
+describe("Login on a desktop install", () => {
+  function stubSetup(status: unknown, ok = true) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/api/auth/me")) return jsonResponse({ detail: "Not authenticated" }, 401);
+        if (url.endsWith("/api/auth/setup")) return jsonResponse(status, ok ? 200 : 500);
+        return jsonResponse({ detail: "not found" }, 404);
+      }),
+    );
+  }
+
+  it("explains how to recover an account", async () => {
+    stubSetup({ needed: false, desktop: true });
+    renderLogin();
+    expect(await screen.findByText(/This is Kresheen on this computer/)).toBeInTheDocument();
+    expect(screen.getByText("kresheen reset-password")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Forgot your password" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("installation.md#forgot-your-password"),
+    );
+  });
+
+  it("shows no note on a server install", async () => {
+    stubSetup({ needed: false, desktop: false });
+    renderLogin();
+    await screen.findByLabelText("Email");
+    await vi.waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining("/api/auth/setup"), expect.anything()),
+    );
+    expect(screen.queryByText(/This is Kresheen on this computer/)).not.toBeInTheDocument();
+  });
+
+  it("shows no note when the status cannot be read", async () => {
+    stubSetup({ detail: "boom" }, false);
+    renderLogin();
+    await screen.findByLabelText("Email");
+    expect(screen.queryByText(/This is Kresheen on this computer/)).not.toBeInTheDocument();
+  });
+});
+
 describe("Signed out by timeout", () => {
   it("sends a signed-in user to the login page with an inactivity message when the API answers 401", async () => {
     vi.stubGlobal(

@@ -8,6 +8,7 @@ kresheen [OPTIONS] COMMAND [ARGS]...
 |---|---|
 | [`serve`](#kresheen-serve) | Run the web dashboard and API |
 | [`create-user`](#kresheen-create-user) | Create a login |
+| [`reset-password`](#kresheen-reset-password) | List accounts or set a new password |
 | [`ci`](#kresheen-ci) | Run a model from CI and gate on what is new |
 | [`db`](#kresheen-db) | Inspect and upgrade the database schema |
 | [`audit-prune`](#kresheen-audit-prune) | Delete old audit-log entries |
@@ -52,6 +53,21 @@ kresheen create-user --email TEXT [--password TEXT] [--role owner|member] [--db 
 | `--role` | `member` | `owner` or `member`. Ignored for the first account. |
 
 The command prints `KRESHEEN_USER_EMAIL=...`, `KRESHEEN_USER_PASSWORD=...` and `role=...`. Save the password: it is not shown again.
+
+## kresheen reset-password
+
+Set a new password for an account, or list the accounts. For a forgotten password or an account you do not remember.
+
+```
+kresheen reset-password [--email TEXT] [--password TEXT] [--db TEXT]
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--email` | none | The account to reset. Without it, the accounts are listed (email, role, active) and nothing changes. An unknown email is refused. |
+| `--password` | generated | The new password (at least 12 characters). If you do not give one, a random password is printed once. |
+
+The account is signed out everywhere, its API tokens are revoked, and an `auth.reset_password_cli` audit event is recorded. In the installed desktop app, or when `KRESHEEN_HOME` is set, `--db` defaults to the desktop database (this also applies to `create-user`). See [installation.md](installation.md#forgot-your-password).
 
 ## kresheen ci
 

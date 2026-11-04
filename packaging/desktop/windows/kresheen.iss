@@ -1,6 +1,7 @@
 ; Inno Setup script for the Windows installer (run through build.py, which passes the /D defines).
 ; Per-user install: no administrator rights, files under %LOCALAPPDATA%\Programs\Kresheen, data under
-; %LOCALAPPDATA%\Kresheen (kept on uninstall).
+; %LOCALAPPDATA%\Kresheen (kept on uninstall unless the user chooses to delete it; the prompt is skipped in a silent
+; uninstall, which always keeps it).
 #ifndef AppVersion
   #error AppVersion is required
 #endif
@@ -36,3 +37,22 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 
 [Run]
 Filename: "{app}\kresheen.exe"; Description: "Start Kresheen now"; Flags: nowait postinstall skipifsilent
+
+[Code]
+{ KRESHEEN_HOME is not honoured here: the uninstaller only knows the default data folder. }
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  DataDir: String;
+begin
+  if CurUninstallStep <> usPostUninstall then
+    Exit;
+  if UninstallSilent then
+    Exit;
+  DataDir := ExpandConstant('{localappdata}\Kresheen');
+  if not DirExists(DataDir) then
+    Exit;
+  if MsgBox('Also delete your Kresheen data (database, secret key, settings) in ' + DataDir +
+    '?' + #13#10#13#10 + 'Choose No to keep it for a later reinstall.',
+    mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+    DelTree(DataDir, True, True, True);
+end;

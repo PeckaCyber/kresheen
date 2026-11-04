@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- `kresheen reset-password`: lists the accounts, or sets a new password for one (`--email`, optional `--password`). It signs the account out everywhere and revokes its API tokens. In the installed desktop app, or with `KRESHEEN_HOME` set, `reset-password` and `create-user` use the desktop database without `--db`. See [installation.md](docs/installation.md#forgot-your-password).
+- The Windows uninstaller offers to delete the Kresheen data folder (the default is to keep it; a silent uninstall always keeps it).
+
+### Changed
+
+- Desktop: the sign-in page on a desktop install explains which account to use and how to reset a password, and the console lists the existing account emails with the reset command at start.
+
 ## [1.2.0] - 2026-10-28
 
 ### Added

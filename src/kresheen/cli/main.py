@@ -140,6 +140,8 @@ def reset_password(email: str | None, password: str | None, db: str):
     user = repo.get_user_by_email(email)
     if user is None:
         raise click.UsageError(f"No account with email {email!r}. Run reset-password without --email to list them.")
+    if user.auth_source != "password":  # same rule as the change-password route: the IdP owns this account
+        raise click.UsageError(f"{email!r} signs in via single sign-on; there is no password to reset.")
     password = password or secrets.token_urlsafe(18)
     repo.save_user(user.model_copy(update={"password_hash": hash_password(password)}))
     repo.delete_sessions_for_user(user.id)

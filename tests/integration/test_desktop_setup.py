@@ -272,6 +272,15 @@ def test_reset_password_refuses_an_unknown_email_and_a_short_password(tmp_path):
     assert short.exit_code != 0 and "at least 12" in short.output
 
 
+def test_reset_password_refuses_a_single_sign_on_account(tmp_path):
+    _cli(tmp_path, "create-user", "--email", "sso@example.com", "--password", _PASSWORD)
+    repo = SQLRepository(f"sqlite:///{tmp_path}/test.db")
+    user = repo.get_user_by_email("sso@example.com")
+    repo.save_user(user.model_copy(update={"auth_source": "sso"}))
+    result = _cli(tmp_path, "reset-password", "--email", "sso@example.com", "--password", "another-long-password")
+    assert result.exit_code != 0 and "single sign-on" in result.output
+
+
 def test_account_commands_default_to_the_desktop_database(tmp_path, monkeypatch):
     from kresheen.cli.main import cli
 

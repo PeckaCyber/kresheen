@@ -56,7 +56,9 @@ def main() -> None:
             status, body = get(port, "/")
             assert status == 200 and b"<html" in body.lower(), "the web interface is not served"
             status, body = get(port, "/api/auth/setup")
-            assert status == 200 and json.loads(body) == {"needed": True}, f"setup not offered: {status} {body!r}"
+            assert status == 200 and json.loads(body) == {"needed": True, "desktop": True}, (
+                f"setup not offered: {status} {body!r}"
+            )
             assert (Path(home) / "secret.key").exists(), "no secret key was created"
             assert (Path(home) / "kresheen.db").exists(), "no database was created"
             print(f"smoke test passed on port {port}")

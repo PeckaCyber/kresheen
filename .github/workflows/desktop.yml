@@ -1,17 +1,12 @@
 # Desktop installers (packaging/desktop/build.py) for Linux (.tar.gz, .deb, .rpm), Windows (setup .exe, .zip) and
 # macOS (.dmg, Apple silicon and Intel), each built on its own runner and smoke-tested (first launch serves the app and offers
-# setup). release.yml calls this and signs and attaches the results; pull requests that touch the packaging, and a
-# manual run, build them as a check. The installers are not code-signed yet. Inno Setup comes with GitHub's Windows
-# image; hdiutil with macOS.
+# setup). release.yml calls this and signs and attaches the results; every pull request, and a manual run, builds them
+# as a check. Any part of the app can break the desktop first launch, so there is no path filter; `desktop-ok` is the
+# one required check for the whole matrix. The installers are not code-signed yet. Inno Setup comes with GitHub's
+# Windows image; hdiutil with macOS.
 name: desktop
 on:
   pull_request:
-    paths:
-      - packaging/desktop/**
-      - src/kresheen/cli/desktop.py
-      - .github/workflows/desktop.yml
-      - .github/requirements/pyinstaller.txt
-      - .github/requirements/macos-intel-build.txt
   workflow_call:
   workflow_dispatch:
 
@@ -64,3 +59,17 @@ jobs:
           name: desktop-${{ runner.os }}-${{ runner.arch }}
           path: dist-desktop/
           if-no-files-found: error
+
+  # The required check: passes only when every platform built and passed the smoke test.
+  desktop-ok:
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every platform passed
+        env:
+          RESULT: ${{ needs.build.result }}
+        run: |
+          echo "desktop build matrix: $RESULT"
+          test "$RESULT" = success

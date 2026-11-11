@@ -7,8 +7,8 @@ set -euo pipefail
 tool=${1:?usage: install-tool.sh <grype|syft|cosign|actionlint|zizmor|hadolint|kube-linter>}
 case "$tool" in
   grype)
-    version=0.121.0
-    sha256=64e07133d3486115de647a66581461dccf5c732748a0a3119077395565f15519
+    version=0.121.3
+    sha256=e9da18cc1429e786722e32161288103600efffd8e483c90761f90485bd1bec85
     url="https://github.com/anchore/grype/releases/download/v${version}/grype_${version}_linux_amd64.tar.gz"
     kind=tar ;;
   syft)

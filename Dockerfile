@@ -47,7 +47,7 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt --no
     && printf '#!/usr/bin/python3\nfrom kresheen.cli.main import cli\ncli()\n' > /rootfs/kresheen
 
 # Official Grype image, pinned by tag and digest (a static Go binary)
-FROM anchore/grype:v0.121.0@sha256:621d56d1d68106b787022c81546f7e0a36202a25d1239f0c20195fab8c16f7ea AS grype
+FROM anchore/grype:v0.121.3@sha256:13113eeceab017260370cf540e1d25442c59665fd07d1b09b66d63bb0c282887 AS grype
 
 FROM ${RUNTIME_IMAGE}
 COPY --from=builder /opt/site-packages /opt/site-packages

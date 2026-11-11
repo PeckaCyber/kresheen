@@ -15,9 +15,11 @@ updates:
         applies-to: version-updates
         update-types: [minor, patch]
 
-  # Tools installed from hashed lists: pip-audit for the CI audit job, PyInstaller for the desktop build (`.in` is the
-  # input; regenerate the `.txt` with `uv pip compile --generate-hashes --universal --python-version 3.13`).
-  - package-ecosystem: pip
+  # Tools installed from hashed lists: pip-audit for the CI audit job, PyInstaller and the Intel macOS build tools for
+  # the desktop build (`.in` is the input; regenerate the `.txt` with the `uv pip compile` command in its header). The
+  # `uv` ecosystem, not `pip`: Dependabot's pip-compile run drops setuptools and pip from these lists (it strips
+  # pip-compile's "unsafe packages" note through to the end of the file), and `--require-hashes` then fails.
+  - package-ecosystem: uv
     directory: /.github/requirements
     schedule: {interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC}
     open-pull-requests-limit: 2

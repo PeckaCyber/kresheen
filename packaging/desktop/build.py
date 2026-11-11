@@ -35,12 +35,12 @@ HERE = Path(__file__).resolve().parent
 BUILD = ROOT / "build" / "desktop"
 
 # Keep in step with the Grype version in .github/scripts/install-tool.sh and the Dockerfile.
-GRYPE_VERSION = "0.121.0"
+GRYPE_VERSION = "0.121.3"
 GRYPE = {
-    ("linux", "x86_64"): ("linux_amd64.tar.gz", "64e07133d3486115de647a66581461dccf5c732748a0a3119077395565f15519"),
-    ("darwin", "arm64"): ("darwin_arm64.tar.gz", "7be39d3a0428c664ce0183e4aba31ed9accffce9eda7e7f6fa84e9c512285f27"),
-    ("darwin", "x86_64"): ("darwin_amd64.tar.gz", "27eef17e42f0340af6582cdbc33ad18faf9f601c613ab81d2e1658a94cbc357f"),
-    ("win32", "AMD64"): ("windows_amd64.zip", "f867bbdc14bd8b0d99b3fc47d839af07480a540072b16896373a8ba32b76f588"),
+    ("linux", "x86_64"): ("linux_amd64.tar.gz", "e9da18cc1429e786722e32161288103600efffd8e483c90761f90485bd1bec85"),
+    ("darwin", "arm64"): ("darwin_arm64.tar.gz", "54336f2cd8cdee8b3d8ea83462561ff7fa9293498054c7c53a193db44bfea4c8"),
+    ("darwin", "x86_64"): ("darwin_amd64.tar.gz", "65bfb1b3b30d32e9dab156a60003c7146e619f649992be227bf09c9ccbf44f7e"),
+    ("win32", "AMD64"): ("windows_amd64.zip", "3007a5afea25c60030a49d6c24d4e5abb6c94c0dbeed7ea303eb26df8e900c18"),
 }
 # Intel macOS: cryptography and argon2-cffi-bindings publish no Intel macOS wheels, so they are built from their
 # hash-checked sdists, cryptography against a static OpenSSL built here. Keep OpenSSL on a supported 3.5 LTS release.

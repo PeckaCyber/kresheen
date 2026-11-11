@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Desktop: the sign-in page on a desktop install explains which account to use and how to reset a password, and the console lists the existing account emails with the reset command at start.
 
+### Security
+
+- Grype 0.121.3 in the image and desktop installers (was 0.121.0). It is built with Go 1.27.3 and fixes the bundled brotli (GO-2026-6888, Critical, known exploited), klauspost/compress (GO-2026-6865), golang.org/x/net and go-jose advisories, and the Go standard library advisories that `.grype.yaml` ignored until now.
+
 ## [1.2.0] - 2026-10-28
 
 ### Added

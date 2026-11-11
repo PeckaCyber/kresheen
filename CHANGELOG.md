@@ -6,6 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-11
+
+### Security
+
+- CVE-2026-76844 (High): zlib1g 1:1.3.dfsg+really1.3.1-1+b1, fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1.
+- CVE-2026-85091 (High): zlib1g 1:1.3.dfsg+really1.3.1-1+b1, fixed in 1:1.3.dfsg+really1.3.1-1+deb13u1.
+- GHSA-mgcc-cww5-fp2q (High): github.com/go-jose/go-jose/v4 v4.1.5, fixed in 4.1.6.
+- GO-2026-6603 (High): stdlib go1.26.8, fixed in 1.26.9.
+- GO-2026-6604 (Critical): stdlib go1.26.8, fixed in 1.26.9, 1.27.2.
+- GO-2026-6605 (High): stdlib go1.26.8, fixed in 1.26.9, 1.27.2.
+- GO-2026-6607 (High): stdlib go1.26.8, fixed in 1.26.9, 1.27.2.
+- GO-2026-6608 (High): stdlib go1.26.8, fixed in 1.26.9, 1.27.2.
+- GO-2026-6610 (High): stdlib go1.26.8, fixed in 1.26.9.
+- GO-2026-6611 (High): stdlib go1.26.8, fixed in 1.26.9.
+- GO-2026-6612 (Critical): stdlib go1.26.8, fixed in 1.26.9.
+- GO-2026-6613 (High): stdlib go1.26.8, fixed in 1.26.9, 1.27.2.
+- GO-2026-6617 (High): stdlib go1.26.8, fixed in 1.26.9.
+- GO-2026-6865 (High): github.com/klauspost/compress v1.20.1, fixed in 1.20.2.
+- GO-2026-6888 (Critical): github.com/andybalholm/brotli v1.2.0, fixed in 1.2.7.
+
+No other changes since 1.2.0.
+
 ### Added
 
 - `kresheen reset-password`: lists the accounts, or sets a new password for one (`--email`, optional `--password`). It signs the account out everywhere and revokes its API tokens. In the installed desktop app, or with `KRESHEEN_HOME` set, `reset-password` and `create-user` use the desktop database without `--db`. See [installation.md](docs/installation.md#forgot-your-password).

@@ -11,7 +11,7 @@ ARG BUILDER_IMAGE=builder-default
 ARG RUNTIME_IMAGE=runtime-default
 
 # python:3.13-slim-trixie
-FROM python:3.13-slim-trixie@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f AS builder-default
+FROM python:3.13-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90 AS builder-default
 # gcr.io/distroless/python3-debian13:nonroot (Python 3.13.5)
 FROM gcr.io/distroless/python3-debian13:nonroot@sha256:6c4cb3bfa4b555429dd19541796a6ba6b30c84675b460bd0bd5072f7d5bdae71 AS runtime-default
 
